@@ -558,7 +558,7 @@ const app = {
         <style>
             #dynamic_scheme {
                 position: relative; width: 100%; height: 70vh; min-height: 400px; max-height: 800px;
-                background: transparent; overflow: hidden; border-radius: 8px; margin-bottom: 20px;
+                background: transparent; overflow: hidden; border-radius: 8px; margin-bottom: 20px; margin-top: 30px;
             }
             #dynamic_scheme img {
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -567,14 +567,25 @@ const app = {
             body.dark-mode #dynamic_scheme img {
                 filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; opacity: 0.85;
             }
-            /* Жесткие ограничения высоты для печати, чтобы убрать пустые пробелы */
+            /* Правила для вывода на отдельный альбомный лист */
             @media print {
+                /* Создаем правило альбомного листа */
+                @page scheme-page { 
+                    size: A4 landscape; 
+                    margin: 10mm; 
+                }
                 #dynamic_scheme {
-                    height: 320px !important; 
-                    min-height: 320px !important;
-                    max-height: 320px !important;
-                    page-break-inside: avoid;
-                    margin-bottom: 5px !important;
+                    page: scheme-page; /* Применяем альбомный лист к схеме */
+                    page-break-before: always; /* Всегда с новой страницы */
+                    break-before: page;
+                    height: 90vh !important; /* Растягиваем на весь лист */
+                    min-height: 90vh !important;
+                    max-height: 90vh !important;
+                    margin: 0 !important;
+                }
+                /* Принудительно центрируем все слои при печати */
+                #dynamic_scheme img {
+                    object-position: center center !important;
                 }
             }
         </style>
@@ -2781,11 +2792,11 @@ const app = {
         document.getElementById('total_sum').innerText = sum.toLocaleString() + " ₽";
         let d = showSku ? 'table-cell' : 'none'; document.querySelectorAll('.col-sku').forEach(e => e.style.display = d); document.querySelector('.col-sku-head').style.display = d;
 
-        // Очищаем старую схему и вставляем новую перед таблицей спецификации
+        // Очищаем старую схему и вставляем новую ПОСЛЕ таблицы спецификации
         let oldScheme = document.getElementById('dynamic_scheme');
         if (oldScheme) oldScheme.remove();
         if (this.state.viewMode === 'equipment' && this.state.showScheme) {
-            document.querySelector('.inv-table').insertAdjacentHTML('beforebegin', this.renderScheme());
+            document.querySelector('.inv-table').insertAdjacentHTML('afterend', this.renderScheme());
         }
         this.saveState();
 

@@ -555,40 +555,38 @@ const app = {
 
         // Генерация HTML с CSS-правилами для ночного режима и ПЕЧАТИ
         let html = `
-        <style>
-            #dynamic_scheme {
-                position: relative; width: 100%; height: 70vh; min-height: 400px; max-height: 800px;
-                background: transparent; overflow: hidden; border-radius: 8px; margin-bottom: 20px; margin-top: 30px;
-            }
-            #dynamic_scheme img {
-                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                object-fit: contain; mix-blend-mode: multiply; transition: filter 0.3s ease, opacity 0.3s ease;
-            }
-            body.dark-mode #dynamic_scheme img {
-                filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; opacity: 0.85;
-            }
-            /* Правила для вывода на отдельный альбомный лист */
-            @media print {
-                /* Создаем правило альбомного листа */
-                @page scheme-page { 
-                    size: A4 landscape; 
-                    margin: 10mm; 
-                }
-                #dynamic_scheme {
-                    page: scheme-page; /* Применяем альбомный лист к схеме */
-                    page-break-before: always; /* Всегда с новой страницы */
-                    break-before: page;
-                    height: 90vh !important; /* Растягиваем на весь лист */
-                    min-height: 90vh !important;
-                    max-height: 90vh !important;
-                    margin: 0 !important;
-                }
-                /* Принудительно центрируем все слои при печати */
-                #dynamic_scheme img {
-                    object-position: center center !important;
-                }
-            }
-        </style>
+                <style>
+                    #dynamic_scheme {
+                        position: relative; width: 100%; height: 70vh; min-height: 400px; max-height: 800px;
+                        background: transparent; overflow: hidden; border-radius: 8px; margin-bottom: 20px;
+                    }
+                    #dynamic_scheme img {
+                        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                        object-fit: contain; mix-blend-mode: multiply; transition: filter 0.3s ease, opacity 0.3s ease;
+                    }
+                    body.dark-mode #dynamic_scheme img {
+                        filter: invert(1) hue-rotate(180deg); mix-blend-mode: screen; opacity: 0.85;
+                    }
+                    /* Правила для вывода на отдельный альбомный лист при печати */
+                    @media print {
+                        @page scheme-page { 
+                            size: A4 landscape; 
+                            margin: 10mm; 
+                        }
+                        #dynamic_scheme {
+                            page: scheme-page; /* Применяем альбомный лист к схеме */
+                            page-break-before: always; /* Всегда с новой страницы */
+                            break-before: page;
+                            height: 90vh !important; /* Растягиваем на весь лист */
+                            min-height: 90vh !important;
+                            max-height: 90vh !important;
+                            margin: 0 !important;
+                        }
+                        #dynamic_scheme img {
+                            object-position: center center !important; /* Центрируем */
+                        }
+                    }
+                </style>
         <div id="dynamic_scheme">`;
 
         layers.forEach(layer => {
@@ -2820,14 +2818,28 @@ const app = {
 };
 window.onload = function () { app.init(); };
 
-// Автоматическое отключение тёмной темы перед выводом на печать
+// Автоматическое отключение тёмной темы и перенос схемы ВНИЗ перед выводом на печать
 window.addEventListener('beforeprint', function () {
     document.body.classList.remove('dark-mode');
+    
+    let scheme = document.getElementById('dynamic_scheme');
+    let table = document.querySelector('.inv-table');
+    if (scheme && table) {
+        // Перемещаем элемент схемы сразу после таблицы спецификации
+        table.insertAdjacentElement('afterend', scheme);
+    }
 });
 
-// Возврат тёмной темы после закрытия окна печати
+// Возврат тёмной темы и возврат схемы НАВЕРХ после закрытия окна печати
 window.addEventListener('afterprint', function () {
-    if (app && app.state && app.state.darkMode) {
+    if (app.state && app.state.darkMode) {
         document.body.classList.add('dark-mode');
+    }
+    
+    let scheme = document.getElementById('dynamic_scheme');
+    let table = document.querySelector('.inv-table');
+    if (scheme && table) {
+        // Возвращаем элемент схемы обратно наверх, перед таблицей
+        table.insertAdjacentElement('beforebegin', scheme);
     }
 });

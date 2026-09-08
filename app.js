@@ -1021,7 +1021,7 @@ const app = {
     currentAuthTab: 'login',
     pendingRegistration: null,
     adminData: { users: [], estimates: [], recentEstimates: [], userEstimates: [] },
-    state: { objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: false, optItems: {}, rigOff: {}, qtyOverrides: {}, darkMode: false, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: false, collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", ufhMixType: 'std', ufhDT: null, sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150', radRegime: 'r8060', servoType: null, snowMelt: false, snowZones: [], snowCtrl: 'sensor', snowInBoilerPower: true, showSnowPanel: false, snowPipe: 'thin' },
+    state: { objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: false, optItems: {}, rigOff: {}, qtyOverrides: {}, darkMode: false, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: false, collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", ufhMixType: 'std', ufhDT: null, sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150', radRegime: 'r8060', servoType: null, snowMelt: false, snowZones: [], snowCtrl: 'sensor', snowInBoilerPower: true, showSnowPanel: false, snowPipe: 'thin' },
 
     lastSavedStateString: "",
 
@@ -32552,7 +32552,7 @@ const app = {
 
         // Полный сброс данных расчета
         this.state = {
-            objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: currentShowScheme, optItems: {}, qtyOverrides: {}, darkMode: currentDarkMode, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: (currentAccType === 'pro'), collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150',
+            objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: currentShowScheme, optItems: {}, qtyOverrides: {}, darkMode: currentDarkMode, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: (currentAccType === 'pro'), collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150',
             // ВОЗВРАЩАЕМ АВТОРИЗАЦИЮ И ТАРИФ НА МЕСТО
             tgUser: currentTgUser,
             accountType: currentAccType,
@@ -35595,6 +35595,333 @@ const app = {
     // здесь и в _boilerById схемы (см. buildSchemeConfig).
     gasBoilerPool: function () {
         return [...catalog.boilers_gas, ...(catalog.boilers_baxi || []), ...(catalog.boilers_vaillant || []), ...(catalog.boilers_navien || [])];
+    },
+
+    // ═══════════════ Дымоход: трасса, ассортимент, предел котла ═══════════════
+    //
+    // Раньше на котёл ставился один готовый настенный комплект — и всё. Комплект
+    // закрывает вывод через стену метром трассы; котельная в глубине дома, второй
+    // этаж или вывод над кровлей дособирались на объекте за счёт монтажника.
+    //
+    // Теперь трасса задаётся тремя цифрами (куда, сколько метров, сколько отводов),
+    // из ассортимента собирается комплектация, а эквивалентная длина сверяется с
+    // пределом котла. Сам предел — свойство теплогенератора: система собирается
+    // любой длины, продавить её должен вентилятор котла (см. CHIMNEY_LIMITS).
+
+    // Физическая длина трассы, которую закрывает готовый комплект, и его вклад в
+    // эквивалентную длину: комплект — это отвод 90° (1 м экв.) плюс труба с
+    // наконечником рабочей длиной около 0,8 м.
+    CHIMNEY_KIT_RUN: 0.8,
+    CHIMNEY_KIT_EQ: 1.8,
+
+    chimneyKind: function (b) { return (b && b.cond) ? 'cond' : 'trad'; },
+
+    // Готовый настенный комплект под котёл — тот же выбор, что делала обвязка
+    // (chimneyFor в render). Одно место на всех, иначе подпись под полями трассы
+    // считала бы по одному комплекту, а в смету попадал другой.
+    chimneyKitFor: function (b) {
+        const list = catalog.chimneys || [];
+        if (b && b.cond) {
+            const own = b.brand && list.find(c => c.chimType === 'cond' && c.forBrand === b.brand);
+            const uni = list.find(c => c.chimType === 'cond' && !c.forBrand);
+            if (own || uni) return own || uni;
+        }
+        return (this.state.chimneyType === 'basic') ? list[1] : list[0];
+    },
+
+    // Группа присоединения: у ROMMER начальные участки разные для
+    // Baxi/Ariston/Vaillant/Viessmann и для Bosch/Buderus/Navien/Baxi ECO Nova.
+    // Марку и серию берём у самого котла — то же деление, что в названиях
+    // артикулов прайса.
+    chimneyStartGroup: function (b) {
+        if (!b) return null;
+        const brand = String(b.brand || '').toLowerCase();
+        const name = String(b.name || '');
+        if (brand === 'baxi') return /^(ECO Nova|ECO Classic)/i.test(name) ? 'navien_bosch' : 'baxi_vaillant';
+        if (brand === 'vaillant') return 'baxi_vaillant';
+        if (brand === 'navien') return 'navien_bosch';
+        return null; // Haier и всё остальное — универсальный начальный участок
+    },
+
+    /**
+     * Предел эквивалентной длины для котла и диаметра.
+     * exact === false означает, что паспорта серии в CHIMNEY_LIMITS ещё нет и
+     * взято осторожное значение по типу котла — об этом честно пишем в смете.
+     */
+    chimneyLimitFor: function (b, dn) {
+        const kind = this.chimneyKind(b);
+        const rules = (typeof CHIMNEY_LIMITS !== 'undefined') ? CHIMNEY_LIMITS : [];
+        const name = String((b && b.name) || '');
+        const brand = String((b && b.brand) || '');
+        const hit = rules.find(r => r.brand === brand && (!r.series || r.series.test(name)));
+        if (hit && typeof hit.max === 'number') {
+            return { max: hit.max, exact: true, src: hit.src || null, kind: kind };
+        }
+        const def = (typeof CHIMNEY_LIMIT_DEFAULTS !== 'undefined' ? CHIMNEY_LIMIT_DEFAULTS : {})[kind] || {};
+        return { max: def[dn] || def['60/100'] || 4, exact: false, src: null, kind: kind };
+    },
+
+    // Фасадный выброс: СП 60.13330 п. 6.5.5 запрещает его для многоэтажных жилых
+    // зданий, а каталог STOUT ограничивает готовые комплекты одноэтажными домами.
+    // Частный дом в два этажа — не «многоэтажное здание», поэтому не запрещаем, а
+    // предупреждаем и по умолчанию предлагаем вывод над кровлей: решает монтажник,
+    // он видит объект.
+    chimneyFacadeDoubtful: function () { return (this.state.floors || 1) > 1; },
+
+    // По умолчанию — через стену, сколько бы этажей ни было. Двухэтажный частный
+    // дом не «многоэтажное здание», и вывод рядом с котельной там обычное дело;
+    // уводить его на вертикаль под конёк значило бы навязывать семиметровую
+    // трассу, которую турбированный котёл всё равно не продавит. Про ограничение
+    // одноэтажными домами предупреждаем (см. buildChimney), решает монтажник.
+    chimneyRouteMode: function () {
+        const r = this.state.chimneyRoute;
+        return (r === 'roof') ? 'roof' : 'wall';
+    },
+
+    // Длина трассы по умолчанию. Через стену — метр (типовой вывод из котельной
+    // наружу). Над кровлей — высоты этажей плюс полтора метра над кровлей: по
+    // рис. 15.2 каталога STOUT оголовок поднимают над коньком, а не вровень.
+    chimneyDefaultLen: function () {
+        // Через стену по умолчанию — ровно то, что закрывает готовый комплект.
+        // Так смета типового одноэтажного дома не меняется ни на рубль, пока
+        // монтажник сам не скажет, что трасса длиннее.
+        if (this.chimneyRouteMode() === 'wall') return this.CHIMNEY_KIT_RUN;
+        const h1 = parseFloat(this.state.h1) || 2.7;
+        const h2 = (this.state.floors || 1) > 1 ? (parseFloat(this.state.h2) || 2.7) : 0;
+        return Math.round((h1 + h2 + 1.5) * 2) / 2;
+    },
+
+    chimneyRunLen: function () {
+        const v = parseFloat(this.state.chimneyLen);
+        return (isNaN(v) || v <= 0) ? this.chimneyDefaultLen() : v;
+    },
+    chimneyBends: function () {
+        const v = parseInt(this.state.chimneyBends);
+        return (isNaN(v) || v < 0) ? 0 : Math.min(6, v);
+    },
+
+    /**
+     * Собирает трассу дымохода под конкретный котёл.
+     *
+     * kit — готовый комплект, который подбирался и раньше (chimneyFor). Через
+     * стену он и остаётся основой: это ровно отвод 90° плюс труба с наконечником.
+     * Над кровлей комплект не годится — он фасадный, и трасса собирается из
+     * начального вертикального участка, удлинителей и оголовка.
+     *
+     * Возвращает { parts, eqLen, dn, limit, warns } либо null, если ассортимента
+     * под этот случай в каталоге нет (тогда render ставит один комплект, как
+     * раньше, — молча потерять дымоход нельзя).
+     */
+    buildChimney: function (b, kit) {
+        const kind = this.chimneyKind(b);
+        const route = this.chimneyRouteMode();
+        const run = this.chimneyRunLen();
+        const bends = this.chimneyBends();
+        const group = this.chimneyStartGroup(b);
+
+        const pools = {
+            trad: catalog.chimney_trad_60100 || [],
+            cond: catalog.chimney_cond_60100 || [],
+            wide: catalog.chimney_cond_80125 || []
+        };
+        // Конденсационному удлинители нужны свои (полипропилен), но накладки,
+        // кронштейны и хомуты общие — они лежат в традиционном наборе.
+        const pick = (role, dn) => {
+            const src = (dn === '80/125') ? pools.wide : (kind === 'cond' ? pools.cond : pools.trad);
+            const own = src.filter(x => x.role === role);
+            const byGroup = own.find(x => x.forGroup === group) || own.find(x => !x.forGroup);
+            if (byGroup) return byGroup;
+            // Общая обвязка трассы — из традиционного набора
+            return pools.trad.find(x => x.role === role && (!x.forGroup || x.forGroup === group))
+                || pools.trad.find(x => x.role === role) || null;
+        };
+        const exts = (dn) => ((dn === '80/125') ? pools.wide : (kind === 'cond' ? pools.cond : pools.trad))
+            .filter(x => x.role === 'ext').sort((a, b2) => (b2.len_m || 0) - (a.len_m || 0));
+
+        // Набор удлинителей на нужную длину: от длинных к коротким. Шаг ряда
+        // 0,25 м, поэтому жадный разбор даёт минимальное число стыков.
+        const fillLength = (need, dn) => {
+            const out = [];
+            let left = Math.max(0, Math.round(need * 100) / 100);
+            exts(dn).forEach(e => {
+                const L = e.len_m || 0;
+                if (L <= 0) return;
+                const n = Math.floor((left + 0.001) / L);
+                if (n > 0) { out.push({ item: e, qty: n }); left = Math.round((left - n * L) * 100) / 100; }
+            });
+            // Остаток меньше самого короткого элемента добираем им же: трассу
+            // лучше сделать чуть длиннее, чем не достать до улицы.
+            if (left > 0.01) {
+                const min = exts(dn).slice(-1)[0];
+                if (min) {
+                    const same = out.find(o => o.item.id === min.id);
+                    if (same) same.qty++; else out.push({ item: min, qty: 1 });
+                }
+            }
+            return out;
+        };
+
+        const assemble = (dn) => {
+            const parts = [];
+            const add = (item, qty, tip) => { if (item && qty > 0) parts.push({ item: item, qty: qty, tip: tip }); };
+            let eq = 0;
+            let straight = run;
+            let usedKit = false;
+
+            if (route === 'wall') {
+                if (dn === '60/100' && kit) {
+                    usedKit = true;
+                    // Комплект закрывает отвод от котла и первые 0,8 м трассы
+                    add(kit, 1, null);
+                    eq += this.CHIMNEY_KIT_EQ;
+                    straight = Math.max(0, run - this.CHIMNEY_KIT_RUN);
+                } else {
+                    const st = pick('start_wall', dn);
+                    const term = pick('term_wall', dn);
+                    add(st, 1, 'Начальный участок: отвод от котла на трассу.');
+                    add(term, 1, 'Оконечный элемент на фасад.');
+                    eq += CHIMNEY_EQ.bend90 + ((term && term.len_m) || 0);
+                    straight = Math.max(0, run - ((term && term.len_m) || 0));
+                }
+            } else {
+                const st = pick('start_roof', dn);
+                const term = pick('term_roof', dn);
+                add(st, 1, 'Начальный вертикальный участок от котла.');
+                add(term, 1, 'Оголовок с ветрозащитой над кровлей.');
+                // Вертикаль обязана иметь сбор конденсата: он стекает вниз, к котлу.
+                add(pick('drain', dn), 1, 'Сбор конденсата: на вертикальной трассе он стекает вниз, к котлу.');
+            }
+
+            fillLength(straight, dn).forEach(e => add(e.item, e.qty, 'Набор длины трассы.'));
+            eq += straight;
+
+            if (bends > 0) {
+                add(pick('bend90', dn), bends, 'Поворот трассы.');
+                eq += bends * CHIMNEY_EQ.bend90;
+            }
+
+            // Обвязка трассы считается по её элементам, а не по всей строке
+            // сметы: кронштейн и накладка сами стыков не образуют, и если их
+            // сложить с хомутами, на метровом выводе получится три хомута там,
+            // где нет ни одного стыка.
+            const RUN_ROLES = ['start_wall', 'start_roof', 'term_wall', 'term_roof', 'ext', 'bend90', 'bend45', 'adapter', 'drain'];
+            const runPieces = parts.filter(p => RUN_ROLES.includes(p.item.role))
+                .reduce((s, p) => s + p.qty, 0) + (usedKit ? 1 : 0);
+            const kitOnly = (usedKit && runPieces === 1);
+
+            // Готовый комплект — узел заводской сборки: в нём уже есть и хомут с
+            // уплотнением, и декоративные манжеты (каталог STOUT, табл. 15.11).
+            // Пока трасса им и исчерпывается, добавлять к нему нечего.
+            if (!kitOnly) {
+                // Крепление трассы: кронштейн не реже чем через два метра.
+                add(pick('bracket', dn), Math.max(1, Math.ceil(run / 2)), 'Крепление трассы: не реже чем через 2 м.');
+                if (route === 'wall') add(pick('rosette', dn), 1, 'Закрывает проход через стену изнутри.');
+                // Хомут на каждый стык: элементов трассы минус один
+                add(pick('clamp', dn), Math.max(0, runPieces - 1), 'Соединение элементов трассы.');
+            }
+
+            return { parts: parts, eqLen: Math.round(eq * 10) / 10, dn: dn };
+        };
+
+        let res = assemble('60/100');
+        let limit = this.chimneyLimitFor(b, '60/100');
+        const warns = [];
+
+        // Не влезли в предел — у конденсационного есть выход: тот же котёл на
+        // 80/125 тянет вдвое дальше. У традиционного такого запаса нет.
+        if (res.eqLen > limit.max && kind === 'cond' && (catalog.chimney_cond_80125 || []).length) {
+            const wide = assemble('80/125');
+            const wideLimit = this.chimneyLimitFor(b, '80/125');
+            if (wide.eqLen <= wideLimit.max) {
+                const adapter = (catalog.chimney_cond_80125 || []).find(x => x.role === 'adapter');
+                if (adapter) wide.parts.unshift({ item: adapter, qty: 1, tip: 'Переход с выхода котла 60/100 на 80/125.' });
+                res = wide;
+                limit = wideLimit;
+                warns.push(`Трасса ${res.eqLen} м не влезала в 60/100 (предел ${this.chimneyLimitFor(b, '60/100').max} м) — собран дымоход 80/125, он тянет дальше.`);
+            }
+        }
+
+        if (res.eqLen > limit.max) {
+            warns.push(`Эквивалентная длина ${String(res.eqLen).replace('.', ',')} м больше предела ${limit.max} м${limit.exact ? '' : ' (ориентировочного)'} — котёл такую трассу не продавит. Сократите трассу, уберите отводы, возьмите котёл помощнее или соберите раздельный дымоход D80: у него запас длины больше, но его калькулятор пока не считает.`);
+        }
+        if (route === 'wall' && this.chimneyFacadeDoubtful()) {
+            warns.push('Дом выше одного этажа: каталог STOUT допускает вывод коаксиала на фасад только в одноэтажных домах, а СП 60.13330 п. 6.5.5 прямо запрещает фасадный выброс в многоэтажных жилых зданиях. Проверьте по объекту — обычно такой дымоход выводят над кровлей.');
+        }
+        if (!limit.exact) {
+            warns.push(`Предел ${limit.max} м взят по типу котла, а не из паспорта серии — сверьтесь с паспортом ${b && b.brand ? b.brand : ''} перед заказом.`);
+        }
+        return { parts: res.parts, eqLen: res.eqLen, dn: res.dn, limit: limit, route: route, warns: warns };
+    },
+
+    setChimneyRoute: function (r) {
+        this.state.chimneyRoute = r;
+        // Длина трассы у стены и над кровлей отличается втрое — сбрасываем на
+        // расчётную по умолчанию, если монтажник её не правил руками.
+        if (!this._chimneyLenTouched) this.state.chimneyLen = null;
+        this.saveState();
+        this.syncUI();
+        this.render();
+    },
+    setChimneyLen: function (v) {
+        const n = parseFloat(String(v).replace(',', '.').replace(/[^\d.]/g, ''));
+        this._chimneyLenTouched = true;
+        this.state.chimneyLen = (isNaN(n) || n <= 0) ? null : Math.min(30, Math.round(n * 4) / 4);
+        this.saveState();
+        this.syncUI();
+        this.render();
+    },
+    updChimneyLen: function (d) {
+        this.setChimneyLen(Math.max(0.25, this.chimneyRunLen() + d));
+    },
+    setChimneyBends: function (v) {
+        const n = parseInt(String(v).replace(/[^\d]/g, ''));
+        this.state.chimneyBends = (isNaN(n) || n < 0) ? 0 : Math.min(6, n);
+        this.saveState();
+        this.syncUI();
+        this.render();
+    },
+    updChimneyBends: function (d) {
+        this.setChimneyBends(this.chimneyBends() + d);
+    },
+
+    // Блок дымохода в панели параметров: виден только при газовом котле.
+    syncChimneyUI: function () {
+        const blk = document.getElementById('blk_chimney');
+        if (!blk) return;
+        const on = (this.state.fuels || []).includes('gas');
+        blk.style.display = on ? 'block' : 'none';
+        if (!on) return;
+
+        const route = this.chimneyRouteMode();
+        const wall = document.getElementById('chim_route_wall');
+        const roof = document.getElementById('chim_route_roof');
+        if (wall) wall.className = 'mode-tab' + (route === 'wall' ? ' active' : '');
+        if (roof) roof.className = 'mode-tab' + (route === 'roof' ? ' active' : '');
+
+        const lenEl = document.getElementById('val_chim_len');
+        if (lenEl && document.activeElement !== lenEl) lenEl.innerText = String(this.chimneyRunLen()).replace('.', ',');
+        const bEl = document.getElementById('val_chim_bends');
+        if (bEl && document.activeElement !== bEl) bEl.innerText = this.chimneyBends();
+
+        // Подпись под полями: чем занята трасса и остаётся ли запас до предела.
+        // Считаем по первому газовому котлу сметы — в каскаде они одинаковые.
+        const note = document.getElementById('chim_note');
+        if (!note) return;
+        // Ищем и по id, и по originalId: у подобранного автоматом котла
+        // originalId служебный ('gas_boiler_auto'), а артикул лежит в id.
+        const _pool = this.gasBoilerPool();
+        const boiler = (this.currentSpec || [])
+            .map(i => _pool.find(b => b.id === i.id) || _pool.find(b => b.id === i.originalId))
+            .find(Boolean);
+        if (!boiler) { note.innerHTML = 'Длина считается эквивалентной: прямые участки плюс отводы (90° = 1 м, 45° = 0,5 м).'; return; }
+        const r = this.buildChimney(boiler, this.chimneyKitFor(boiler));
+        if (!r) { note.innerHTML = ''; return; }
+        const tight = r.eqLen > r.limit.max;
+        note.innerHTML =
+            `Эквивалентная длина <b>${String(r.eqLen).replace('.', ',')} м</b> при пределе <b>${r.limit.max} м</b>` +
+            (r.limit.exact ? '' : ' (по типу котла, сверьтесь с паспортом)') +
+            `, дымоход ${r.dn}.` +
+            (tight ? ` <span style="color:#EF4444; font-weight:700;">Не проходит.</span>` : '');
     },
     // Стоимость обвязки одного газового котла: дымоход, стабилизатор, фильтр,
     // американки, краны, а в каскаде ещё и обратный клапан. Нужна подбору — каждый
@@ -44795,6 +45122,9 @@ const app = {
                 this.renderElCostUI();
             }
         }
+        // Дымоход: трасса и предел котла
+        this.syncChimneyUI();
+
         // Прогноз стоимости отопления газом — по тем же условиям, но от газового
         // котла: подробный режим и включённая вкладка «🔥 Газ».
         const gasCostBlk = document.getElementById('blk_gas_cost');
@@ -49259,6 +49589,7 @@ const app = {
         this.currentEquipmentList = [];
         this.currentWorksList = [];
         app.tempWarns = []; // Массив для сбора предупреждений о дефиците мощности
+        app.chimneyWarns = []; // Замечания по трассе дымохода — в раздел обвязки котельной
         // Подобранные приборы отопления с их фактической мощностью — из них
         // гидравлика берёт расходы (см. radHydraulics).
         app.radDevices = [];
@@ -51022,15 +51353,7 @@ const app = {
         // конденсата, пластик): у Vaillant — родной PP-комплект (гарантия требует
         // сертифицированную систему), у остальных — универсальный ROMMER. Традиционные
         // котлы любого бренда идут на STOUT/ROMMER 60/100, как и раньше.
-        const chimneyFor = (b) => {
-            const list = catalog.chimneys || [];
-            if (b && b.cond) {
-                const own = b.brand && list.find(c => c.chimType === 'cond' && c.forBrand === b.brand);
-                const uni = list.find(c => c.chimType === 'cond' && !c.forBrand);
-                if (own || uni) return own || uni;
-            }
-            return (this.state.chimneyType === 'basic') ? list[1] : list[0];
-        };
+        const chimneyFor = (b) => this.chimneyKitFor(b);
         let _gasIdx = 0;
         selBoilers.forEach(b => {
             if (b.type === 'gas' && !rigDropped('gas')) {
@@ -51041,7 +51364,35 @@ const app = {
                 // noCheapenAlts у конденсационного: в .alts лежат и обычные дымоходы, и
                 // режим «Аналог» иначе подставил бы конденсационному котлу дешёвый
                 // традиционный 60/100. Ручной замене список остаётся.
-                addToBill({ ...ch, sortRank: -1, ...(ch.chimType === 'cond' ? { noCheapenAlts: true } : {}) }, 1, this.getDesc('chimney', ch), grp);
+                //
+                // Трасса собирается по заданным монтажником «куда / сколько метров /
+                // сколько отводов» (см. buildChimney). Через стену основой остаётся
+                // тот же готовый комплект — замена и «Аналог» на нём работают как
+                // прежде, — а к нему добираются удлинители, отводы и крепёж. Над
+                // кровлей комплект не годится: он фасадный, трасса собирается целиком.
+                const _chRoute = this.buildChimney(b, ch);
+                if (_chRoute && _chRoute.parts.length) {
+                    _chRoute.parts.forEach((p, _i) => {
+                        const _isKit = (p.item.id === ch.id);
+                        addToBill(
+                            { ...p.item, sortRank: _i === 0 ? -1 : -0.5, ...(_isKit && ch.chimType === 'cond' ? { noCheapenAlts: true } : {}) },
+                            p.qty,
+                            _isKit ? this.getDesc('chimney', ch) : (p.tip || null),
+                            grp
+                        );
+                    });
+                    // Замечания по дымоходу идут не в общий список tempWarns, а
+                    // своим: тот выводится над приборами отопления с заголовком
+                    // про нехватку мощности и советом добавить радиаторы — к
+                    // дымоходу это не имеет отношения. Место дымохода — раздел
+                    // обвязки котельной, где он и лежит.
+                    _chRoute.warns.forEach(w => {
+                        const _line = '• ' + w;
+                        if (!app.chimneyWarns.some(x => x === _line)) app.chimneyWarns.push(_line);
+                    });
+                } else {
+                    addToBill({ ...ch, sortRank: -1, ...(ch.chimType === 'cond' ? { noCheapenAlts: true } : {}) }, 1, this.getDesc('chimney', ch), grp);
+                }
                 addToBill(catalog.stabs[0], 1, this.getDesc('stab', 'gas', 250, 150, b.brand), grp);
                 addToBill(catalog.american_34, 2, "Разъемное соед.", grp);
                 addToBill(withRommerAlt(catalog.ball_valve_34), 2, "Запорная арматура.", grp);
@@ -52725,6 +53076,11 @@ const app = {
         }
         this.renderBoilerAutoInfo();
 
+        // Замечания по дымоходу — в шапку того раздела, где он лежит.
+        if (app.chimneyWarns && app.chimneyWarns.length) {
+            const _chBlock = `⚠️ <b>ВНИМАНИЕ: дымоход</b><br>` + app.chimneyWarns.join('<br>');
+            hydroWarnHtml = hydroWarnHtml ? (hydroWarnHtml + '<br><br>' + _chBlock) : _chBlock;
+        }
         flushBill("2. Обвязка котельной", hydroWarnHtml);
 
 
@@ -56354,8 +56710,15 @@ const app = {
         if (elCount > 0) addToWorks("Mонтаж электрического котла", elCount, 18000, "шт", boilerGroup);
         if (gasCount > 0) {
             addToWorks("Монтаж газового котла", gasCount, 20000, "шт", boilerGroup);
-            addToWorks("Монтаж коаксиального дымохода", gasCount, 10000, "шт", boilerGroup);
-            addToWorks("Монтаж отверстия под дымоход", gasCount, 6000, "шт", boilerGroup);
+            // Вывод над кровлей — другая работа: проход перекрытий и кровли,
+            // высотный монтаж, герметизация. Считать её по расценке настенного
+            // вывода значило бы подарить заказчику полдня бригады.
+            if (this.chimneyRouteMode() === 'roof') {
+                addToWorks("Монтаж дымохода через кровлю", gasCount, 18000, "шт", boilerGroup);
+            } else {
+                addToWorks("Монтаж коаксиального дымохода", gasCount, 10000, "шт", boilerGroup);
+                addToWorks("Монтаж отверстия под дымоход", gasCount, 6000, "шт", boilerGroup);
+            }
         }
 
         // Подсчет и монтаж стабилизаторов (Монтаж котла и бойлера)
@@ -56869,6 +57232,9 @@ const app = {
         // что пересобраны — значит, изменилась и маржа.
         this.syncMoneyTab();
         if (this.state.viewMode === 'money') this.renderMoneyPanel();
+        // Подпись под полями дымохода считается по подобранному котлу — значит,
+        // после того как смета собрана, а не до неё (syncUI отрабатывает раньше).
+        this.syncChimneyUI();
 
         // Блок скидки виден и Базовому тарифу — сама скидка больше не PRO-функция
         // (см. addToBill). Ползунок без действия был бы обманом, действие без

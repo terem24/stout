@@ -1052,6 +1052,9 @@ const WORK_PRICE_CATALOG = [
     { name: "Монтаж газового котла", unit: "шт", price: 20000, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж коаксиального дымохода", unit: "шт", price: 10000, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж отверстия под дымоход", unit: "шт", price: 6000, group: "1.1 Монтаж котла и бойлера" },
+    // Вывод над кровлей вместо фасада: проход перекрытий и кровли, высотный
+    // монтаж, герметизация. Ставится вместо двух строк выше — см. render().
+    { name: "Монтаж дымохода через кровлю", unit: "шт", price: 18000, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж стабилизатора напряжения", unit: "шт", price: 1500, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж комплекта 3-х ходового клапана Fugas", unit: "компл", price: 4500, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж водонагревателя / бойлера", unit: "шт", price: 9000, group: "1.1 Монтаж котла и бойлера" },
@@ -1190,6 +1193,63 @@ const WORK_PRICE_CATALOG = [
     // 3.1 Внутренняя канализация
     { name: "Монтаж труб канализации (без метража)", unit: "точка", price: 3500, group: "3.1 Внутренняя канализация" },
     { name: "Монтаж инсталляции унитаза", unit: "шт", price: 8000, group: "3.1 Внутренняя канализация" }
+];
+
+// ═══════════════ Предельная длина дымохода ═══════════════
+//
+// Длину ограничивает не дымоход, а котёл: система собирается любой длины, а
+// продавить её должен вентилятор теплогенератора. Поэтому предел — свойство
+// модели, и пишут его в паспорте, причём один на всю серию.
+//
+// Считается ЭКВИВАЛЕНТНАЯ длина: прямые участки плюс отводы, пересчитанные в
+// метры (CHIMNEY_EQ). Правило «90° = 1 м, 45° = 0,5 м» одинаково во всех
+// руководствах перечисленных марок.
+//
+// max === null означает «паспорта на руках нет» — тогда берётся осторожное
+// значение по типу котла из CHIMNEY_LIMIT_DEFAULTS, а в смете рядом с дымоходом
+// пишется, что предел ориентировочный и его надо свериться с паспортом.
+// Придуманная точная цифра тут хуже честно осторожной: дымоход, который не
+// тянет, обнаруживается зимой и переделывается за счёт монтажника.
+//
+// Как уточнить: вписать в max метры из паспорта серии и указать src (например
+// "паспорт BAXI ECO Nova, стр. 14"). Подбор сразу начнёт считать по ним.
+const CHIMNEY_EQ = { bend90: 1.0, bend45: 0.5 };
+const CHIMNEY_LIMIT_DEFAULTS = {
+    // тип котла → диаметр → метры эквивалентной длины
+    trad: { '60/100': 4 },
+    cond: { '60/100': 8, '80/125': 12 }
+};
+const CHIMNEY_LIMITS = [
+    // Haier — базовая линейка автоподбора, серий в названии нет
+    { brand: 'Haier', series: null, kind: 'trad', max: null, src: null },
+
+    // BAXI, традиционные с закрытой камерой
+    { brand: 'BAXI', series: /^ECO Nova/i, kind: 'trad', max: null, src: null },
+    { brand: 'BAXI', series: /^ECO4S/i, kind: 'trad', max: null, src: null },
+    { brand: 'BAXI', series: /^ECO Life/i, kind: 'trad', max: null, src: null },
+    { brand: 'BAXI', series: /^ECO Four/i, kind: 'trad', max: null, src: null },
+    { brand: 'BAXI', series: /^LUNA 3 Comfort/i, kind: 'trad', max: null, src: null },
+    { brand: 'BAXI', series: /^LUNA 3/i, kind: 'trad', max: null, src: null },
+    { brand: 'BAXI', series: /^NUVOLA 3 Comfort/i, kind: 'trad', max: null, src: null },
+    // BAXI, конденсационные
+    { brand: 'BAXI', series: /^NUVOLA Duo-tec/i, kind: 'cond', max: null, src: null },
+    { brand: 'BAXI', series: /^LUNA Platinum/i, kind: 'cond', max: null, src: null },
+    { brand: 'BAXI', series: /^LUNA Duo-tec/i, kind: 'cond', max: null, src: null },
+    { brand: 'BAXI', series: /^Duo-tec Compact/i, kind: 'cond', max: null, src: null },
+    { brand: 'BAXI', series: /^LUNA AIR/i, kind: 'cond', max: null, src: null },
+    { brand: 'BAXI', series: /^LUNA IN PLUS/i, kind: 'cond', max: null, src: null },
+
+    // Vaillant
+    { brand: 'Vaillant', series: /^turboFIT/i, kind: 'trad', max: null, src: null },
+    { brand: 'Vaillant', series: /^turboTEC/i, kind: 'trad', max: null, src: null },
+    { brand: 'Vaillant', series: /^ecoTEC intro/i, kind: 'cond', max: null, src: null },
+    { brand: 'Vaillant', series: /^ecoTEC plus/i, kind: 'cond', max: null, src: null },
+
+    // Navien
+    { brand: 'Navien', series: /^Deluxe C Plus/i, kind: 'trad', max: null, src: null },
+    { brand: 'Navien', series: /^Deluxe One/i, kind: 'trad', max: null, src: null },
+    { brand: 'Navien', series: /^NGB210/i, kind: 'trad', max: null, src: null },
+    { brand: 'Navien', series: /^NCB700/i, kind: 'cond', max: null, src: null }
 ];
 
 const catalog = {
@@ -1481,6 +1541,80 @@ const catalog = {
         { id: "0020219516", name: "Дымоход коаксиальный 60/100 PP, горизонтальный проход через стену (для конденсационных Vaillant)", price: 12030, brand: "Vaillant", chimType: "cond", forBrand: "Vaillant", availability: "on_order", price_date: "2026-08-20" },
         { id: "0020220656", name: "Дымоход коаксиальный 60/100 PP, вертикальный проход через крышу, чёрный (для конденсационных Vaillant)", price: 12333, brand: "Vaillant", chimType: "cond", forBrand: "Vaillant", availability: "on_order", price_date: "2026-08-20" }
     ],
+
+    // ═══════════════ Элементы дымохода поштучно ═══════════════
+    //
+    // До сих пор в смету попадал один готовый настенный комплект на котёл, и всё:
+    // ни удлинителей, ни отводов, ни вертикального вывода. Дом с котельной в
+    // глубине или в два этажа монтажник дособирал руками — а чаще забывал, и
+    // дымоход всплывал уже на объекте, за свои.
+    //
+    // Цены — из price_index.json, коэффициент 0,90 выведен по шести позициям,
+    // которые уже были в каталоге (разброс 0,8999..0,9003), а не взят из головы:
+    // у дымоходов он не такой, как у остальной номенклатуры ROMMER.
+    //
+    // role — что это за деталь для сборщика трассы (см. app.buildChimney):
+    //   start_wall / start_roof — начальный участок (он же первый отвод 90° или
+    //                             вертикальный адаптер), зависит от марки котла;
+    //   term_wall / term_roof   — оконечный элемент: труба с наконечником на
+    //                             фасад либо оголовок с ветрозащитой над кровлей;
+    //   ext                     — удлинитель, len_m — его рабочая длина;
+    //   bend90 / bend45         — промежуточные отводы;
+    //   drain                   — конденсатоотводчик;
+    //   rosette / bracket / clamp / adapter — обвязка трассы.
+    // forGroup — группа присоединения котла: у ROMMER начальные участки разные
+    // для Baxi/Ariston/Vaillant/Viessmann и для Bosch/Buderus/Navien/Baxi ECO Nova
+    // (см. app.chimneyStartGroup).
+
+    // Коаксиал 60/100 традиционный (алюминий)
+    chimney_trad_60100: [
+        { id: "RCA-6010-750100", name: "Начальный участок 90° универсальный, коаксиальный 60/100", price: 1634, brand: "ROMMER", role: "start_wall", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-210190", name: "Начальный участок 90° коаксиальный 60/100 (BAXI кроме ECO Nova, Ariston, Vaillant, Viessmann)", price: 1630, brand: "ROMMER", role: "start_wall", dn: "60/100", kind: "trad", forGroup: "baxi_vaillant", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-240190", name: "Начальный участок 90° коаксиальный 60/100 (Bosch, Buderus, Navien S/C/E, BAXI ECO Nova)", price: 1626, brand: "ROMMER", role: "start_wall", dn: "60/100", kind: "trad", forGroup: "navien_bosch", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-740100", name: "Начальный участок вертикальный универсальный, коаксиальный 60/100", price: 1085, brand: "ROMMER", role: "start_roof", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-210100", name: "Адаптер вертикальный коаксиальный 60/100 (BAXI кроме ECO Nova, Ariston, Vaillant, Viessmann)", price: 1077, brand: "ROMMER", role: "start_roof", dn: "60/100", kind: "trad", forGroup: "baxi_vaillant", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-240100", name: "Адаптер вертикальный коаксиальный 60/100 (Bosch, Buderus, Navien S/C/E, BAXI ECO Nova)", price: 1085, brand: "ROMMER", role: "start_roof", dn: "60/100", kind: "trad", forGroup: "navien_bosch", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-701001", name: "Труба с наконечником АНТИЛЁД 60/100, рабочая длина 1000 мм", price: 1833, brand: "ROMMER", role: "term_wall", dn: "60/100", kind: "trad", len_m: 1.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-700700", name: "Труба с наконечником СТАНДАРТ 60/100, рабочая длина 700 мм", price: 1444, brand: "ROMMER", role: "term_wall", dn: "60/100", kind: "trad", len_m: 0.7, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000334", name: "Оголовок с ветрозащитой 60/100, белый (для вертикали)", price: 3912, brand: "ROMMER", role: "term_roof", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000250", name: "Удлинитель коаксиальный 60/100, L 250 мм", price: 745, brand: "ROMMER", role: "ext", dn: "60/100", kind: "trad", len_m: 0.25, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000500", name: "Удлинитель коаксиальный 60/100, L 500 мм", price: 1073, brand: "ROMMER", role: "ext", dn: "60/100", kind: "trad", len_m: 0.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-001000", name: "Удлинитель коаксиальный 60/100, L 1000 мм", price: 1736, brand: "ROMMER", role: "ext", dn: "60/100", kind: "trad", len_m: 1.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-001500", name: "Удлинитель коаксиальный 60/100, L 1500 мм", price: 3496, brand: "ROMMER", role: "ext", dn: "60/100", kind: "trad", len_m: 1.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-002000", name: "Удлинитель коаксиальный 60/100, L 2000 мм", price: 4882, brand: "ROMMER", role: "ext", dn: "60/100", kind: "trad", len_m: 2.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000090", name: "Отвод промежуточный коаксиальный 60/100, 90°", price: 1463, brand: "ROMMER", role: "bend90", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000045", name: "Отвод промежуточный коаксиальный 60/100, 45°", price: 1391, brand: "ROMMER", role: "bend45", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000101", name: "Конденсатоотводчик коаксиальный универсальный 60/100", price: 2466, brand: "ROMMER", role: "drain", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000106", name: "Накладка декоративная D100, белая", price: 141, brand: "ROMMER", role: "rosette", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000003", name: "Крепление к стене D100, металлическое", price: 300, brand: "ROMMER", role: "bracket", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-6010-000001", name: "Хомут комплект D100 (хомут резиновый, стальной гнутый, саморезы)", price: 194, brand: "ROMMER", role: "clamp", dn: "60/100", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+    ],
+
+    // Коаксиал 60/100 конденсационный (полипропилен)
+    chimney_cond_60100: [
+        { id: "RCA-8610-000250", name: "Удлинитель конденсационный коаксиальный 60/100, L 250 мм", price: 1535, brand: "ROMMER", role: "ext", dn: "60/100", kind: "cond", len_m: 0.25, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8610-000500", name: "Удлинитель конденсационный коаксиальный 60/100, L 500 мм", price: 2369, brand: "ROMMER", role: "ext", dn: "60/100", kind: "cond", len_m: 0.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8610-001000", name: "Удлинитель конденсационный коаксиальный 60/100, L 1000 мм", price: 3760, brand: "ROMMER", role: "ext", dn: "60/100", kind: "cond", len_m: 1.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8610-002000", name: "Удлинитель конденсационный коаксиальный 60/100, L 2000 мм", price: 5741, brand: "ROMMER", role: "ext", dn: "60/100", kind: "cond", len_m: 2.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8610-010090", name: "Отвод конденсационный коаксиальный 60/100, 90°", price: 1619, brand: "ROMMER", role: "bend90", dn: "60/100", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8610-000045", name: "Отвод конденсационный коаксиальный 60/100, 45°", price: 1782, brand: "ROMMER", role: "bend45", dn: "60/100", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8610-000001", name: "Оголовок с ветрозащитой вертикальный конденсационный 60/100", price: 8070, brand: "ROMMER", role: "term_roof", dn: "60/100", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+    ],
+
+    // Коаксиал 80/125 конденсационный (для длинных трасс)
+    chimney_cond_80125: [
+        { id: "RCA-8012-000002", name: "Переход с 60/100 на 80/125 конденсационный", price: 2074, brand: "ROMMER", role: "adapter", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-250800", name: "Комплект дымохода конденсационный 80/125, 800 мм", price: 8230, brand: "ROMMER", role: "term_wall", dn: "80/125", kind: "cond", len_m: 0.8, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-000250", name: "Удлинитель коаксиальный конденсационный 80/125, L 250 мм", price: 1579, brand: "ROMMER", role: "ext", dn: "80/125", kind: "cond", len_m: 0.25, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-000500", name: "Удлинитель коаксиальный конденсационный 80/125, L 500 мм", price: 3028, brand: "ROMMER", role: "ext", dn: "80/125", kind: "cond", len_m: 0.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-001000", name: "Удлинитель коаксиальный конденсационный 80/125, L 1000 мм", price: 5245, brand: "ROMMER", role: "ext", dn: "80/125", kind: "cond", len_m: 1.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-002000", name: "Удлинитель коаксиальный конденсационный 80/125, L 2000 мм", price: 14285, brand: "ROMMER", role: "ext", dn: "80/125", kind: "cond", len_m: 2.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-000090", name: "Отвод коаксиальный конденсационный 80/125, 90°", price: 2863, brand: "ROMMER", role: "bend90", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-000045", name: "Отвод коаксиальный конденсационный 80/125, 45°", price: 3150, brand: "ROMMER", role: "bend45", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8012-000001", name: "Оголовок с ветрозащитой вертикальный конденсационный 80/125", price: 7703, brand: "ROMMER", role: "term_roof", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8125-000103", name: "Крепление к стене D125, металлическое", price: 434, brand: "ROMMER", role: "bracket", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+    ],
+
     stabs: [
         { id: "SST-0001-000250", name: "Стабилизатор ST 250", price: 4972, type: "gas", availability: "in_stock", price_date: "2026-08-10" },
         { id: "SST-0001-000600", name: "Стабилизатор ST 600", price: 6896, type: "el", availability: "in_stock", price_date: "2026-08-10" },

@@ -1653,24 +1653,48 @@ const RecognizeUI = {
                 ];
             }
 
-            // Модели пробуются по очереди: если основная перегружена на
-            // стороне Google («high demand»), автоматически берём запасную.
-            // Все три в белом списке прокси, менять сервер не нужно.
-            const data = await this.askModel(parts);
+            /**
+             * Один и тот же файл обязан давать один и тот же разбор.
+             *
+             * Многолистовые сметы и длинные тексты уже брались из памяти по
+             * листам, а короткий документ — самый частый случай — каждый раз
+             * шёл в модель заново. Модель при temperature 0 всё равно отвечает
+             * не байт в байт: где-то другой тип строки, где-то иначе разбитое
+             * название, — и монтажник, загрузив ту же смету второй раз, видел
+             * другой подбор. Ключ памяти — сам документ, поэтому повторная
+             * загрузка теперь возвращает прежний разбор и не тратит запрос
+             * из месячного лимита.
+             */
+            const cacheSrc = this._text || this._img || (this._imgs && this._imgs[0]) || '';
+            let parsed = this.cachedSheet(cacheSrc);
 
-            const cand = data?.candidates?.[0];
-            const text = cand?.content?.parts?.[0]?.text;
-            if (!text) throw new Error('Разбор вернулся пустым — в документе не нашлось строк сметы.');
+            if (parsed) {
+                this._fromCache = 1;
+            } else {
+                // Модели пробуются по очереди: если основная перегружена на
+                // стороне Google («high demand»), автоматически берём запасную.
+                // Все три в белом списке прокси, менять сервер не нужно.
+                const data = await this.askModel(parts);
 
-            const parsed = this.parseModelJson(text, cand.finishReason);
+                const cand = data?.candidates?.[0];
+                const text = cand?.content?.parts?.[0]?.text;
+                if (!text) throw new Error('Разбор вернулся пустым — в документе не нашлось строк сметы.');
 
-            // На снимке не смета, а план этажа: модель сказала об этом сама.
-            // Читаем его как план — по своим правилам и в свой экран проверки.
-            if (!this._text && typeof RecognizePlan !== 'undefined' && RecognizePlan.isPlanResult(parsed)) {
-                await this.runPlan(true);
-                this._busy = false;
-                if (go) go.disabled = false;
-                return;
+                parsed = this.parseModelJson(text, cand.finishReason);
+
+                // На снимке не смета, а план этажа: модель сказала об этом сама.
+                // Читаем его как план — по своим правилам и в свой экран проверки.
+                if (!this._text && typeof RecognizePlan !== 'undefined' && RecognizePlan.isPlanResult(parsed)) {
+                    await this.runPlan(true);
+                    this._busy = false;
+                    if (go) go.disabled = false;
+                    return;
+                }
+
+                // В память кладём только разбор сметы: у плана этажа ответ
+                // другой формы, и оттуда он вернулся бы уже неузнаваемым.
+                // Оборванный разбор не запоминаем — иначе обрывок закрепится.
+                if (!this._parseWarning) this.rememberSheet(cacheSrc, parsed);
             }
 
             this.progressTo(2);

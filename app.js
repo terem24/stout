@@ -10877,7 +10877,8 @@ const app = {
     loadInstallerSettingsLocal: function () {
         let parsed = null;
         try { parsed = JSON.parse(localStorage.getItem('stout_installer_settings') || 'null'); } catch (e) { parsed = null; }
-        this.installerSettings = Object.assign({ workPrices: {}, equipmentLibrary: [], swapLog: [], deletionLog: [], company: null, railLayout: null, railLayoutTouch: null }, parsed || {});
+        this.installerSettings = Object.assign({ workPrices: {}, equipmentLibrary: [], swapLog: [], deletionLog: [], company: null, railLayout: null, railLayoutTouch: null, margin: null }, parsed || {});
+        if (this.installerSettings.margin && typeof this.installerSettings.margin !== 'object') this.installerSettings.margin = null;
         if (this.installerSettings.railLayout && typeof this.installerSettings.railLayout !== 'object') this.installerSettings.railLayout = null;
         if (this.installerSettings.railLayoutTouch && typeof this.installerSettings.railLayoutTouch !== 'object') this.installerSettings.railLayoutTouch = null;
         if (!this.installerSettings.workPrices || typeof this.installerSettings.workPrices !== 'object') this.installerSettings.workPrices = {};
@@ -11011,12 +11012,19 @@ const app = {
                     // не перечисленное поле просто пропадёт при первом же обмене.
                     railLayoutTouch: (cloud.railLayoutTouch && typeof cloud.railLayoutTouch === 'object')
                         ? cloud.railLayoutTouch
-                        : ((this.installerSettings && this.installerSettings.railLayoutTouch) || null)
+                        : ((this.installerSettings && this.installerSettings.railLayoutTouch) || null),
+                    // Скидки поставщика и доля бригады — по тому же правилу, что
+                    // реквизиты и раскладка: облако главнее, но пустое облако не
+                    // затирает то, что монтажник успел завести на этом устройстве.
+                    margin: (cloud.margin && typeof cloud.margin === 'object')
+                        ? cloud.margin
+                        : ((this.installerSettings && this.installerSettings.margin) || null)
                 };
                 this.saveInstallerSettingsLocal();
                 if (!cloudCompany && localCompany) this.pushInstallerSettingsToCloud();
                 if (!cloud.railLayout && this.installerSettings.railLayout) this.pushInstallerSettingsToCloud();
                 if (!cloud.railLayoutTouch && this.installerSettings.railLayoutTouch) this.pushInstallerSettingsToCloud();
+                if (!cloud.margin && this.installerSettings.margin) this.pushInstallerSettingsToCloud();
                 if (this._activeProfileTab === 'workprices') this.renderWorkPricesTab();
                 if (this._activeProfileTab === 'equipment') this.renderEquipmentLibraryTab();
                 if (this._activeProfileTab === 'company') this.fillCompanyDetailsForm();
@@ -11120,6 +11128,428 @@ const app = {
         this.pushInstallerSettingsToCloud();
         this.renderWorkPricesTab();
         this.render();
+    },
+
+    // ═══════════════ Деньги монтажника: закупка, бригада, маржа ═══════════════
+    //
+    // Смета знает две суммы: сколько монтажник выставил клиенту за оборудование и
+    // сколько за работу. Третьей — во сколько объект обошёлся ему самому — в
+    // калькуляторе не было вовсе, и маржу считали в голове или в Excel.
+    //
+    // Считаем её из готовых currentEquipmentList и currentWorksList, а не по ходу
+    // набора сметы. Это принципиально: в этих списках количества уже поправлены
+    // ручными оверрайдами и коэффициентами замен, а разделы, которых в квартире
+    // нет, уже выброшены. Свой счётчик, подцепленный к addToBill, повторял бы все
+    // эти развилки заново — ровно так когда-то разъехалась «Рекомендованная цена»
+    // с итогом сметы (644 994 ₽ против 366 682 ₽).
+    //
+    // Наружу не уходит ничего. В installer_settings (JSONB в users) хранятся
+    // только проценты; рубли пересчитываются в браузере при каждой отрисовке.
+    // Ни в ссылку клиенту (compactPayload), ни в таблицу estimates отсюда не
+    // попадает ни одно поле: закупочные цены заказчику видеть незачем, а база
+    // читается всяким, у кого есть anon-ключ.
+    //
+    // Вся вкладка — только для ПРОФИ, и проверяется это через isPro(), а не через
+    // checkAccess('pro'): 'pro' там давно означает всего лишь «авторизован» и
+    // Базовому тарифу тоже отвечает да.
+
+    // Что монтажник увидит в форме при первом открытии вкладки. Это не «средние по
+    // рынку», а правдоподобная отправная точка: считать от этих чисел калькулятор
+    // начнёт только после того, как их подтвердят кнопкой. Цифра, взятая с потолка
+    // и показанная как своя, хуже отсутствия цифры.
+    MARGIN_DEFAULTS: { discStout: 25, discRommer: 25, discOther: 10, crewShare: 45, overheadFix: 0, overheadPct: 3 },
+
+    // Заведённые настройки либо null, если монтажник ещё не подтверждал форму.
+    // Неполный объект (пришёл из облака от другой версии, поломался при записи)
+    // тоже считаем незаведённым: лучше показать форму заново, чем досчитывать
+    // недостающий процент за монтажника — на его деньгах такая догадка и скажется.
+    marginSettings: function () {
+        if (!this.installerSettings) this.loadInstallerSettingsLocal();
+        const m = this.installerSettings.margin;
+        if (!m || typeof m !== 'object') return null;
+        const complete = Object.keys(this.MARGIN_DEFAULTS).every(k => typeof m[k] === 'number' && isFinite(m[k]));
+        return complete ? m : null;
+    },
+
+    _marginPct: function (v) {
+        const n = parseFloat(String(v).replace(',', '.'));
+        if (isNaN(n)) return 0;
+        return Math.min(100, Math.max(0, Math.round(n * 10) / 10));
+    },
+
+    // Подтверждение формы первого запуска: забираем то, что стоит в полях, и с
+    // этого момента вкладка считает.
+    applyMarginSetup: function () {
+        if (!this.isPro()) { this.showModal('pro'); return; }
+        if (!this.installerSettings) this.loadInstallerSettingsLocal();
+        const read = (id, def) => {
+            const el = document.getElementById(id);
+            if (!el) return def;
+            const n = parseFloat(String(el.value).replace(',', '.').replace(/[^\d.]/g, ''));
+            return isNaN(n) ? def : n;
+        };
+        const d = this.MARGIN_DEFAULTS;
+        this.installerSettings.margin = {
+            discStout: this._marginPct(read('mg_disc_stout', d.discStout)),
+            discRommer: this._marginPct(read('mg_disc_rommer', d.discRommer)),
+            discOther: this._marginPct(read('mg_disc_other', d.discOther)),
+            crewShare: this._marginPct(read('mg_crew_share', d.crewShare)),
+            overheadFix: Math.max(0, Math.round(read('mg_overhead_fix', d.overheadFix))),
+            overheadPct: this._marginPct(read('mg_overhead_pct', d.overheadPct))
+        };
+        this.saveInstallerSettingsLocal();
+        this.pushInstallerSettingsToCloud();
+        // Полный render(), а не одна панель: цифру маржи в липкой шапке заводит
+        // именно он, и без этого она появлялась бы только со следующей правкой
+        // параметров объекта.
+        this.render();
+    },
+
+    // Правка одного поля уже после настройки — прямо в подвале вкладки.
+    setMarginField: function (field, val) {
+        if (!this.isPro()) { this.showModal('pro'); return; }
+        const m = this.marginSettings();
+        if (!m) return;
+        if (field === 'overheadFix') {
+            const n = parseFloat(String(val).replace(/[^\d]/g, ''));
+            m.overheadFix = isNaN(n) ? 0 : Math.max(0, Math.round(n));
+        } else {
+            m[field] = this._marginPct(val);
+        }
+        this.saveInstallerSettingsLocal();
+        this.pushInstallerSettingsToCloud();
+        this.render();
+    },
+
+    resetMarginSettings: async function () {
+        if (!await app.confirm('Убрать настройки закупки и вернуться к форме? Смета и цены при этом не изменятся.')) return;
+        if (!this.installerSettings) this.loadInstallerSettingsLocal();
+        this.installerSettings.margin = null;
+        this.saveInstallerSettingsLocal();
+        this.pushInstallerSettingsToCloud();
+        this.render();
+    },
+
+    /**
+     * Деньги по текущей смете. null — если тариф не ПРОФИ или настройки ещё не
+     * заведены: вкладка тогда показывает форму, а не цифры.
+     *
+     * Считаем по тем же правилам, по которым сложился итог сметы:
+     *   • опциональные позиции (isOpt) в «Итого» не входят — не входят и сюда;
+     *   • закупка берётся от basePrice (цена прайса), а не от price (цена
+     *     клиенту): поставщик даёт скидку от прайса, а скидку заказчику
+     *     монтажник уступает уже из собственной доли;
+     *   • бригаде платят от расценки до скидки — по той же причине.
+     */
+    marginReport: function () {
+        if (!this.isPro()) return null;
+        const m = this.marginSettings();
+        if (!m) return null;
+
+        const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+        const discFor = (brand) => {
+            const b = String(brand || '').trim().toUpperCase();
+            if (b === 'STOUT') return num(m.discStout);
+            if (b === 'ROMMER') return num(m.discRommer);
+            return num(m.discOther);
+        };
+
+        const eq = { client: 0, cost: 0, unknownSum: 0, unknownCount: 0 };
+        const bySection = {};
+        (this.currentEquipmentList || []).forEach(i => {
+            if (i.isOpt) return;
+            const client = Math.round(i.sum || 0);
+            // Позиция без артикула — это своя или нераспознанная строка: цену в
+            // неё монтажник вписал руками, и это цена продажи, а не прайс
+            // поставщика. Скидка бренда к ней неприменима, поэтому такие строки
+            // идут отдельной пометкой, а не подгоняются под общий процент:
+            // придуманная закупка испортила бы весь итог. Признак берём тем же
+            // realSku, которым смета решает, показывать ли артикул клиенту.
+            const custom = !realSku(i.originalId || i.id);
+            const base = Math.round((i.basePrice !== undefined ? i.basePrice : (i.price || 0)) * (i.q || 0));
+            const cost = custom ? 0 : Math.round(base * (1 - discFor(i.brand) / 100));
+            eq.client += client;
+            eq.cost += cost;
+            if (custom) { eq.unknownSum += client; eq.unknownCount++; }
+            const key = i.sectionTitle || 'Прочее';
+            if (!bySection[key]) bySection[key] = { title: key, client: 0, cost: 0, unknown: 0 };
+            bySection[key].client += client;
+            bySection[key].cost += cost;
+            if (custom) bySection[key].unknown += client;
+        });
+
+        const works = { client: 0, cost: 0 };
+        const byGroup = {};
+        (this.currentWorksList || []).forEach(w => {
+            const client = Math.round(w.sum || 0);
+            const base = Math.round((w.listPrice !== undefined ? w.listPrice : (w.price || 0)) * (w.q || 0));
+            const cost = Math.round(base * num(m.crewShare) / 100);
+            works.client += client;
+            works.cost += cost;
+            const key = w.group || 'Прочее';
+            if (!byGroup[key]) byGroup[key] = { title: key, client: 0, cost: 0, unknown: 0 };
+            byGroup[key].client += client;
+            byGroup[key].cost += cost;
+        });
+
+        const client = eq.client + works.client;
+        const overhead = Math.round(num(m.overheadFix) + client * num(m.overheadPct) / 100);
+        const cost = eq.cost + works.cost + overhead;
+
+        // «А если уступить ещё столько-то»: скидка режет выручку, закупка и
+        // бригада остаются прежними — вычитается ровно из маржи. Накладные с
+        // процентом от суммы чуть уменьшаются вместе с ней, их пересчитываем.
+        const withDiscount = (extra) => {
+            const c2 = Math.round(client * (1 - extra / 100));
+            const oh2 = Math.round(num(m.overheadFix) + c2 * num(m.overheadPct) / 100);
+            return { extra: extra, client: c2, margin: c2 - (eq.cost + works.cost + oh2) };
+        };
+
+        const rows = (o) => Object.keys(o).map(k => o[k])
+            .map(r => Object.assign(r, { margin: r.client - r.cost }))
+            .sort((a, b) => b.margin - a.margin);
+
+        return {
+            eq: eq, works: works, overhead: overhead,
+            client: client, cost: cost, margin: client - cost,
+            bySection: rows(bySection),
+            byGroup: rows(byGroup),
+            whatIf: [withDiscount(5), withDiscount(10)]
+        };
+    },
+
+    // Вкладку «Деньги» видит любой авторизованный — Базовому она открывает окно
+    // тарифов. Гостю не показываем вовсе: у него и цены-то размыты.
+    syncMoneyTab: function () {
+        const tab = document.getElementById('tab_money');
+        if (tab) tab.style.display = this.state.tgUser ? '' : 'none';
+    },
+
+    _mgFmt: function (v) {
+        const n = Math.round(v || 0);
+        return (n < 0 ? '−' : '') + Math.abs(n).toLocaleString('ru-RU') + ' ₽';
+    },
+    _mgShare: function (margin, client) {
+        if (!client) return '';
+        return Math.round(margin / client * 100) + ' %';
+    },
+    _mgColor: function (v) {
+        return (v || 0) < 0 ? '#EF4444' : '#10B981';
+    },
+    _mgEsc: function (s) {
+        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    },
+
+    // Цифра маржи в липкой шапке — рядом с суммами оборудования и монтажа.
+    // Обновляется отдельно от них: те анимируются, а эта просто переписывается,
+    // иначе при правке процентов в подвале вкладки цифра дёргалась бы на каждый
+    // символ.
+    updateHeaderMargin: function () {
+        const el = document.getElementById('hdr_margin_sum');
+        if (!el) return;
+        const rep = this.marginReport();
+        if (!rep) { el.innerText = '—'; return; }
+        el.innerText = this._mgFmt(rep.margin) + (rep.client ? ' (' + this._mgShare(rep.margin, rep.client) + ')' : '');
+        el.style.color = this._mgColor(rep.margin);
+    },
+
+    renderMoneyPanel: function () {
+        const panel = document.getElementById('panel_money');
+        if (!panel) return;
+
+        const card = (label, value, color, hint) => `
+            <div style="flex: 1 1 160px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
+                <div style="font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: .4px;">${label}</div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 4px; color: ${color};">${value}</div>
+                ${hint ? `<div style="font-size: 11px; color: var(--text-sec); margin-top: 2px;">${hint}</div>` : ''}
+            </div>`;
+
+        // Не ПРОФИ — показываем, ради чего вкладка, и уводим в окно тарифов.
+        if (!this.isPro()) {
+            panel.innerHTML = `
+                <div style="max-width: 560px; margin: 30px auto; text-align: center;">
+                    <div style="font-size: 32px;">💰</div>
+                    <div style="font-size: 18px; font-weight: 800; margin: 8px 0 6px;">Деньги по объекту — в тарифе «Профи»</div>
+                    <div style="font-size: 13px; color: var(--text-sec); line-height: 1.6;">
+                        Вкладка считает, во сколько объект обходится вам самому: закупка оборудования
+                        по вашим скидкам поставщика, оплата бригады, накладные — и что остаётся на руках
+                        по каждому разделу сметы.
+                    </div>
+                    <button type="button" onclick="app.showModal('pro')"
+                        style="margin-top: 16px; font: inherit; font-size: 13px; font-weight: 700; padding: 10px 22px; border-radius: 10px; border: none; background: var(--primary); color: #fff; cursor: pointer;">Посмотреть тариф</button>
+                </div>`;
+            return;
+        }
+
+        const m = this.marginSettings();
+        const d = this.MARGIN_DEFAULTS;
+
+        // Первый вход: форма. Пока цифры не подтверждены — не считаем ничего.
+        if (!m) {
+            const field = (id, label, val, suffix, hint) => `
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border);">
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600;">${label}</div>
+                        ${hint ? `<div style="font-size: 11px; color: var(--text-sec); margin-top: 2px;">${hint}</div>` : ''}
+                    </div>
+                    <input type="text" id="${id}" value="${val}" inputmode="decimal"
+                        style="width: 70px; text-align: right; font: inherit; font-size: 13px; font-weight: 700; padding: 5px 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main);">
+                    <span style="font-size: 12px; color: var(--text-sec); width: 24px;">${suffix}</span>
+                </div>`;
+            panel.innerHTML = `
+                <div style="max-width: 640px; margin: 20px auto 30px;">
+                    <div style="font-size: 18px; font-weight: 800;">Сколько вы зарабатываете на объекте</div>
+                    <div style="font-size: 13px; color: var(--text-sec); line-height: 1.6; margin: 8px 0 16px;">
+                        Смета знает, сколько вы выставили клиенту. Чтобы посчитать, что остаётся вам,
+                        не хватает одного — по какой цене оборудование достаётся вам самому.
+                        Заполните это один раз, дальше вкладка считает сама на каждом объекте.
+                    </div>
+                    <div style="background: var(--surface-light); border: 1px solid var(--border); border-radius: 12px; padding: 4px 16px 14px;">
+                        <div style="font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .5px; padding: 12px 0 2px;">Скидка от цен, которые вы видите в смете</div>
+                        ${field('mg_disc_stout', 'STOUT', d.discStout, '%', '')}
+                        ${field('mg_disc_rommer', 'ROMMER', d.discRommer, '%', '')}
+                        ${field('mg_disc_other', 'Остальные марки', d.discOther, '%', 'Haier, Wavin, Ридан, REHAU и прочие — общей цифрой')}
+                        <div style="font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .5px; padding: 16px 0 2px;">Работа и накладные</div>
+                        ${field('mg_crew_share', 'Доля бригады', d.crewShare, '%', 'Сколько из расценки уходит монтажникам')}
+                        ${field('mg_overhead_fix', 'Накладные на объект', d.overheadFix, '₽', 'Доставка, выезды, расходники не из сметы')}
+                        ${field('mg_overhead_pct', 'Накладные от суммы', d.overheadPct, '%', 'Налог, эквайринг и прочее с оборота')}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-sec); margin: 14px 0 0; line-height: 1.6;">
+                        Цифры проставлены для примера — поправьте под себя. Они хранятся в вашем аккаунте,
+                        в смету не попадают и клиенту по ссылке не уходят.
+                    </div>
+                    <button type="button" onclick="app.applyMarginSetup()"
+                        style="margin-top: 14px; font: inherit; font-size: 14px; font-weight: 700; padding: 11px 26px; border-radius: 10px; border: none; background: var(--primary); color: #fff; cursor: pointer;">Считать</button>
+                </div>`;
+            return;
+        }
+
+        const rep = this.marginReport();
+        const fmt = (v) => this._mgFmt(v);
+
+        // Подвал с настройками показываем всегда: он же служит объяснением,
+        // откуда взялись цифры выше.
+        const inline = (field, label, val, suffix) => `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: var(--text-sec);">${label}</span>
+                <span class="editable-val" contenteditable="true"
+                    onblur="app.setMarginField('${field}', this.innerText)"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+                    style="font-size: 13px; font-weight: 700; color: var(--primary); border-bottom: 1px dashed var(--primary); padding: 0 4px; min-width: 26px; text-align: right;">${val}</span>
+                <span style="font-size: 12px; color: var(--text-sec);">${suffix}</span>
+            </div>`;
+        const settingsBlock = `
+            <div style="margin-top: 26px; border-top: 1px dashed var(--border); padding-top: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="font-size: 12px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .5px;">Как считается</div>
+                    <button type="button" onclick="app.resetMarginSettings()"
+                        style="font: inherit; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-sec); cursor: pointer;">Сбросить</button>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 14px 26px; margin-top: 12px;">
+                    ${inline('discStout', 'Скидка STOUT', m.discStout, '%')}
+                    ${inline('discRommer', 'Скидка ROMMER', m.discRommer, '%')}
+                    ${inline('discOther', 'Скидка на прочие', m.discOther, '%')}
+                    ${inline('crewShare', 'Доля бригады', m.crewShare, '%')}
+                    ${inline('overheadFix', 'Накладные на объект', m.overheadFix, '₽')}
+                    ${inline('overheadPct', 'Накладные от суммы', m.overheadPct, '%')}
+                </div>
+                <div style="font-size: 11px; color: var(--text-sec); margin-top: 12px; line-height: 1.6;">
+                    Закупка считается от цен прайса, а не от той цены, которую вы выставили клиенту:
+                    скидку заказчику вы уступаете из своей доли. Эти цифры хранятся в вашем аккаунте —
+                    в смету, в счёт и в ссылку клиенту они не попадают.
+                </div>
+            </div>`;
+
+        if (!rep || !rep.client) {
+            panel.innerHTML = `
+                <div style="max-width: 760px; margin: 20px auto 30px;">
+                    <div style="text-align: center; color: var(--text-sec); font-size: 13px; padding: 30px 0;">
+                        Смета пока пуста — считать нечего. Задайте параметры объекта слева,
+                        и здесь появятся деньги по нему.
+                    </div>
+                    ${settingsBlock}
+                </div>`;
+            return;
+        }
+
+        const row = (title, client, cost, note) => {
+            const margin = client - cost;
+            return `<tr>
+                <td style="padding: 9px 8px; border-bottom: 1px solid var(--border); font-size: 13px;">${this._mgEsc(title)}${note ? `<div style="font-size: 11px; color: var(--text-sec); margin-top: 2px;">${note}</div>` : ''}</td>
+                <td style="padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: right; font-size: 13px; white-space: nowrap;">${fmt(client)}</td>
+                <td style="padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: right; font-size: 13px; white-space: nowrap; color: var(--text-sec);">${fmt(cost)}</td>
+                <td style="padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: right; font-size: 13px; font-weight: 700; white-space: nowrap; color: ${this._mgColor(margin)};">${fmt(margin)}</td>
+                <td style="padding: 9px 8px; border-bottom: 1px solid var(--border); text-align: right; font-size: 12px; white-space: nowrap; color: var(--text-sec);">${this._mgShare(margin, client)}</td>
+            </tr>`;
+        };
+        const head = (c1) => `<tr>
+                <th style="text-align: left; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border);">${c1}</th>
+                <th style="text-align: right; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border);">Клиенту</th>
+                <th style="text-align: right; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border);">Себе</th>
+                <th style="text-align: right; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border);">Остаётся</th>
+                <th style="text-align: right; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border);">Доля</th>
+            </tr>`;
+
+        const unknownNote = rep.eq.unknownCount
+            ? `<div style="margin-top: 10px; font-size: 12px; color: var(--text-sec); background: var(--surface-light); border: 1px dashed var(--border); border-radius: 8px; padding: 9px 12px; line-height: 1.5;">
+                   Закупка не известна: ${rep.eq.unknownCount} ${this.plural(rep.eq.unknownCount, 'позиция', 'позиции', 'позиций')}
+                   на ${fmt(rep.eq.unknownSum)} — это своё и распознанное оборудование, у которого цена вписана руками.
+                   В строке «Себе» они посчитаны по нулю, то есть маржа по ним завышена.
+               </div>`
+            : '';
+
+        const whatIf = rep.whatIf.map(w => `
+            <div style="flex: 1 1 200px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;">
+                <div style="font-size: 12px; color: var(--text-sec);">Уступить ещё ${w.extra} %</div>
+                <div style="font-size: 16px; font-weight: 800; margin-top: 3px; color: ${this._mgColor(w.margin)};">${fmt(w.margin)}</div>
+                <div style="font-size: 11px; color: var(--text-sec);">останется при сумме ${fmt(w.client)}</div>
+            </div>`).join('');
+
+        panel.innerHTML = `
+            <div style="max-width: 860px; margin: 6px auto 30px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+                    ${card('Клиенту', fmt(rep.client), 'var(--text-main)', 'оборудование и монтаж')}
+                    ${card('Себе', fmt(rep.cost), 'var(--text-main)', 'закупка, бригада, накладные')}
+                    ${card('Остаётся', fmt(rep.margin), this._mgColor(rep.margin), rep.client ? this._mgShare(rep.margin, rep.client) + ' от суммы' : '')}
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse;">
+                    ${head('Из чего складывается')}
+                    ${row('Оборудование', rep.eq.client, rep.eq.cost, '')}
+                    ${row('Монтажные работы', rep.works.client, rep.works.cost, '')}
+                    ${row('Накладные', 0, rep.overhead, '')}
+                    <tr>
+                        <td style="padding: 12px 8px; font-size: 14px; font-weight: 800;">Итого</td>
+                        <td style="padding: 12px 8px; text-align: right; font-size: 14px; font-weight: 800; white-space: nowrap;">${fmt(rep.client)}</td>
+                        <td style="padding: 12px 8px; text-align: right; font-size: 14px; font-weight: 800; white-space: nowrap;">${fmt(rep.cost)}</td>
+                        <td style="padding: 12px 8px; text-align: right; font-size: 16px; font-weight: 800; white-space: nowrap; color: ${this._mgColor(rep.margin)};">${fmt(rep.margin)}</td>
+                        <td style="padding: 12px 8px; text-align: right; font-size: 13px; font-weight: 800; white-space: nowrap; color: ${this._mgColor(rep.margin)};">${this._mgShare(rep.margin, rep.client)}</td>
+                    </tr>
+                </table>
+                ${unknownNote}
+
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px;">${whatIf}</div>
+
+                ${rep.bySection.length ? `
+                <div style="margin-top: 26px;">
+                    <div style="font-size: 13px; font-weight: 800; margin-bottom: 6px;">Оборудование по разделам</div>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        ${head('Раздел')}
+                        ${rep.bySection.map(s => row(s.title, s.client, s.cost, s.unknown ? 'из них ' + fmt(s.unknown) + ' без закупки' : '')).join('')}
+                    </table>
+                </div>` : ''}
+
+                ${rep.byGroup.length ? `
+                <div style="margin-top: 26px;">
+                    <div style="font-size: 13px; font-weight: 800; margin-bottom: 6px;">Работы по разделам</div>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        ${head('Раздел')}
+                        ${rep.byGroup.map(s => row(s.title, s.client, s.cost, '')).join('')}
+                    </table>
+                </div>` : ''}
+
+                ${settingsBlock}
+            </div>`;
     },
     // Ищет позицию каталога по id (включая .rommer-альтернативы и все серии радиаторов) —
     // нужен для лога замен, чтобы отличить реальную замену оборудования от служебного
@@ -27204,14 +27634,24 @@ const app = {
 
     setViewMode: function (mode) {
         if (mode === 'works' && !this.checkAccess('pro')) return;
+        // «Деньги» — единственная вкладка, которую Базовый тариф не открывает.
+        // checkAccess('pro') тут не годится: он давно означает «авторизован».
+        if (mode === 'money') {
+            if (!this.state.tgUser) { this.showAuthModal(); return; }
+            if (!this.isPro()) { this.showModal('pro'); return; }
+        }
         this.state.viewMode = mode;
         let tEq = document.getElementById('tab_equipment');
         let tWk = document.getElementById('tab_works');
         let t3d = document.getElementById('tab_3d');
         let tRec = document.getElementById('tab_recognize');
+        let tMoney = document.getElementById('tab_money');
         if (tEq && tWk) {
             tEq.classList.toggle('active', mode === 'equipment');
             tWk.classList.toggle('active', mode === 'works');
+        }
+        if (tMoney) {
+            tMoney.classList.toggle('active', mode === 'money');
         }
         if (t3d) {
             t3d.classList.toggle('active', mode === '3d');
@@ -27227,6 +27667,8 @@ const app = {
         let footerBtns = document.querySelector('.footer-btns');
         let panel3d = document.getElementById('panel_3d');
         let panelRec = document.getElementById('panel_recognize');
+        let panelMoney = document.getElementById('panel_money');
+        if (panelMoney && mode !== 'money') panelMoney.style.display = 'none';
 
         // Кнопка ИИ-заполнения описывает объект словами для расчёта — на вкладке
         // распознавания сметы ей делать нечего, а место она занимает.
@@ -27255,6 +27697,26 @@ const app = {
             return;
         }
         if (panelRec) panelRec.style.display = 'none';
+
+        // «Деньги» — такой же отдельный вид, как 3D и распознавание: таблица
+        // сметы прячется, вместо неё своя панель. Но render() тут нужен полный:
+        // маржа считается из currentEquipmentList и currentWorksList, а их
+        // наполняет именно он.
+        if (mode === 'money') {
+            if (tableResponsive) tableResponsive.style.display = 'none';
+            if (docFooter) docFooter.style.display = 'none';
+            if (discountBlock) discountBlock.style.display = 'none';
+            if (footerBtns) footerBtns.style.display = 'none';
+            if (panel3d) {
+                panel3d.style.display = 'none';
+                if (window.Boiler3D) window.Boiler3D.dispose();
+            }
+            const _scheme = document.getElementById('dynamic_scheme');
+            if (_scheme) _scheme.remove();
+            if (panelMoney) panelMoney.style.display = 'block';
+            this.render();
+            return;
+        }
 
         if (mode === '3d') {
             if (tableResponsive) tableResponsive.style.display = 'none';
@@ -33954,6 +34416,11 @@ const app = {
                 this.migrateBoilerAutoLevel(_saved);
             } catch (e) { console.error("Ошибка загрузки сохранения", e); }
         }
+        // Вкладку «Деньги» не восстанавливаем: сама она открывается только через
+        // setViewMode (там же проверяется тариф), а сохранённый viewMode ничего не
+        // открывает — получилась бы смета без подвала и без панели. Тариф к тому же
+        // мог кончиться между сеансами.
+        if (this.state.viewMode === 'money') this.state.viewMode = 'equipment';
         this.migrateSnowPipeSwap();
         this.migrateElCostDefaultOff();
         this.migrateBoilerSectionTitles();
@@ -49338,6 +49805,10 @@ const app = {
                     unit: i.unit || 'шт',
                     q: i.q,
                     price: i.price,
+                    // Цена до скидки клиенту. Нужна вкладке «Деньги»: скидка
+                    // поставщика даётся от прайса, а не от той цены, которую
+                    // монтажник в итоге выставил заказчику (см. marginReport).
+                    basePrice: (i.basePrice !== undefined ? i.basePrice : i.price),
                     sum: i.sum,
                     group: i.group,
                     sectionTitle: title,
@@ -49666,6 +50137,9 @@ const app = {
                     name: w.name,
                     q: w.q,
                     price: w.price,
+                    // Расценка до скидки клиенту: бригаде платят от неё, скидку
+                    // монтажник уступает из своей доли (см. marginReport).
+                    listPrice: (w.listPrice !== undefined ? w.listPrice : w.price),
                     sum: w.sum,
                     unit: w.unit,
                     group: w.group
@@ -56206,6 +56680,10 @@ const app = {
         // перестроена, число выделенных могло измениться (перенос, удаление,
         // откат распознавания), да и вкладка могла смениться на «Работы».
         this.updateRecSelBar();
+        // Вкладка «Деньги»: и сама вкладка, и её содержимое. Списки сметы только
+        // что пересобраны — значит, изменилась и маржа.
+        this.syncMoneyTab();
+        if (this.state.viewMode === 'money') this.renderMoneyPanel();
 
         // Блок скидки виден и Базовому тарифу — сама скидка больше не PRO-функция
         // (см. addToBill). Ползунок без действия был бы обманом, действие без
@@ -56261,17 +56739,27 @@ const app = {
             // в шапке должна показываться и ему, не только PRO
             let showWorksTotal = isPro || !!this.state.tgUser;
 
+            // Маржа в шапке — только ПРОФИ и только когда закупка настроена.
+            // Каркас пересобирается и при смене этого признака: иначе цифра либо
+            // не появилась бы после настройки, либо осталась висеть после сброса.
+            const showHdrMargin = !!this.marginReport();
+
             // Строим HTML каркас только 1 раз (или при смене тарифа), чтобы не сбрасывать анимацию
-            if (!headerTotals.innerHTML.includes('anim_eq_sum') || headerTotals.dataset.isPro !== String(showWorksTotal)) {
+            if (!headerTotals.innerHTML.includes('anim_eq_sum') || headerTotals.dataset.isPro !== String(showWorksTotal) || headerTotals.dataset.hasMargin !== String(showHdrMargin)) {
                 let sumsHtml = `<span style="color:var(--text-sec); font-size:11px; margin-right:4px;">Оборудование:</span> <b id="anim_eq_sum" style="color:var(--primary); font-size:14px;">0 ₽</b>`;
                 if (showWorksTotal) {
                     sumsHtml += `<span style="margin:0 10px; color:var(--border);">|</span> <span style="color:var(--text-sec); font-size:11px; margin-right:4px;">Монтаж:</span> <b id="anim_works_sum" style="color:#F97316; font-size:14px;">0 ₽</b>`;
                 }
+                if (showHdrMargin) {
+                    sumsHtml += `<span style="margin:0 10px; color:var(--border);">|</span> <span style="color:var(--text-sec); font-size:11px; margin-right:4px;">Мне:</span> <b id="hdr_margin_sum" style="color:#10B981; font-size:14px; cursor:pointer;" title="Что остаётся вам по этому объекту — открыть вкладку «Деньги»" onclick="app.setViewMode('money')">0 ₽</b>`;
+                }
                 headerTotals.innerHTML = `<div class="header-totals-sums-row">${sumsHtml}</div>`;
                 headerTotals.dataset.isPro = String(showWorksTotal);
+                headerTotals.dataset.hasMargin = String(showHdrMargin);
                 headerTotals.dataset.lastEq = 0;
                 headerTotals.dataset.lastWorks = 0;
             }
+            if (showHdrMargin) this.updateHeaderMargin();
 
             const currentShowBlur = !app.state.tgUser;
             // Запускаем анимацию Оборудования

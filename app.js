@@ -35673,9 +35673,35 @@ const app = {
     // уводить его на вертикаль под конёк значило бы навязывать семиметровую
     // трассу, которую турбированный котёл всё равно не продавит. Про ограничение
     // одноэтажными домами предупреждаем (см. buildChimney), решает монтажник.
+    //
+    // 'split' — раздельная система D80: две трубы вместо «трубы в трубе». Это уже
+    // не про то, куда выходит дымоход, а про то, какой он, но в одном ряду с
+    // маршрутом монтажнику понятнее: он выбирает, чем выводит котёл.
     chimneyRouteMode: function () {
         const r = this.state.chimneyRoute;
-        return (r === 'roof') ? 'roof' : 'wall';
+        return (r === 'roof' || r === 'split') ? r : 'wall';
+    },
+
+    // Длина воздушного канала раздельной системы. Дым идёт над кровлей, воздух
+    // берут через стену рядом с котельной — так эту систему и собирают. Если на
+    // объекте иначе, количество труб правится прямо в смете.
+    CHIMNEY_AIR_RUN: 1,
+
+    // Моноблочный переход с выхода котла на две трубы 80/80. У конденсационного
+    // он свой, у традиционных — по группе марок; где марку в обрезанном названии
+    // прайса прочитать не удалось, берём универсальный: он подходит всему, кроме
+    // Immergas, которого в каталоге нет.
+    chimneyD80Adapter: function (b) {
+        const list = catalog.chimney_split_d80 || [];
+        const kind = this.chimneyKind(b);
+        if (kind === 'cond') return list.find(x => x.role === 'adapter_d80' && x.kind === 'cond') || null;
+        const brand = String((b && b.brand) || '').toLowerCase();
+        const name = String((b && b.name) || '');
+        let grp = null;
+        if (brand === 'haier') grp = 'haier';
+        else if (brand === 'baxi' && !/^(ECO Nova|ECO Classic)/i.test(name)) grp = 'baxi';
+        const own = grp && list.find(x => x.role === 'adapter_d80' && x.d80Group === grp);
+        return own || list.find(x => x.role === 'adapter_d80' && x.kind === 'trad' && !x.d80Group) || null;
     },
 
     // Длина трассы по умолчанию. Через стену — метр (типовой вывод из котельной
@@ -35685,6 +35711,7 @@ const app = {
         // Через стену по умолчанию — ровно то, что закрывает готовый комплект.
         // Так смета типового одноэтажного дома не меняется ни на рубль, пока
         // монтажник сам не скажет, что трасса длиннее.
+        // Раздельная и вертикаль считаются одинаково: дым идёт над кровлей.
         if (this.chimneyRouteMode() === 'wall') return this.CHIMNEY_KIT_RUN;
         const h1 = parseFloat(this.state.h1) || 2.7;
         const h2 = (this.state.floors || 1) > 1 ? (parseFloat(this.state.h2) || 2.7) : 0;
@@ -35712,9 +35739,83 @@ const app = {
      * под этот случай в каталоге нет (тогда render ставит один комплект, как
      * раньше, — молча потерять дымоход нельзя).
      */
+    /**
+     * Раздельная система D80: два канала вместо коаксиала.
+     *
+     * Дымовой идёт на заданную длину (обычно над кровлей), воздушный — метр через
+     * стену рядом с котельной. Оконечные элементы у них разные: на дым оголовок с
+     * ветрозащитой, на воздух решётка. Предел котла сверяется с СУММОЙ каналов —
+     * так его пишут в руководствах.
+     */
+    buildChimneySplit: function (b) {
+        const kind = this.chimneyKind(b);
+        const run = this.chimneyRunLen();
+        const air = this.CHIMNEY_AIR_RUN;
+        const bends = this.chimneyBends();
+        const list = catalog.chimney_split_d80 || [];
+        if (!list.length) return null;
+
+        const fit = (x) => x.kind === 'any' || x.kind === kind;
+        const pick = (role) => list.find(x => x.role === role && fit(x)) || null;
+        const exts = list.filter(x => x.role === 'ext' && fit(x)).sort((a, c) => (c.len_m || 0) - (a.len_m || 0));
+
+        const parts = [];
+        const add = (item, qty, tip) => { if (item && qty > 0) parts.push({ item: item, qty: qty, tip: tip }); };
+        // Набор длины канала: от длинных труб к коротким, остаток добираем
+        // самой короткой — канал лучше сделать чуть длиннее, чем не достать.
+        const fill = (need, tip) => {
+            let left = Math.max(0, Math.round(need * 100) / 100);
+            let pieces = 0;
+            exts.forEach(e => {
+                const L = e.len_m || 0;
+                if (L <= 0) return;
+                const n = Math.floor((left + 0.001) / L);
+                if (n > 0) { add(e, n, tip); pieces += n; left = Math.round((left - n * L) * 100) / 100; }
+            });
+            if (left > 0.01 && exts.length) { add(exts[exts.length - 1], 1, tip); pieces += 1; }
+            return pieces;
+        };
+
+        add(this.chimneyD80Adapter(b), 1, 'Переход с выхода котла 60/100 на две трубы Ø80.');
+        let pieces = 1;
+
+        // Дымовой канал
+        pieces += fill(run, 'Дымовой канал.');
+        add(pick('term_flue_roof'), 1, 'Оголовок с ветрозащитой на дымовом канале.');
+        add(pick('drain'), 1, 'Сбор конденсата: на вертикальном дымовом канале он стекает вниз, к котлу.');
+        pieces += 2;
+        if (bends > 0) { add(pick('bend90'), bends, 'Поворот дымового канала.'); pieces += bends; }
+
+        // Воздушный канал
+        pieces += fill(air, 'Воздухозаборный канал.');
+        add(pick('term_air'), 1, 'Решётка воздухозабора: не пускает внутрь снег и птиц.');
+        add(pick('rosette'), 1, 'Закрывает проход воздуховода через стену изнутри.');
+        pieces += 1;
+
+        // Обвязка обоих каналов
+        add(pick('bracket'), Math.max(2, Math.ceil(run / 2) + 1), 'Крепление каналов: не реже чем через 2 м.');
+        add(pick('clamp'), Math.max(0, pieces - 2), 'Соединение элементов каналов.');
+        add(pick('seal'), Math.max(0, pieces - 2), 'Уплотнение стыков.');
+
+        // Предел считается по сумме каналов; отводы переводятся в метры так же,
+        // как в коаксиале.
+        const eqLen = Math.round((run + air + bends * CHIMNEY_EQ.bend90) * 10) / 10;
+        const limit = this.chimneyLimitFor(b, 'D80');
+        const warns = [];
+        if (eqLen > limit.max) {
+            warns.push(`Суммарная длина каналов ${String(eqLen).replace('.', ',')} м больше предела ${limit.max} м${limit.exact ? '' : ' (ориентировочного)'} — даже раздельная система столько не продавит. Сократите трассу или возьмите котёл помощнее.`);
+        }
+        if (!limit.exact) {
+            warns.push(`Предел ${limit.max} м для раздельной системы взят по типу котла, а не из паспорта серии — сверьтесь с паспортом ${b && b.brand ? b.brand : ''} перед заказом.`);
+        }
+        warns.push(`Посчитано так: дымовой канал ${String(run).replace('.', ',')} м над кровлей, воздухозабор ${air} м через стену рядом с котельной. Если на объекте иначе, поправьте количество труб прямо в смете.`);
+        return { parts: parts, eqLen: eqLen, dn: 'D80', limit: limit, route: 'split', warns: warns };
+    },
+
     buildChimney: function (b, kit) {
         const kind = this.chimneyKind(b);
         const route = this.chimneyRouteMode();
+        if (route === 'split') return this.buildChimneySplit(b);
         const run = this.chimneyRunLen();
         const bends = this.chimneyBends();
         const group = this.chimneyStartGroup(b);
@@ -35842,7 +35943,7 @@ const app = {
         }
 
         if (res.eqLen > limit.max) {
-            warns.push(`Эквивалентная длина ${String(res.eqLen).replace('.', ',')} м больше предела ${limit.max} м${limit.exact ? '' : ' (ориентировочного)'} — котёл такую трассу не продавит. Сократите трассу, уберите отводы, возьмите котёл помощнее или соберите раздельный дымоход D80: у него запас длины больше, но его калькулятор пока не считает.`);
+            warns.push(`Эквивалентная длина ${String(res.eqLen).replace('.', ',')} м больше предела ${limit.max} м${limit.exact ? '' : ' (ориентировочного)'} — котёл такую трассу не продавит. Сократите трассу, уберите отводы, возьмите котёл помощнее или переключите дымоход на «D80»: у раздельной системы запас длины в разы больше.`);
         }
         if (route === 'wall' && this.chimneyFacadeDoubtful()) {
             warns.push('Дом выше одного этажа: каталог STOUT допускает вывод коаксиала на фасад только в одноэтажных домах, а СП 60.13330 п. 6.5.5 прямо запрещает фасадный выброс в многоэтажных жилых зданиях. Проверьте по объекту — обычно такой дымоход выводят над кровлей.');
@@ -35895,8 +35996,10 @@ const app = {
         const route = this.chimneyRouteMode();
         const wall = document.getElementById('chim_route_wall');
         const roof = document.getElementById('chim_route_roof');
+        const split = document.getElementById('chim_route_split');
         if (wall) wall.className = 'mode-tab' + (route === 'wall' ? ' active' : '');
         if (roof) roof.className = 'mode-tab' + (route === 'roof' ? ' active' : '');
+        if (split) split.className = 'mode-tab' + (route === 'split' ? ' active' : '');
 
         const lenEl = document.getElementById('val_chim_len');
         if (lenEl && document.activeElement !== lenEl) lenEl.innerText = String(this.chimneyRunLen()).replace('.', ',');
@@ -56713,7 +56816,10 @@ const app = {
             // Вывод над кровлей — другая работа: проход перекрытий и кровли,
             // высотный монтаж, герметизация. Считать её по расценке настенного
             // вывода значило бы подарить заказчику полдня бригады.
-            if (this.chimneyRouteMode() === 'roof') {
+            if (this.chimneyRouteMode() === 'split') {
+                // Две трассы вместо одной, каждая со своим оголовком и креплением
+                addToWorks("Монтаж раздельного дымохода D80", gasCount, 25000, "шт", boilerGroup);
+            } else if (this.chimneyRouteMode() === 'roof') {
                 addToWorks("Монтаж дымохода через кровлю", gasCount, 18000, "шт", boilerGroup);
             } else {
                 addToWorks("Монтаж коаксиального дымохода", gasCount, 10000, "шт", boilerGroup);

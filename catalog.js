@@ -1055,6 +1055,9 @@ const WORK_PRICE_CATALOG = [
     // Вывод над кровлей вместо фасада: проход перекрытий и кровли, высотный
     // монтаж, герметизация. Ставится вместо двух строк выше — см. render().
     { name: "Монтаж дымохода через кровлю", unit: "шт", price: 18000, group: "1.1 Монтаж котла и бойлера" },
+    // Раздельная D80: две трассы вместо одной, каждая со своим оголовком,
+    // креплением и проходом. Ставится вместо строк выше — см. render().
+    { name: "Монтаж раздельного дымохода D80", unit: "шт", price: 25000, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж стабилизатора напряжения", unit: "шт", price: 1500, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж комплекта 3-х ходового клапана Fugas", unit: "компл", price: 4500, group: "1.1 Монтаж котла и бойлера" },
     { name: "Монтаж водонагревателя / бойлера", unit: "шт", price: 9000, group: "1.1 Монтаж котла и бойлера" },
@@ -1215,9 +1218,14 @@ const WORK_PRICE_CATALOG = [
 // "паспорт BAXI ECO Nova, стр. 14"). Подбор сразу начнёт считать по ним.
 const CHIMNEY_EQ = { bend90: 1.0, bend45: 0.5 };
 const CHIMNEY_LIMIT_DEFAULTS = {
-    // тип котла → диаметр → метры эквивалентной длины
-    trad: { '60/100': 4 },
-    cond: { '60/100': 8, '80/125': 12 }
+    // тип котла → диаметр → метры эквивалентной длины.
+    // D80 — раздельная система, и предел там считается на СУММУ двух каналов
+    // (дымового и воздушного): так его и пишут в руководствах. Значения взяты с
+    // запасом вниз: у турбированных котлов раздельная обычно тянет 25–30 м, у
+    // конденсационных 40 и больше, но пока паспортов нет, лучше предупредить
+    // раньше, чем позже.
+    trad: { '60/100': 4, 'D80': 20 },
+    cond: { '60/100': 8, '80/125': 12, 'D80': 30 }
 };
 const CHIMNEY_LIMITS = [
     // Haier — базовая линейка автоподбора, серий в названии нет
@@ -1613,6 +1621,58 @@ const catalog = {
         { id: "RCA-8012-000045", name: "Отвод коаксиальный конденсационный 80/125, 45°", price: 3150, brand: "ROMMER", role: "bend45", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
         { id: "RCA-8012-000001", name: "Оголовок с ветрозащитой вертикальный конденсационный 80/125", price: 7703, brand: "ROMMER", role: "term_roof", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
         { id: "RCA-8125-000103", name: "Крепление к стене D125, металлическое", price: 434, brand: "ROMMER", role: "bracket", dn: "80/125", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+    ],
+
+
+    // ═══════════════ Раздельная система D80 ═══════════════
+    //
+    // Коаксиал упирается в предел котла на первых же метрах: у турбированного
+    // это около четырёх метров эквивалентной длины. Когда трасса длиннее —
+    // котельная в глубине дома, вывод над кровлей двухэтажного, — единственный
+    // выход это раздельная система: две трубы Ø80 вместо «трубы в трубе». Запас
+    // длины у неё в разы больше, потому что каждый канал работает сам за себя.
+    //
+    // Один канал — дымовой, второй — воздухозаборный, и оконечные элементы у них
+    // разные: на дым идёт оголовок с ветрозащитой или наконечник, на воздух —
+    // решётка (чтобы не затягивало снег и птиц). Соединяются с котлом моноблочным
+    // адаптером, он свой у каждой группы марок.
+    //
+    // kind: 'trad' — алюминий, 'cond' — полипропилен (низкая температура и много
+    // конденсата), 'any' — общая обвязка, годится обоим.
+    // d80Group — марка котла, под которую сделан адаптер. Названия в прайс-индексе
+    // обрезаны на 110 символах, поэтому марки за срезом не додумывались: где
+    // прочитать не удалось, подбор берёт универсальный адаптер (см.
+    // app.chimneyD80Adapter), а остальные остаются в таблице замены.
+    chimney_split_d80: [
+        { id: "RCA-8080-290002", name: "Комплект адаптеров D80 на раздельную систему (Kiturami, Hubert, Haier, Arderia и др.)", price: 1783, brand: "ROMMER", role: "adapter_d80", kind: "trad", d80Group: "haier", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8080-210002", name: "Адаптер моноблочный на раздельную систему 80/80 (BAXI кроме ECO Nova/Classic и др.)", price: 2215, brand: "ROMMER", role: "adapter_d80", kind: "trad", d80Group: "baxi", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8080-250002", name: "Адаптер моноблочный универсальный на раздельную систему 80/80 (кроме Immergas)", price: 2373, brand: "ROMMER", role: "adapter_d80", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8080-240002", name: "Адаптер моноблочный на раздельную систему 80/80 (Ferroli, Bosch, Buderus и др.)", price: 2261, brand: "ROMMER", role: "adapter_d80", kind: "trad", d80Group: "bosch", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-8080-280002", name: "Комплект адаптеров (воздуховод + газоход) на раздельную систему 80/80 (Navien и др.)", price: 1783, brand: "ROMMER", role: "adapter_d80", kind: "trad", d80Group: "navien", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0880-250000", name: "Адаптер моноблочный конденсационный, переход с 60/100 на 80/80", price: 4506, brand: "ROMMER", role: "adapter_d80", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-000250", name: "Удлинитель D80, L 250 мм", price: 494, brand: "ROMMER", role: "ext", kind: "trad", len_m: 0.25, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-000500", name: "Удлинитель D80, L 500 мм", price: 720, brand: "ROMMER", role: "ext", kind: "trad", len_m: 0.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-001000", name: "Удлинитель D80, L 1000 мм", price: 1134, brand: "ROMMER", role: "ext", kind: "trad", len_m: 1.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-001500", name: "Удлинитель D80, L 1500 мм", price: 1860, brand: "ROMMER", role: "ext", kind: "trad", len_m: 1.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-002000", name: "Удлинитель D80, L 2000 мм", price: 2519, brand: "ROMMER", role: "ext", kind: "trad", len_m: 2.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-000090", name: "Отвод D80, 90°", price: 826, brand: "ROMMER", role: "bend90", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-000045", name: "Отвод D80, 45°", price: 828, brand: "ROMMER", role: "bend45", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-00000250", name: "Удлинитель конденсационный Ø80, L 250 мм", price: 857, brand: "ROMMER", role: "ext", kind: "cond", len_m: 0.25, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-00000500", name: "Удлинитель конденсационный Ø80, L 500 мм", price: 1385, brand: "ROMMER", role: "ext", kind: "cond", len_m: 0.5, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-00001000", name: "Удлинитель конденсационный Ø80, L 1000 мм", price: 2202, brand: "ROMMER", role: "ext", kind: "cond", len_m: 1.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-00002000", name: "Удлинитель конденсационный Ø80, L 2000 мм", price: 4282, brand: "ROMMER", role: "ext", kind: "cond", len_m: 2.0, availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-0000090", name: "Отвод конденсационный Ø80, 90°", price: 1115, brand: "ROMMER", role: "bend90", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-0000045", name: "Отвод конденсационный Ø80, 45°", price: 1115, brand: "ROMMER", role: "bend45", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010006", name: "Оголовок с ветрозащитой D80, чёрный (дымовой канал над кровлей)", price: 2629, brand: "ROMMER", role: "term_flue_roof", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010004", name: "Наконечник D80, белый (дымовой канал на фасад)", price: 663, brand: "ROMMER", role: "term_flue_wall", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010003", name: "Наконечник-решётка D80 (воздухозабор)", price: 344, brand: "ROMMER", role: "term_air", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010005", name: "Зонт для вертикальной системы D80, нержавейка (воздухозабор над кровлей)", price: 826, brand: "ROMMER", role: "term_air_roof", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-020137", name: "Конденсатоотводчик универсальный D80", price: 1864, brand: "ROMMER", role: "drain", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-020111", name: "Крепление к стене D80, металлическое", price: 287, brand: "ROMMER", role: "bracket", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010002", name: "Накладка декоративная D80, белая", price: 137, brand: "ROMMER", role: "rosette", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010007", name: "Хомут стальной D80", price: 118, brand: "ROMMER", role: "clamp", kind: "any", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0080-010080", name: "Уплотнение силиконовое D80", price: 213, brand: "ROMMER", role: "seal", kind: "trad", availability: "in_stock", price_date: "2026-07-29" },
+        { id: "RCA-0808-000102", name: "Уплотнение Ø80 для конденсационных труб", price: 334, brand: "ROMMER", role: "seal", kind: "cond", availability: "in_stock", price_date: "2026-07-29" },
     ],
 
     stabs: [

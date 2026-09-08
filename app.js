@@ -4596,7 +4596,31 @@ const app = {
         return !!this.state.showScheme && !!this.state.tgUser;
     },
 
+    // Запущено ли с локальной машины. Проверка была рассыпана по десятку мест
+    // одинаковым условием — здесь она названа, чтобы новые места её повторяли,
+    // а не выдумывали заново.
+    isLocalhost: function () {
+        const h = window.location.hostname;
+        return h === 'localhost' || h === '127.0.0.1';
+    },
+
+    // Тариф, выставленный вручную на локальной машине (см. mountLocalTariffSwitch).
+    // На боевом домене всегда null: там тариф решает только база.
+    localTariff: function () {
+        if (!this.isLocalhost()) return null;
+        try {
+            const v = localStorage.getItem('local_tariff');
+            return (v === 'pro' || v === 'base') ? v : null;
+        } catch (e) { return null; }
+    },
+
     isPro: function () {
+        // Локальная проверка идёт мимо базы: у тестового аккаунта демо-период
+        // рано или поздно истекает, и тогда половину интерфейса не посмотреть.
+        // На heatcalc.ru эта ветка недостижима — localTariff() там всегда null.
+        const forced = this.localTariff();
+        if (forced) return forced === 'pro';
+
         let trialUntil = parseInt(localStorage.getItem('pro_trial_until')) || 0;
         let isTrialActive = trialUntil > Date.now();
         const u = this.state.tgUser || this.state.user;
@@ -4619,6 +4643,48 @@ const app = {
             return isTrialActive;
         }
         return isTrialActive;
+    },
+
+    /**
+     * Переключатель тарифа для локальной проверки — уголок внизу слева, только на
+     * localhost и 127.0.0.1. На боевом сайте не создаётся вовсе.
+     *
+     * Нужен потому, что тариф тестового аккаунта живёт в базе (users.account_type
+     * и demo_ends_at), и когда демо-период истекает, посмотреть у себя платную
+     * часть — вкладку «Деньги», брендирование, группировку — уже нельзя, не
+     * правя базу. Переключатель обходит базу, ничего в ней не меняя.
+     */
+    mountLocalTariffSwitch: function () {
+        if (!this.isLocalhost()) return;
+        let box = document.getElementById('local_tariff_switch');
+        if (!box) {
+            box = document.createElement('div');
+            box.id = 'local_tariff_switch';
+            box.className = 'no-print';
+            box.setAttribute('style', 'position: fixed; left: 10px; bottom: 10px; z-index: 2147483000; display: flex; align-items: center; gap: 6px; background: rgba(17,24,39,.92); color: #fff; border-radius: 8px; padding: 5px 8px; font: 600 11px/1 system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.35);');
+            document.body.appendChild(box);
+        }
+        const cur = this.localTariff();
+        const btn = (val, label) => {
+            const on = (cur === val);
+            return `<button type="button" onclick="app.setLocalTariff('${val}')"
+                style="font: inherit; padding: 4px 9px; border-radius: 6px; cursor: pointer; border: 1px solid ${on ? '#22C55E' : 'rgba(255,255,255,.25)'}; background: ${on ? '#22C55E' : 'transparent'}; color: ${on ? '#062b14' : '#fff'};">${label}</button>`;
+        };
+        box.innerHTML = `<span style="opacity:.65; letter-spacing:.3px;">ЛОКАЛЬНО</span>`
+            + btn('base', 'Базовый') + btn('pro', 'Профи')
+            + `<button type="button" onclick="app.setLocalTariff('')" title="Вернуть тариф как в базе"
+                style="font: inherit; padding: 4px 9px; border-radius: 6px; cursor: pointer; border: 1px solid ${cur ? 'rgba(255,255,255,.25)' : '#22C55E'}; background: ${cur ? 'transparent' : '#22C55E'}; color: ${cur ? '#fff' : '#062b14'};">Как в базе</button>`;
+    },
+
+    setLocalTariff: function (val) {
+        if (!this.isLocalhost()) return;
+        try {
+            if (val === 'pro' || val === 'base') localStorage.setItem('local_tariff', val);
+            else localStorage.removeItem('local_tariff');
+        } catch (e) { }
+        this.mountLocalTariffSwitch();
+        this.syncRailUI && this.syncRailUI();
+        this.render();
     },
 
     // Проверка обязательной анкеты (ФИО, телефон, дата рождения, регион, город, сфера
@@ -34443,6 +34509,8 @@ const app = {
         // syncRailUI: колонка, в отличие от меню кабинета, видна и без входа.
         this.setParamsDock(this.paramsDock(), false);
         this.initParamsDrag();
+        // Уголок переключения тарифа — появляется только на локальной машине
+        this.mountLocalTariffSwitch();
         // Списки доступа к инструментам: приходят с сервера, поэтому интерфейс
         // пересобираем ещё раз, когда они доедут (до этого проектирование
         // и распознавание закрыты — открывать «на всякий случай» нельзя).

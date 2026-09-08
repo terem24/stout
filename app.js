@@ -10943,7 +10943,8 @@ const app = {
     loadInstallerSettingsLocal: function () {
         let parsed = null;
         try { parsed = JSON.parse(localStorage.getItem('stout_installer_settings') || 'null'); } catch (e) { parsed = null; }
-        this.installerSettings = Object.assign({ workPrices: {}, equipmentLibrary: [], swapLog: [], deletionLog: [], company: null, railLayout: null, railLayoutTouch: null, margin: null }, parsed || {});
+        this.installerSettings = Object.assign({ workPrices: {}, workCosts: {}, equipmentLibrary: [], swapLog: [], deletionLog: [], company: null, railLayout: null, railLayoutTouch: null, margin: null }, parsed || {});
+        if (!this.installerSettings.workCosts || typeof this.installerSettings.workCosts !== 'object') this.installerSettings.workCosts = {};
         if (this.installerSettings.margin && typeof this.installerSettings.margin !== 'object') this.installerSettings.margin = null;
         if (this.installerSettings.railLayout && typeof this.installerSettings.railLayout !== 'object') this.installerSettings.railLayout = null;
         if (this.installerSettings.railLayoutTouch && typeof this.installerSettings.railLayoutTouch !== 'object') this.installerSettings.railLayoutTouch = null;
@@ -11062,6 +11063,9 @@ const app = {
                 const cloudCompany = (cloud.company && typeof cloud.company === 'object') ? cloud.company : null;
                 this.installerSettings = {
                     workPrices: Object.assign({}, cloud.workPrices || {}),
+                    // Оплата бригады по названию работы — рядом со своей ценой на
+                    // ту же работу и по тем же правилам обмена.
+                    workCosts: Object.assign({}, cloud.workCosts || {}),
                     equipmentLibrary: Array.isArray(cloud.equipmentLibrary) ? cloud.equipmentLibrary : [],
                     swapLog: Array.isArray(cloud.swapLog) ? cloud.swapLog : [],
                     deletionLog: Array.isArray(cloud.deletionLog) ? cloud.deletionLog : [],
@@ -11155,6 +11159,52 @@ const app = {
         }
         return basePrice;
     },
+
+    // Сколько из расценки уходит бригаде — за единицу работы. Задано поимённо в
+    // прайсе монтажа (workCosts) либо считается общей долей из вкладки «Деньги».
+    // Своя цифра главнее доли: её ставят как раз там, где общая доля врёт —
+    // пусконаладка почти целиком остаётся монтажнику, а штробление уходит
+    // подсобникам целиком.
+    wpCost: function (name, listPrice) {
+        const own = this.installerSettings && this.installerSettings.workCosts
+            ? this.installerSettings.workCosts[name] : undefined;
+        if (own !== undefined) return own;
+        const m = this.marginSettings();
+        const share = m ? (parseFloat(m.crewShare) || 0) : 0;
+        return Math.round((listPrice || 0) * share / 100);
+    },
+
+    // Задана ли своя оплата бригады именно для этой работы
+    hasOwnWorkCost: function (name) {
+        return !!(this.installerSettings && this.installerSettings.workCosts
+            && this.installerSettings.workCosts[name] !== undefined);
+    },
+
+    setInstallerWorkCost: function (name, val) {
+        if (!this.installerSettings) this.loadInstallerSettingsLocal();
+        if (!this.installerSettings.workCosts) this.installerSettings.workCosts = {};
+        const num = parseInt(String(val).replace(/[^\d]/g, ''));
+        // Ноль — осмысленное значение только на словах: работа, которая ничего не
+        // стоит, в прайсе не нужна. Пустое поле и ноль одинаково означают «считай
+        // общей долей», и это честнее, чем показывать стопроцентную маржу.
+        if (!isNaN(num) && num > 0) this.installerSettings.workCosts[name] = num;
+        else delete this.installerSettings.workCosts[name];
+        this.saveInstallerSettingsLocal();
+        this.pushInstallerSettingsToCloud();
+        // Вкладку целиком здесь не перерисовываем — как и у цены рядом: обработчик
+        // висит на blur, и пересборка списка на каждом переходе по Tab уводила бы
+        // фокус из следующего поля.
+        this.render();
+    },
+
+    resetInstallerWorkCost: function (name) {
+        if (!this.installerSettings || !this.installerSettings.workCosts) return;
+        delete this.installerSettings.workCosts[name];
+        this.saveInstallerSettingsLocal();
+        this.pushInstallerSettingsToCloud();
+        this.renderWorkPricesTab();
+        this.render();
+    },
     // Дата последнего изменения прайс-листа монтажных работ — проставляется при любом
     // назначении своей цены, снимается, когда персональных цен не остаётся вовсе
     // (весь прайс-лист вернулся к значениям по умолчанию)
@@ -11188,8 +11238,9 @@ const app = {
         this.render();
     },
     resetAllInstallerWorkPrices: async function () {
-        if (!await app.confirm('Сбросить все персональные цены на монтажные работы к значениям по умолчанию?')) return;
+        if (!await app.confirm('Сбросить все персональные цены на монтажные работы и оплату бригады к значениям по умолчанию?')) return;
         this.installerSettings.workPrices = {};
+        this.installerSettings.workCosts = {};
         delete this.installerSettings.workPricesUpdatedAt;
         this.pushInstallerSettingsToCloud();
         this.renderWorkPricesTab();
@@ -11344,12 +11395,16 @@ const app = {
             if (custom) bySection[key].unknown += client;
         });
 
-        const works = { client: 0, cost: 0 };
+        const works = { client: 0, cost: 0, ownCount: 0, total: 0 };
         const byGroup = {};
         (this.currentWorksList || []).forEach(w => {
             const client = Math.round(w.sum || 0);
-            const base = Math.round((w.listPrice !== undefined ? w.listPrice : (w.price || 0)) * (w.q || 0));
-            const cost = Math.round(base * num(m.crewShare) / 100);
+            const unit = (w.listPrice !== undefined ? w.listPrice : (w.price || 0));
+            // Своя оплата бригады за эту работу главнее общей доли — см. wpCost.
+            const own = this.hasOwnWorkCost(w.name);
+            const cost = Math.round(this.wpCost(w.name, unit) * (w.q || 0));
+            works.total++;
+            if (own) works.ownCount++;
             works.client += client;
             works.cost += cost;
             const key = w.group || 'Прочее';
@@ -11612,6 +11667,13 @@ const app = {
                         ${head('Раздел')}
                         ${rep.byGroup.map(s => row(s.title, s.client, s.cost, '')).join('')}
                     </table>
+                    <div style="font-size: 11px; color: var(--text-sec); margin-top: 8px; line-height: 1.6;">
+                        ${rep.works.ownCount
+                            ? `Своя оплата бригаде задана у ${rep.works.ownCount} ${this.plural(rep.works.ownCount, 'работы', 'работ', 'работ')} из ${rep.works.total} в этой смете, остальные считаются общей долей ${m.crewShare} %.`
+                            : `Все работы считаются общей долей ${m.crewShare} %.`}
+                        <a href="javascript:void(0)" onclick="app.railGo('workprices')" style="color: var(--primary); text-decoration: none; border-bottom: 1px dashed var(--primary);">Задать поимённо</a> —
+                        пусконаладка и штробление на общую долю ложатся плохо.
+                    </div>
                 </div>` : ''}
 
                 ${settingsBlock}
@@ -11801,6 +11863,14 @@ const app = {
             ? `<span style="font-size:10.5px; color:var(--text-sec);">Обновлено: ${new Date(updatedAt).toLocaleDateString('ru-RU')}</span>`
             : '';
 
+        // Вторая колонка — сколько из расценки уходит бригаде. Показываем только
+        // ПРОФИ: считает её вкладка «Деньги», а без неё это поле, в которое
+        // монтажник вписывает цифры, ни на что не влияющие.
+        const showCosts = this.isPro();
+        const mgSet = this.marginSettings();
+        const crewShare = mgSet ? (parseFloat(mgSet.crewShare) || 0) : 0;
+        const costsFilled = Object.keys(this.installerSettings.workCosts || {}).length;
+
         let html = `
             <div class="lk-section-head">
                 <h4>🔧 Прайс монтажа</h4>
@@ -11808,23 +11878,57 @@ const app = {
             </div>
             <p class="lk-hint" style="margin-bottom:8px;">Цены по умолчанию для новых смет; в самой смете цену можно поменять. ${updatedAtHtml}</p>
         `;
+        if (showCosts) {
+            html += `<p class="lk-hint" style="margin-bottom:8px;">
+                Вторая колонка — <b>сколько из этой цены уходит бригаде</b>. Заполнять не обязательно:
+                ${mgSet
+                    ? `у незаполненных берётся общая доля ${crewShare} % из вкладки «Деньги»${costsFilled ? `. Своя оплата задана у ${costsFilled} ${this.plural(costsFilled, 'работы', 'работ', 'работ')}` : ''}.`
+                    : `общая доля пока не задана — откройте вкладку «Деньги» и заполните её.`}
+            </p>`;
+        }
 
         Object.keys(groups).forEach(groupName => {
             html += `<div class="lk-subhead">${groupName}</div>`;
+            if (showCosts) {
+                html += `<div style="display:flex; justify-content:flex-end; gap:6px; padding:0 4px 4px 0; font-size:10px; font-weight:700; color:var(--text-sec); text-transform:uppercase; letter-spacing:.4px;">
+                    <span style="width:82px; text-align:right;">Клиенту</span>
+                    <span style="width:14px;"></span>
+                    <span style="width:82px; text-align:right;">Бригаде</span>
+                    <span style="width:14px;"></span>
+                    <span style="width:22px;"></span>
+                </div>`;
+            }
             html += `<div class="lk-list">`;
             groups[groupName].forEach(w => {
+                const nameArg = w.name.replace(/'/g, "\\'");
                 const custom = this.installerSettings.workPrices[w.name];
                 const isCustom = custom !== undefined;
                 const val = isCustom ? custom : w.price;
+                const ownCost = this.installerSettings.workCosts[w.name];
+                const hasOwnCost = ownCost !== undefined;
+                // В пустом поле показываем то, что и так будет посчитано долей —
+                // видно, от чего человек отталкивается, когда ставит свою цифру.
+                const costPlaceholder = Math.round((val || 0) * crewShare / 100);
+                const costCell = showCosts ? `
+                        <input type="text" inputmode="numeric" value="${hasOwnCost ? Math.round(ownCost) : ''}"
+                            placeholder="${costPlaceholder}"
+                            title="${hasOwnCost ? 'Своя оплата бригаде' : 'Пусто — считается общей долей ' + crewShare + ' %'}"
+                            style="width:82px; text-align:right; height:24px; font-size:12px; padding:2px 8px; border-radius:6px; border:1px solid ${hasOwnCost ? 'var(--primary)' : 'var(--border)'}; background:var(--bg); color:var(--text-main);"
+                            onblur="app.setInstallerWorkCost('${nameArg}', this.value)"
+                            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
+                        <span style="font-size:11px; color:var(--text-sec); width:14px;">₽</span>` : '';
                 html += `
                     <div class="lk-row">
                         <span style="flex:1; min-width:0;">${w.name} <span style="color:var(--text-sec);">(${w.unit})</span></span>
                         ${isCustom ? `<span title="Своя цена" style="font-size:10px; color:var(--primary); font-weight:700;">СВОЯ</span>` : ''}
                         <input type="text" inputmode="numeric" value="${Math.round(val)}" style="width:82px; text-align:right; height:24px; font-size:12px; padding:2px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text-main);"
-                            onblur="app.setInstallerWorkPrice('${w.name.replace(/'/g, "\\'")}', this.value)"
+                            onblur="app.setInstallerWorkPrice('${nameArg}', this.value)"
                             onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
                         <span style="font-size:11px; color:var(--text-sec); width:14px;">₽</span>
-                        ${isCustom ? `<span title="Сбросить к цене по умолчанию (${w.price} ₽)" style="cursor:pointer; color:var(--text-sec); font-size:14px; padding:0 4px;" onclick="app.resetInstallerWorkPrice('${w.name.replace(/'/g, "\\'")}')">↺</span>` : `<span style="width:22px;"></span>`}
+                        ${costCell}
+                        ${isCustom || hasOwnCost
+                            ? `<span title="Сбросить к значениям по умолчанию (цена ${w.price} ₽${hasOwnCost ? ', оплата бригады — по общей доле' : ''})" style="cursor:pointer; color:var(--text-sec); font-size:14px; padding:0 4px;" onclick="app.resetWorkPriceRow('${nameArg}')">↺</span>`
+                            : `<span style="width:22px;"></span>`}
                     </div>
                 `;
             });
@@ -11832,6 +11936,19 @@ const app = {
         });
 
         container.innerHTML = html;
+    },
+
+    // Возврат строки прайса к умолчаниям: и своя цена, и своя оплата бригады.
+    // Кнопка одна на строку — две подряд стрелки в узком ряду не различить.
+    resetWorkPriceRow: function (name) {
+        if (!this.installerSettings) this.loadInstallerSettingsLocal();
+        delete this.installerSettings.workPrices[name];
+        if (this.installerSettings.workCosts) delete this.installerSettings.workCosts[name];
+        this._clearWorkPricesTimestampIfEmpty();
+        this.saveInstallerSettingsLocal();
+        this.pushInstallerSettingsToCloud();
+        this.renderWorkPricesTab();
+        this.render();
     },
     // Рендерит вкладку «Своё оборудование»: персональная библиотека ручных позиций (клик =
     // добавить в текущую смету) + история замен оборудования через кнопку «Аналог»

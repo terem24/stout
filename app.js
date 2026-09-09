@@ -32000,7 +32000,7 @@ const app = {
         // генерации не менялась).
         try {
             const hasExistingShareId = !!(this.state.shared_invoice_id && this.isValidUUID(this.state.shared_invoice_id));
-            const shareId = hasExistingShareId
+            let shareId = hasExistingShareId
                 ? this.state.shared_invoice_id
                 : this.generateCustomInvoiceId();
             this.state.shared_invoice_id = shareId;
@@ -32024,6 +32024,7 @@ const app = {
             let shareUrl = null;
             let fastSaveReason = '';
             const fastSaveTimeout = this.isMobileOrTablet() ? 20000 : 10000;
+            const fastSaveStartedAt = Date.now();
             try {
                 const isSaved = await withTimeout(
                     this.saveSharedInvoiceJobToCloud({
@@ -32039,7 +32040,46 @@ const app = {
                 if (isSaved) {
                     shareUrl = `${baseOrigin}/invoice.html?id=${shareId}`;
                 } else {
-                    fastSaveReason = 'Сохранение вернуло отказ без ошибки';
+                    fastSaveReason = this.lastSharedInvoiceSaveError || 'Сохранение вернуло отказ без ошибки';
+
+                    // Ссылка на этот объект уже создавалась, значит строка в shared_invoices
+                    // есть и upsert пошёл не вставкой, а обновлением — а права на обновление
+                    // чужой или ничейной строки база не даёт (см. 20260816_shared_invoice_status_rpc.sql).
+                    // Если владелец строки не совпал с текущим входом, отказ будет повторяться
+                    // при каждой отправке этой сметы, и клиенту каждый раз уходит длинная
+                    // ссылка. Поэтому делаем то же, что «Запрос счёта»: пишем смету заново,
+                    // под новым номером — вставка разрешена, и ссылка снова короткая.
+                    // Прежняя ссылка при этом продолжает работать: строку мы не трогаем.
+                    //
+                    // Повторяем только после отказа, пришедшего ответом. Если первая попытка
+                    // упёрлась в таймаут (нет связи с базой), она уходит в catch — там повтор
+                    // бессмысленен и только задержал бы монтажника ещё на один бюджет.
+                    if (hasExistingShareId) {
+                        const retryBudget = Math.max(4000, fastSaveTimeout - (Date.now() - fastSaveStartedAt));
+                        const retryShareId = this.generateCustomInvoiceId();
+                        try {
+                            const isRetrySaved = await withTimeout(
+                                this.saveSharedInvoiceJobToCloud({
+                                    shareId: retryShareId, object_info, manager_info, items, totals,
+                                    tgUser: this.state.tgUser,
+                                    // Номер только что создан, записи с ним в базе заведомо нет.
+                                    skipExistingLookup: true
+                                }),
+                                retryBudget
+                            );
+                            if (isRetrySaved) {
+                                shareId = retryShareId;
+                                this.state.shared_invoice_id = retryShareId;
+                                this.saveState();
+                                shareUrl = `${baseOrigin}/invoice.html?id=${retryShareId}`;
+                            } else {
+                                fastSaveReason = `${fastSaveReason}; повтор с новым номером: ${this.lastSharedInvoiceSaveError || 'отказ без ошибки'}`.slice(0, 300);
+                            }
+                        } catch (retryErr) {
+                            console.warn('[executeShareInvoice] Повтор сохранения с новым номером не удался:', retryErr);
+                            fastSaveReason = `${fastSaveReason}; повтор с новым номером: ${String((retryErr && retryErr.message) || retryErr)}`.slice(0, 300);
+                        }
+                    }
                 }
             } catch (fastSaveErr) {
                 console.warn('[executeShareInvoice] Быстрое сохранение в облако не удалось, используем офлайн-ссылку:', fastSaveErr);
@@ -32616,8 +32656,22 @@ const app = {
             // возвращает supabaseClient.auth.getSession()/getUser() — здесь это tgUser.authUserId),
             // а НЕ на внутренний public.users.id — в отличие от estimates.user_id в saveJobToCloud.
             // Подстановка public.users.id сюда нарушает foreign key shared_invoices_user_id_fkey.
+            //
+            // Берём номер из живой сессии, а tgUser.authUserId оставляем запасным (так же
+            // сделано во всех остальных обращениях к базе). Сохранённый в браузере номер
+            // может оказаться от прошлого способа входа — например, после перезахода через
+            // Яндекс ID у того же человека auth-идентификатор другой. Со старым номером
+            // строка записывается на чужого владельца, и обновить её потом уже нельзя.
+            // getSession() читает локальное хранилище, сети не касается и время не тратит.
             const tgUser = job.tgUser;
-            const dbUserId = (tgUser && tgUser.authUserId) || null;
+            let dbUserId = (tgUser && tgUser.authUserId) || null;
+            try {
+                const { data: sessionData } = await supabaseClient.auth.getSession();
+                const sessionUserId = sessionData && sessionData.session && sessionData.session.user && sessionData.session.user.id;
+                if (sessionUserId) dbUserId = sessionUserId;
+            } catch (e) {
+                console.warn('[saveSharedInvoiceJobToCloud] Сессию прочитать не удалось, берём сохранённый номер:', e);
+            }
 
             let objectInfo = job.object_info;
             // job.skipExistingLookup ставит только быстрое сохранение при первой генерации ссылки:
@@ -32654,13 +32708,34 @@ const app = {
 
             if (error) {
                 console.error('[saveSharedInvoiceJobToCloud] Ошибка Supabase:', error);
+                this.lastSharedInvoiceSaveError = this.describeSupabaseError(error);
                 return false;
             }
+            this.lastSharedInvoiceSaveError = '';
             return true;
         } catch (error) {
             console.error('[saveSharedInvoiceJobToCloud] Ошибка в блоке catch:', error);
+            this.lastSharedInvoiceSaveError = this.describeSupabaseError(error);
             return false;
         }
+    },
+    // Последняя причина отказа saveSharedInvoiceJobToCloud. Сама функция отвечает «да/нет»
+    // (на это опираются очередь и быстрое сохранение), а текст ошибки до сих пор уходил
+    // только в консоль монтажника — в админке в отметке offline_link стояла заглушка
+    // «Сохранение вернуло отказ без ошибки», по которой причину было не установить.
+    lastSharedInvoiceSaveError: '',
+    // Собирает из ответа Supabase короткую строку для отметки в админке: код нужен,
+    // чтобы отличать запрет по правам доступа (42501) от нарушения внешнего ключа (23503)
+    // и от переполнения по размеру — по одному тексту сообщения они путаются.
+    describeSupabaseError: function (error) {
+        if (!error) return 'Неизвестная ошибка';
+        const parts = [];
+        if (error.code) parts.push(`[${error.code}]`);
+        if (error.message) parts.push(String(error.message));
+        if (error.details) parts.push(`— ${String(error.details)}`);
+        if (error.hint) parts.push(`(${String(error.hint)})`);
+        const text = parts.join(' ').trim();
+        return (text || String(error)).slice(0, 300);
     },
     queue: {
         _isProcessing: false,

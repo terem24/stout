@@ -2078,45 +2078,45 @@ const catalog = {
         { id: "SSC-0004-001920", imgId: "SCC-0001-000045", name: "Шкаф распределительный наружный ШРН-7 эконом (19–20 вых.)", sizeName: "ШРН-7 эконом", outs: [19, 20], inner: 1266, innerApprox: true, innerH: 560, innerD: 118, price: 7888, brand: "STOUT", availability: "in_stock", price_date: "2026-07-29" }
     ],
     pipes: [
-        { id: "SPX-0002-101620", name: "Труба 16x2.0 (100 м)", len: 100, price: 152, rommer: { id: "RPX-0002-101620", name: "Труба PEX-a 16x2.0 (100 м)", price: 80, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" },
-        { id: "SPX-0002-501620", name: "Труба 16x2.0 (500 м)", len: 500, price: 152, rommer: { id: "RPX-0002-501620", name: "Труба PEX-a 16x2.0 (500 м)", price: 80, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" }
+        { id: "SPX-0002-101620", name: "Труба 16x2.0 (100 м)", len: 100, price: 152, rommer: { id: "RPX-0002-101620", name: "Труба PEX-a 16x2.0 (100 м)", price: 82, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0002-501620", name: "Труба 16x2.0 (500 м)", len: 500, price: 152, rommer: { id: "RPX-0002-501620", name: "Труба PEX-a 16x2.0 (500 м)", price: 82, brand: "ROMMER", availability: "on_order", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" }
     ],
     metal_plastic_pipes: [
-        { id: "SPM-0001-101620", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 16x2.0 (100 м)", len: 100, price: 143, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPM-0001-201620", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 16x2.0 (200 м)", len: 200, price: 143, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPM-0001-102020", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 20x2.0 (100 м)", len: 100, price: 242, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPM-0001-052630", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 26x3.0 (50 м)", len: 50, price: 439, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPM-0001-053230", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 32x3.0 (50 м)", len: 50, price: 644, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "SPM-0001-101620", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 16x2.0 (100 м)", len: 100, price: 143, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-201620", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 16x2.0 (200 м)", len: 200, price: 143, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-102020", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 20x2.0 (100 м)", len: 100, price: 242, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-052630", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 26x3.0 (50 м)", len: 50, price: 439, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-053230", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 32x3.0 (50 м)", len: 50, price: 644, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" }
     ],
     stable_pipes: [
-        { id: "SPS-0002-001626", name: "Труба стабильная PE-Xa/Al/PE-RT 16.2х2.6 (100 м)", len: 100, price: 266, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10", rommer: { id: "RPS-0001-001626", name: "Труба стабильная PE-Xa/Al/PE-RT 16.2х2.6 (100 м)", len: 100, price: 207.00, brand: "ROMMER", availability: "in_stock", price_date: "2026-06-30" } },
-        { id: "SPS-0002-002029", name: "Труба стабильная PE-Xa/Al/PE-RT II 20х2.9 (100 м)",   len: 100, price: 379, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10", rommer: { id: "RPS-0001-002029", name: "Труба стабильная PE-Xa/Al/PE-RT II 20х2.9 (100 м)",   len: 100, price: 293.00, brand: "ROMMER", availability: "in_stock", price_date: "2026-06-30" } },
-        { id: "SPS-0002-002537", name: "Труба стабильная PE-Xa/Al/PE-RT II 25х3.7 (50 м)",    len: 50,  price: 534, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10", rommer: { id: "RPS-0001-002537", name: "Труба стабильная PE-Xa/Al/PE-RT II 25х3.7 (50 м)",    len: 50,  price: 413.00, brand: "ROMMER", availability: "in_stock", price_date: "2026-06-30" } },
-        { id: "SPS-0002-003247", name: "Труба стабильная PE-Xa/Al/PE-RT II 32х4.7 (50 м)",    len: 50,  price: 1008, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10", rommer: { id: "RPS-0001-003247", name: "Труба стабильная PE-Xa/Al/PE-RT II 32х4.7 (50 м)",    len: 50,  price: 780.00, brand: "ROMMER", availability: "in_stock", price_date: "2026-06-30" } },
+        { id: "SPS-0002-001626", name: "Труба стабильная PE-Xa/Al/PE-RT 16.2х2.6 (100 м)", len: 100, price: 266, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09", rommer: { id: "RPS-0001-001626", name: "Труба стабильная PE-Xa/Al/PE-RT 16.2х2.6 (100 м)", len: 100, price: 195, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" } },
+        { id: "SPS-0002-002029", name: "Труба стабильная PE-Xa/Al/PE-RT II 20х2.9 (100 м)",   len: 100, price: 379, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09", rommer: { id: "RPS-0001-002029", name: "Труба стабильная PE-Xa/Al/PE-RT II 20х2.9 (100 м)",   len: 100, price: 277, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" } },
+        { id: "SPS-0002-002537", name: "Труба стабильная PE-Xa/Al/PE-RT II 25х3.7 (50 м)",    len: 50,  price: 534, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09", rommer: { id: "RPS-0001-002537", name: "Труба стабильная PE-Xa/Al/PE-RT II 25х3.7 (50 м)",    len: 50,  price: 390, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" } },
+        { id: "SPS-0002-003247", name: "Труба стабильная PE-Xa/Al/PE-RT II 32х4.7 (50 м)",    len: 50,  price: 1008, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09", rommer: { id: "RPS-0001-003247", name: "Труба стабильная PE-Xa/Al/PE-RT II 32х4.7 (50 м)",    len: 50,  price: 737, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" } },
     ],
     insulated_pipes_mp_red: [
-        { id: "SPI-0001-101620", name: "Труба металлопластиковая в теплоизоляции (красная) 16x2.0 (100 м)", len: 100, price: 199, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPI-0001-102020", name: "Труба металлопластиковая в теплоизоляции (красная) 20x2.0 (100 м)", len: 100, price: 314, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPI-0001-052630", name: "Труба металлопластиковая в теплоизоляции (красная) 26x3.0 (50 м)", len: 50, price: 531, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPI-0001-053230", name: "Труба металлопластиковая в теплоизоляции (красная) 32x3.0 (50 м)", len: 50, price: 749, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "SPI-0001-101620", name: "Труба металлопластиковая в теплоизоляции (красная) 16x2.0 (100 м)", len: 100, price: 199, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0001-102020", name: "Труба металлопластиковая в теплоизоляции (красная) 20x2.0 (100 м)", len: 100, price: 314, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0001-052630", name: "Труба металлопластиковая в теплоизоляции (красная) 26x3.0 (50 м)", len: 50, price: 531, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0001-053230", name: "Труба металлопластиковая в теплоизоляции (красная) 32x3.0 (50 м)", len: 50, price: 749, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" }
     ],
     insulated_pipes_mp_blue: [
-        { id: "SPI-0002-101620", name: "Труба металлопластиковая в теплоизоляции (синяя) 16x2.0 (100 м)", len: 100, price: 199, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPI-0002-102020", name: "Труба металлопластиковая в теплоизоляции (синяя) 20x2.0 (100 м)", len: 100, price: 314, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPI-0002-052630", name: "Труба металлопластиковая в теплоизоляции (синяя) 26x3.0 (50 м)", len: 50, price: 531, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPI-0002-053230", name: "Труба металлопластиковая в теплоизоляции (синяя) 32x3.0 (50 м)", len: 50, price: 749, brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "SPI-0002-101620", name: "Труба металлопластиковая в теплоизоляции (синяя) 16x2.0 (100 м)", len: 100, price: 199, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0002-102020", name: "Труба металлопластиковая в теплоизоляции (синяя) 20x2.0 (100 м)", len: 100, price: 314, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0002-052630", name: "Труба металлопластиковая в теплоизоляции (синяя) 26x3.0 (50 м)", len: 50, price: 531, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0002-053230", name: "Труба металлопластиковая в теплоизоляции (синяя) 32x3.0 (50 м)", len: 50, price: 749, brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" }
     ],
     insulated_pipes: [
-        { id: "SPI-0003-001622", name: "Труба 16x2.2 в теплоизоляции (красная)", len: 100, price: 220, rommer: [{ id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2 (серая)", price: 86, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, { id: "EFXT018062SUPRK-400", name: "Теплоизоляция 18/6 (Красная)", price: 28, brand: "Energoflex" }], availability: "in_stock", price_date: "2026-06-27" },
-        { id: "SPI-0004-001622", name: "Труба 16x2.2 в теплоизоляции (синяя)", len: 100, price: 220, rommer: [{ id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2 (серая)", price: 86, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, { id: "EFXT018062SUPRS-400", name: "Теплоизоляция 18/6 (Синяя)", price: 28, brand: "Energoflex" }], availability: "in_stock", price_date: "2026-06-27" }
+        { id: "SPI-0003-001622", name: "Труба 16x2.2 в теплоизоляции (красная)", len: 100, price: 220, rommer: [{ id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2 (серая)", price: 87, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, { id: "EFXT018062SUPRK-400", name: "Теплоизоляция 18/6 (Красная)", price: 27.5, brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" }], availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPI-0004-001622", name: "Труба 16x2.2 в теплоизоляции (синяя)", len: 100, price: 220, rommer: [{ id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2 (серая)", price: 87, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, { id: "EFXT018062SUPRS-400", name: "Теплоизоляция 18/6 (Синяя)", price: 27.5, brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" }], availability: "in_stock", price_date: "2026-09-09" }
     ],
     rad_pipes_grey: [
-        { id: "SPX-0001-001622", name: "Труба PEX-a/EVOH серая 16x2.2 (100м)", len: 100, price: 175, rommer: { id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2", price: 86, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-07-29" },
-        { id: "SPX-0001-241622", name: "Труба PEX-a/EVOH серая 16x2.2 (240м)", len: 240, price: 175, rommer: { id: "RPX-0001-241622", name: "Труба PEX-a 16x2.2", price: 86, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-07-29" },
-        { id: "SPX-0001-501622", name: "Труба PEX-a/EVOH серая 16x2.2 (500м)", len: 500, price: 175, rommer: { id: "RPX-0001-501622", name: "Труба PEX-a 16x2.2", price: 86, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-07-29" },
-        { id: "SPX-0001-002028", name: "Труба PEX-a/EVOH серая 20x2.8 (100м)", len: 100, price: 262, rommer: { id: "RPX-0001-002028", name: "Труба PEX-a 20x2.8", price: 130, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-07-29" },
-        { id: "SPX-0001-002535", name: "Труба PEX-a/EVOH серая 25x3.5 (50м)", len: 50, price: 407, rommer: { id: "RPX-0001-002535", name: "Труба PEX-a 25x3.5", price: 210, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-07-29" },
-        { id: "SPX-0001-003244", name: "Труба PEX-a/EVOH серая 32x4.4 (50м)", len: 50, price: 661, rommer: { id: "RPX-0001-003244", name: "Труба PEX-a 32x4.4", price: 357, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-07-29" }
+        { id: "SPX-0001-001622", name: "Труба PEX-a/EVOH серая 16x2.2 (100м)", len: 100, price: 175, rommer: { id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2", price: 87, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-241622", name: "Труба PEX-a/EVOH серая 16x2.2 (240м)", len: 240, price: 175, rommer: { id: "RPX-0001-241622", name: "Труба PEX-a 16x2.2", price: 87, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-501622", name: "Труба PEX-a/EVOH серая 16x2.2 (500м)", len: 500, price: 175, rommer: { id: "RPX-0001-501622", name: "Труба PEX-a 16x2.2", price: 87, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-002028", name: "Труба PEX-a/EVOH серая 20x2.8 (100м)", len: 100, price: 262, rommer: { id: "RPX-0001-002028", name: "Труба PEX-a 20x2.8", price: 133, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-002535", name: "Труба PEX-a/EVOH серая 25x3.5 (50м)", len: 50, price: 407, rommer: { id: "RPX-0001-002535", name: "Труба PEX-a 25x3.5", price: 214, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-003244", name: "Труба PEX-a/EVOH серая 32x4.4 (50м)", len: 50, price: 661, rommer: { id: "RPX-0001-003244", name: "Труба PEX-a 32x4.4", price: 364, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" }
     ],
     axial_fittings_pex: [
         // Латунные аксиальные фитинги STOUT для труб PE-Xa (серая) — тройниковая/шлейфовая разводка
@@ -2196,8 +2196,8 @@ const catalog = {
         { id: "SFA-0030-000025", name: "Заглушка 25", price: 346, brand: "STOUT", rommer: { id: "RFA-0030-000025", name: "Заглушка 25", price: 232, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-19" }, availability: "in_stock", price_date: "2026-08-19" }
     ],
     insulation: [
-        { id: "RIC-0002-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (красная)", dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RIC-0001-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (синяя)",  dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "RIC-0002-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (красная)", dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "RIC-0001-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (синяя)",  dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }
     ],
     manifolds: [
         { id: "SMS-0917-000002", loops: 2, price: 8479, rommer: { id: "RMS-1200-000002", name: "Коллектор с расходомерами 1\"x2 вых.", price: 4586, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-19" }, availability: "in_stock", price_date: "2026-08-19" },
@@ -2421,7 +2421,7 @@ const catalog = {
     // на объект нужно меньше. Плата — теплоносителя в контуре на 15 % больше и
     // стенка тоньше. Серая 20х2.8 никуда не делась и переключается в панели.
     snow_pipes_red: [
-        { id: "SPX-0002-002020", name: "Труба PEX-a/EVOH красная 20x2.0 (100м)", len: 100, price: 183, brand: "STOUT", rommer: { id: "RPX-0002-002020", name: "Труба PEX-a 20x2.0", price: 109, brand: "ROMMER", availability: "on_order", price_date: "2026-08-11" }, availability: "on_order", price_date: "2026-08-11" }
+        { id: "SPX-0002-002020", name: "Труба PEX-a/EVOH красная 20x2.0 (100м)", len: 100, price: 194, brand: "STOUT", rommer: { id: "RPX-0002-002020", name: "Труба PEX-a 20x2.0", price: 108, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" }
     ],
     // Датчик осадков — единственная позиция раздела, которой нет ни у STOUT, ни у
     // ROMMER: в прайсе ТЕРЕМ ничего похожего не числится, поэтому позиция идёт
@@ -2690,10 +2690,10 @@ const catalog = {
     // берётся K-FLEX ST 9 мм — там ближайшие типоразмеры 35 и 42.
     // Красная на подачу, синяя на обратку — как в разводке отопления.
     boiler_insulation: {
-        22: { red: { id: "RIC-0001-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (красная)", dn: 22, thick: 6, len: 2, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-14" },
-             blue: { id: "RIC-0002-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (синяя)",   dn: 22, thick: 6, len: 2, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-14" } },
-        28: { red: { id: "RIC-0001-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (красная)", dn: 28, thick: 6, len: 2, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-14" },
-             blue: { id: "RIC-0002-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (синяя)",   dn: 28, thick: 6, len: 2, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-14" } },
+        22: { red: { id: "RIC-0001-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (красная)", dn: 22, thick: 6, len: 2, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+             blue: { id: "RIC-0002-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (синяя)",   dn: 22, thick: 6, len: 2, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" } },
+        28: { red: { id: "RIC-0001-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (красная)", dn: 28, thick: 6, len: 2, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+             blue: { id: "RIC-0002-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (синяя)",   dn: 28, thick: 6, len: 2, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" } },
         // K-FLEX цветовой разбивки не имеет — одна позиция на подачу и обратку.
         // Цена за трубку 2 м, поэтому unit «шт», а не «м», как у ПРОТЕКТ ПРО.
         35: { red: { id: "R09035215508", name: "Трубка K-FLEX ST 35/9, 2м", dn: 35, thick: 9, len: 2, price: 223, unit: "шт", brand: "K-FLEX", availability: "in_stock", price_date: "2026-08-20" } },
@@ -2727,7 +2727,7 @@ const catalog = {
         { id: "RPW-1012-3703110", name: "Насос скважинный RHS 3-110, кабель 70 м", q_max: 7.9, h_max: 128, watt: 2200, price: 81465, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }
     ],
     well_parts: [
-        { id: "10011032", name: "Труба ПНД 32х3.0 питьевая (кратно 5м)", price: 112.4, brand: "CYKLON", unit: "м", availability: "in_stock", price_date: "2026-06-06" },
+        { id: "10011032", name: "Труба ПНД 32х3.0 питьевая (кратно 5м)", price: 117.8, brand: "CYKLON", unit: "м", availability: "in_stock", price_date: "2026-09-09" },
         { id: "75618", name: "Трос 4 мм нерж.сталь (кратно 10м)", price: 70, brand: "UNIPUMP", unit: "м", availability: "in_stock", price_date: "2026-06-06" },
         { id: "39023", name: "Зажим (хомут) для троса 4-5 мм", price: 36, brand: "UNIPUMP", unit: "шт" },
         { id: "83652", name: "Оголовок скважинный 133-152/32", price: 3828, brand: "UNIPUMP", availability: "in_stock", price_date: "2026-08-20" },
@@ -2763,10 +2763,10 @@ const catalog = {
         { id: "RCS-0001-000053", name: "Реле давления для водоснабжения со встроенным манометром KRS-7", price: 1159, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" }
     ],
     water_pipes: [
-        { id: "SPX-0001-001622", name: "Труба PEX-a 16x2.2 (серая)", price: 175, unit: "м", rommer: { id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2", price: 86, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" },
-        { id: "SPX-0001-002028", name: "Труба PEX-a 20x2.8 (серая)", price: 262, unit: "м", rommer: { id: "RPX-0001-002028", name: "Труба PEX-a 20x2.8", price: 130, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" },
-        { id: "SPX-0001-002535", name: "Труба PEX-a 25x3.5 (серая)", price: 407, unit: "м", rommer: { id: "RPX-0001-002535", name: "Труба PEX-a 25x3.5", price: 210, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" },
-        { id: "SPX-0001-003244", name: "Труба PEX-a 32x4.4 (серая)", price: 661, unit: "м", rommer: { id: "RPX-0001-003244", name: "Труба PEX-a 32x4.4", price: 357, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" }
+        { id: "SPX-0001-001622", name: "Труба PEX-a 16x2.2 (серая)", price: 175, unit: "м", rommer: { id: "RPX-0001-001622", name: "Труба PEX-a 16x2.2", price: 87, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-002028", name: "Труба PEX-a 20x2.8 (серая)", price: 262, unit: "м", rommer: { id: "RPX-0001-002028", name: "Труба PEX-a 20x2.8", price: 133, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-002535", name: "Труба PEX-a 25x3.5 (серая)", price: 407, unit: "м", rommer: { id: "RPX-0001-002535", name: "Труба PEX-a 25x3.5", price: 214, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPX-0001-003244", name: "Труба PEX-a 32x4.4 (серая)", price: 661, unit: "м", rommer: { id: "RPX-0001-003244", name: "Труба PEX-a 32x4.4", price: 364, brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }, availability: "in_stock", price_date: "2026-09-09" }
     ],
     // Металлопластик, отмеренный метрами (водоснабжение, подводка полотенцесушителя).
     //
@@ -2788,16 +2788,16 @@ const catalog = {
         { id: "SPM-0001-053230", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 32x3.0", price: 644, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" }
     ],
     water_insulation: [
-        { id: "EFXT018092SUPRK", name: "Теплоизоляция 18/9 (Красная)", price: 34, unit: "м", brand: "Energoflex" },
+        { id: "EFXT018092SUPRK", name: "Теплоизоляция 18/9 (Красная)", price: 38, unit: "м", brand: "Energoflex", availability: "on_order", price_date: "2026-09-09" },
         { id: "EFXT018092SUPRS", name: "Теплоизоляция 18/9 (Синяя)", price: 34, unit: "м", brand: "Energoflex" }
     ],
     insulation_pro: [
-        { id: "RIC-0001-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (синяя)",  dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RIC-0001-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (синяя)",  dn: 22, thick: 6, len: 2, pack: 160, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RIC-0001-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (синяя)",  dn: 28, thick: 6, len: 2, pack: 120, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RIC-0002-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (красная)", dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RIC-0002-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (красная)", dn: 22, thick: 6, len: 2, pack: 160, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RIC-0002-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (красная)", dn: 28, thick: 6, len: 2, pack: 120, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "RIC-0001-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (синяя)",  dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "RIC-0001-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (синяя)",  dn: 22, thick: 6, len: 2, pack: 160, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "RIC-0001-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (синяя)",  dn: 28, thick: 6, len: 2, pack: 120, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "RIC-0002-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (красная)", dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "RIC-0002-220602", name: "Трубка ПРОТЕКТ ПРО 22/6, 2м (красная)", dn: 22, thick: 6, len: 2, pack: 160, price: 29, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "RIC-0002-280602", name: "Трубка ПРОТЕКТ ПРО 28/6, 2м (красная)", dn: 28, thick: 6, len: 2, pack: 120, price: 36, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" }
     ],
     water_fittings: [
         { id: "SFA-0032-001612", name: "Водорозетка 16x1/2\" (тупиковая)", price: 865, availability: "in_stock", price_date: "2026-08-10" },
@@ -5122,29 +5122,29 @@ const catalog = {
         // Энергофлекс Super Protect 22мм красная» из счёта не находила в базе
         // ничего, при том что 18-я того же ряда находилась.
         // Цены — колонка рублёвой цены сентябрьского прайса.
-        { id: "EFXT0150411SUPRK", name: "Теплоизоляция 15/4 Super Протект (Красная), бухта 11 м", price: 24.85, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0150411SUPRS", name: "Теплоизоляция 15/4 Super Протект (Синяя), бухта 11 м", price: 24.85, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0180411SUPRK", name: "Теплоизоляция 18/4 Super Протект (Красная), бухта 11 м", price: 26.54, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-07-28" },
-        { id: "EFXT0180411SUPRS", name: "Теплоизоляция 18/4 Super Протект (Синяя), бухта 11 м", price: 26.54, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-07-28" },
-        { id: "EFXT0220411SUPRK", name: "Теплоизоляция 22/4 Super Протект (Красная), бухта 11 м", price: 28.65, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0220411SUPRS", name: "Теплоизоляция 22/4 Super Протект (Синяя), бухта 11 м", price: 28.65, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0280411SUPRK", name: "Теплоизоляция 28/4 Super Протект (Красная), бухта 11 м", price: 36.06, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0280411SUPRS", name: "Теплоизоляция 28/4 Super Протект (Синяя), бухта 11 м", price: 36.06, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0350411SUPRK", name: "Теплоизоляция 35/4 Super Протект (Красная), бухта 11 м", price: 45.58, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "EFXT0350411SUPRS", name: "Теплоизоляция 35/4 Super Протект (Синяя), бухта 11 м", price: 45.58, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0150411SUPRK", name: "Теплоизоляция 15/4 Super Протект (Красная), бухта 11 м", price: 24.82, unit: "м", brand: "Energoflex", availability: "on_order", price_date: "2026-09-09" },
+        { id: "EFXT0150411SUPRS", name: "Теплоизоляция 15/4 Super Протект (Синяя), бухта 11 м", price: 24.82, unit: "м", brand: "Energoflex", availability: "on_order", price_date: "2026-09-09" },
+        { id: "EFXT0180411SUPRK", name: "Теплоизоляция 18/4 Super Протект (Красная), бухта 11 м", price: 26.45, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0180411SUPRS", name: "Теплоизоляция 18/4 Super Протект (Синяя), бухта 11 м", price: 26.45, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0220411SUPRK", name: "Теплоизоляция 22/4 Super Протект (Красная), бухта 11 м", price: 28.64, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0220411SUPRS", name: "Теплоизоляция 22/4 Super Протект (Синяя), бухта 11 м", price: 28.64, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0280411SUPRK", name: "Теплоизоляция 28/4 Super Протект (Красная), бухта 11 м", price: 36, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0280411SUPRS", name: "Теплоизоляция 28/4 Super Протект (Синяя), бухта 11 м", price: 36, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0350411SUPRK", name: "Теплоизоляция 35/4 Super Протект (Красная), бухта 11 м", price: 45.55, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0350411SUPRS", name: "Теплоизоляция 35/4 Super Протект (Синяя), бухта 11 м", price: 45.55, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
 
         // Гофрированная защитная труба ПНД. В прайсе название состоит из одного
         // размера («28 (трубы до 20Ø)»), слова «гофра» там нет вовсе — поэтому
         // подбор по названию её не находил. Ряд заведён целиком, чтобы другие
         // размеры не пришлось добавлять поштучно. 0002 — красная, 0001 — синяя.
-        { id: "SPG-0002-502316", name: "Труба гофрированная ПНД 23 (для труб до 16 мм), красная, бухта 50 м", price: 19, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0002-502820", name: "Труба гофрированная ПНД 28 (для труб до 20 мм), красная, бухта 50 м", price: 24, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0002-503525", name: "Труба гофрированная ПНД 35 (для труб до 25 мм), красная, бухта 50 м", price: 35, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0002-504032", name: "Труба гофрированная ПНД 40 (для труб до 32 мм), красная, бухта 30 м", price: 46, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0001-502316", name: "Труба гофрированная ПНД 23 (для труб до 16 мм), синяя, бухта 50 м", price: 19, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0001-502820", name: "Труба гофрированная ПНД 28 (для труб до 20 мм), синяя, бухта 50 м", price: 24, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0001-503525", name: "Труба гофрированная ПНД 35 (для труб до 25 мм), синяя, бухта 50 м", price: 35, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "SPG-0001-504032", name: "Труба гофрированная ПНД 40 (для труб до 32 мм), синяя, бухта 30 м", price: 46, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-08-10" },
+        { id: "SPG-0002-502316", name: "Труба гофрированная ПНД 23 (для труб до 16 мм), красная, бухта 50 м", price: 19, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0002-502820", name: "Труба гофрированная ПНД 28 (для труб до 20 мм), красная, бухта 50 м", price: 24, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0002-503525", name: "Труба гофрированная ПНД 35 (для труб до 25 мм), красная, бухта 50 м", price: 35, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0002-504032", name: "Труба гофрированная ПНД 40 (для труб до 32 мм), красная, бухта 30 м", price: 46, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0001-502316", name: "Труба гофрированная ПНД 23 (для труб до 16 мм), синяя, бухта 50 м", price: 19, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0001-502820", name: "Труба гофрированная ПНД 28 (для труб до 20 мм), синяя, бухта 50 м", price: 24, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0001-503525", name: "Труба гофрированная ПНД 35 (для труб до 25 мм), синяя, бухта 50 м", price: 35, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPG-0001-504032", name: "Труба гофрированная ПНД 40 (для труб до 32 мм), синяя, бухта 30 м", price: 46, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
 
         { id: "10.В.050.R.M.B", article: "10.В.050.R.M.B", name: "Трап регулируемый боковой, решетка металлическая 100х100 (белый) D 50", price: 1576.06, unit: "шт", brand: "Sinikon", availability: "in_stock", price_date: "2026-07-28" },
 

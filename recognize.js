@@ -71,7 +71,12 @@ const RecognizeUI = {
         const region = row.region || '';
         const dist = row.distributor_id || (app.state && app.state.distributorId);
         if (dist && (acc.dists || {})[dist]) return true;
-        return !!(region && acc.regions && acc.regions[region]);
+        // Регион сверяем приведённым: в анкете он записан как попало
+        // («Калининград», «Калининградская обл.»), а доступ включён на
+        // «Калининградскую область» — см. app.regionAccessKey.
+        return (typeof app.regionFlagFor === 'function')
+            ? app.regionFlagFor(acc.regions, region)
+            : !!(region && acc.regions && acc.regions[region]);
     },
 
     /**

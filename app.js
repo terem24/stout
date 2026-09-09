@@ -11471,7 +11471,10 @@ const app = {
         });
 
         const client = eq.client + works.client;
-        const overhead = Math.round(num(m.overheadFix) + client * num(m.overheadPct) / 100);
+        // Пустая смета — ещё не объект: списывать на неё накладные не за что.
+        // Иначе в шапке на чистом экране висело «Мне: −10 000 ₽», хотя ни одной
+        // строки не посчитано. Расходы появляются вместе с первой из них.
+        const overhead = client ? Math.round(num(m.overheadFix) + client * num(m.overheadPct) / 100) : 0;
         const cost = eq.cost + works.cost + overhead;
 
         // «А если уступить ещё столько-то»: скидка режет выручку, закупка и
@@ -11492,7 +11495,7 @@ const app = {
             const wkTo = Math.min(MAXD, curWkD + extra);
             const c2 = Math.round(eq.client * (100 - eqTo) / (100 - curEqD)
                 + works.client * (100 - wkTo) / (100 - curWkD));
-            const oh2 = Math.round(num(m.overheadFix) + c2 * num(m.overheadPct) / 100);
+            const oh2 = c2 ? Math.round(num(m.overheadFix) + c2 * num(m.overheadPct) / 100) : 0;
             // Сколько ползункам ещё есть куда двигаться. Считаем только по тем
             // половинам сметы, где вообще есть строки: пустые работы не должны
             // гасить кнопку из-за давно выставленного там процента.

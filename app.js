@@ -8662,6 +8662,75 @@ const app = {
         );
     },
 
+    // Сессия есть, а записи о человеке в users не появилось (запись не прошла).
+    // Раньше это было видно только в консоли: интерфейс продолжал показывать вход,
+    // сметы не уходили в облако, а в списках админки такого человека не было вовсе —
+    // и никто об этом не знал, пока не начинали искать его вручную. Предупреждаем
+    // один раз за сеанс: повторять на каждой перезагрузке нечего, причина одна.
+    warnAccountNotSaved: function () {
+        try {
+            if (sessionStorage.getItem('account_row_warned') === '1') return;
+            sessionStorage.setItem('account_row_warned', '1');
+        } catch (e) { }
+        app.alert(
+            'Не удалось получить вашу учётную запись с сервера. Расчёт работает, но сметы ' +
+            'не сохраняются в облако, а счета и уведомления недоступны. Выйдите из аккаунта ' +
+            'и войдите снова; если повторится — сообщите администратору.',
+            'Аккаунт не подключён'
+        );
+    },
+
+    // Локальная запись о входе и живая сессия — разные вещи: авторизованным человека
+    // считает state.tgUser из localStorage (см. isLoggedIn), а сервер знает только про
+    // сессию. Когда сессия заканчивается, интерфейс продолжает показывать имя и тариф,
+    // человек спокойно работает — и не догадывается, что его смет нет в облаке, а в
+    // админке его нет в списках. Поэтому при старте без сессии пробуем её обновить.
+    // Сетевой сбой (офлайн, блокировки, VPN) поводом снять вход не считаем: там ответа
+    // нет вовсе, и выкидывать человека из-за плохой связи было бы хуже молчания.
+    verifySavedLogin: async function () {
+        if (!this.state.tgUser) return;
+        if (this._yandexExchanging) return;
+        // Возврат от провайдера: сессия ещё в адресной строке, SDK её только разбирает
+        const href = window.location.href;
+        if (href.indexOf('access_token') >= 0 || href.indexOf('code=') >= 0) return;
+
+        let session = null;
+        let sessionGone = false;
+        try {
+            const { data, error } = await supabaseClient.auth.refreshSession();
+            session = (data && data.session) ? data.session : null;
+            if (!session && error) {
+                // Снимаем вход только когда сервер прямо ответил, что сессии больше нет.
+                // Всё остальное — сеть не дошла, лимит запросов, сбой на стороне Supabase —
+                // оставляем как есть: выкинуть человека из-за связи хуже, чем промолчать.
+                const st = Number(error.status || 0);
+                sessionGone = error.name !== 'AuthRetryableFetchError' &&
+                    (st === 400 || st === 401 || st === 403);
+            }
+        } catch (e) {
+            console.warn('[verifySavedLogin] Сессию проверить не удалось:', e);
+        }
+
+        if (session) { this.handleAuthSession(session); return; }
+        if (!sessionGone) return;
+
+        console.warn('[verifySavedLogin] Сессия недействительна — снимаем локальный вход.');
+        try { await supabaseClient.auth.signOut({ scope: 'local' }); } catch (e) { }
+        if (typeof Tour !== 'undefined' && !Tour.userChose()) Tour.toggle(false);
+        delete this.state.tgUser;
+        this.state.accountType = 'base';
+        this._profileDbLoaded = false;
+        this.clearInstallerSettingsOnLogout();
+        this.saveState();
+        this.syncUI();
+        this.render();
+        app.alert(
+            'Сеанс входа закончился, и калькулятор работал без связи с аккаунтом. ' +
+            'Войдите снова — сметы и настройки аккаунта на месте.',
+            'Нужно войти заново'
+        );
+    },
+
     showRuGoogleBlockedModal: function () {
         const overlay = document.createElement('div');
         overlay.className = 'calc-dialog-overlay';
@@ -14365,7 +14434,12 @@ const app = {
         }
 
         if (tariffFilter === 'base') {
-            query = query.eq('account_type', 'base');
+            // Базовый тариф лежит в колонке двумя разными словами: старым записям
+            // проставлялся 'base', новым база сама пишет 'free' (значение по умолчанию
+            // колонки — код account_type при регистрации не передаёт). Тариф это один и
+            // тот же, поэтому фильтр обязан ловить оба слова, иначе из списка выпадает
+            // почти половина людей.
+            query = query.in('account_type', ['base', 'free']);
         } else if (tariffFilter === 'pro') {
             query = query.eq('account_type', 'pro');
         } else if (tariffFilter === 'pro_trial') {
@@ -27283,10 +27357,13 @@ const app = {
                     .limit(1);
                 let uData = uDataList ? uDataList[0] : null;
                 if (!uData) {
-                    let { data: newUList } = await supabaseClient
+                    let { data: newUList, error: insertError } = await supabaseClient
                         .from('users')
                         .insert([{ auth_user_id: authUserId, email: email, username: fullName, phone: existingPhone, city: existingCity || undefined, utm_source: utm, registration_ip: clientIp, ...regFieldsObj, ...updatePayload }])
                         .select(adminSelectCols);
+                    // Ошибку вставки раньше не смотрели вовсе: регистрация не доезжала до
+                    // базы молча, и человек оставался невидимым для админки навсегда.
+                    if (insertError) console.error('[handleAuthSession] Запись пользователя не создана:', insertError.message);
                     upsertResult = newUList;
                 } else {
                     await supabaseClient.from('users').update({ auth_user_id: authUserId, city: existingCity || uData.city || undefined, ...updatePayload }).eq('id', uData.id);
@@ -27393,7 +27470,16 @@ const app = {
 
                 // City check removed immediately after registration; now validated on actions
             } else {
+                // Сессия живая, а строки в users нет — ни upsert, ни запасная вставка не
+                // прошли. Дальше по коду всё разъезжается тихо: тариф падает до базового,
+                // сметы не уходят в облако, в админке человека не видно. Говорим вслух.
+                console.error('[handleAuthSession] Учётной записи нет в базе:', {
+                    authUserId: authUserId,
+                    email: email,
+                    upsertError: upsertError ? upsertError.message : ''
+                });
                 this.state.accountType = 'base';
+                this.warnAccountNotSaved();
             }
 
             // Анкета доехала из базы — теперь есть чем заполнить город в подробном расчёте
@@ -35230,6 +35316,10 @@ const app = {
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             if (session) {
                 this.handleAuthSession(session);
+            } else if (this.state.tgUser) {
+                // Вход помнит localStorage, а сессии нет: либо её пора обновить,
+                // либо она закончилась совсем. Разбираемся, а не делаем вид, что всё в порядке.
+                this.verifySavedLogin();
             }
             // Ветки «сессии нет» здесь намеренно нет: гостю ни окно быстрого старта,
             // ни подсказки не показываем. Типовой объект он выбрать может — кнопка в

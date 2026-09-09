@@ -8607,41 +8607,6 @@ const app = {
         googleBtn.style.display = (country && country !== 'RU') ? '' : 'none';
     },
 
-    // Новый посетитель из РФ вошёл через Google — отменяем регистрацию.
-    // Supabase к этому моменту уже успел создать запись в auth.users, её нужно
-    // удалить, иначе email окажется занят и человек не сможет зарегистрироваться
-    // ни по почте, ни через Яндекс.
-    rejectGoogleSignupRU: async function (session) {
-        try {
-            await supabaseProxyFetch(supabaseUrl + '/functions/v1/revoke-google-signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': supabaseKey,
-                    'Authorization': 'Bearer ' + session.access_token
-                },
-                body: JSON.stringify({})
-            });
-        } catch (e) {
-            console.warn("Не удалось удалить незавершённую регистрацию через Google:", e);
-        }
-
-        try { await supabaseClient.auth.signOut(); } catch (e) { }
-        delete this.state.tgUser;
-        this.state.accountType = 'base';
-        this._authHandling = false;
-        this.saveState();
-        this.syncUI();
-        this.render();
-
-        // Адрес мог остаться с #access_token после редиректа Google
-        if (window.location.hash) {
-            history.replaceState(null, document.title, window.location.pathname + window.location.search);
-        }
-
-        this.showRuGoogleBlockedModal();
-    },
-
     // Аккаунт уже переведён на e-mail/Яндекс, но человек снова жмёт Google.
     // Аккаунт живой — ничего не удаляем, просто не пускаем этим способом.
     refuseGoogleForMigratedRU: async function () {
@@ -8729,66 +8694,6 @@ const app = {
             'Войдите снова — сметы и настройки аккаунта на месте.',
             'Нужно войти заново'
         );
-    },
-
-    showRuGoogleBlockedModal: function () {
-        const overlay = document.createElement('div');
-        overlay.className = 'calc-dialog-overlay';
-
-        const card = document.createElement('div');
-        card.className = 'calc-dialog-card';
-        card.style.maxWidth = '440px';
-
-        const title = document.createElement('h3');
-        title.className = 'calc-dialog-title';
-        title.innerText = 'Регистрация через Google недоступна';
-        card.appendChild(title);
-
-        const msg = document.createElement('div');
-        msg.className = 'calc-dialog-message';
-        msg.style.textAlign = 'left';
-        msg.innerHTML =
-            '<p style="margin: 0 0 10px;">По требованиям российского законодательства авторизация ' +
-            'пользователей из России через форму входа Google больше не допускается.</p>' +
-            '<p style="margin: 0 0 10px;">Зарегистрируйтесь одним из разрешённых способов — ' +
-            'все возможности калькулятора при этом сохраняются:</p>' +
-            '<ul style="margin: 0 0 4px 18px; padding: 0;">' +
-            '<li style="margin-bottom: 4px;"><b>Яндекс ID</b> — в один клик, как и Google</li>' +
-            '<li><b>E-mail и пароль</b> — обычная регистрация</li>' +
-            '</ul>';
-        card.appendChild(msg);
-
-        const btns = document.createElement('div');
-        btns.className = 'calc-dialog-buttons';
-
-        const close = () => {
-            overlay.classList.remove('active');
-            setTimeout(() => overlay.remove(), 200);
-        };
-
-        const emailBtn = document.createElement('button');
-        emailBtn.className = 'calc-dialog-btn calc-dialog-btn-cancel';
-        emailBtn.innerText = 'Регистрация по e-mail';
-        emailBtn.onclick = () => {
-            close();
-            this.showAuthModal();
-            this.switchAuthTab('register');
-        };
-
-        const yaBtn = document.createElement('button');
-        yaBtn.className = 'calc-dialog-btn calc-dialog-btn-confirm';
-        yaBtn.innerText = 'Войти через Яндекс ID';
-        yaBtn.onclick = () => {
-            close();
-            this.loginYandex();
-        };
-
-        btns.appendChild(emailBtn);
-        btns.appendChild(yaBtn);
-        card.appendChild(btns);
-        overlay.appendChild(card);
-        document.body.appendChild(overlay);
-        setTimeout(() => overlay.classList.add('active'), 10);
     },
 
     // Предложение перейти на другой способ входа — для тех, кто уже
@@ -27216,32 +27121,25 @@ const app = {
             let regActivityTypes = Array.isArray(meta.activity_types) ? meta.activity_types : [];
 
             // Ограничение авторизации через Google для пользователей из РФ.
-            // Проверяем до upsert в users: после него "новый" аккаунт стал бы
-            // неотличим от давно существующего.
+            // Кнопки Google в окне входа в РФ нет (см. applyRuLoginRestrictions) — то есть
+            // обычным путём сюда никто из России не попадёт. Но остаются VPN, устаревший
+            // кэш страны и служебная ссылка ?google_login=1, и раньше такой вход считался
+            // новой регистрацией: он отменялся, а учётная запись удалялась. Человек этого
+            // не замечал — вход помнил его браузер, — и продолжал работать, хотя в базе
+            // его не было вовсе: сметы не сохранялись, а в списках админки он не значился.
+            // Теперь вход проходит как обычный, а перейти на Яндекс ID или почту
+            // предлагаем окном: остаться незарегистрированным нельзя ни при каком раскладе.
             const isGoogleAccount = (user.app_metadata && user.app_metadata.provider === 'google') ||
                 (Array.isArray(user.identities) && user.identities.some(i => i && i.provider === 'google'));
             this._needRuLoginMigration = false;
             if (isGoogleAccount && !this.isAdminEmail(email)) {
                 const country = await this.detectVisitorCountry();
                 if (country === 'RU') {
-                    const { data: existingRows } = await supabaseClient
-                        .from('users')
-                        .select('id')
-                        .eq('email', email)
-                        .limit(1);
-                    const isExistingAccount = !!(existingRows && existingRows.length);
-
-                    if (!isExistingAccount) {
-                        // Новая регистрация через Google из РФ — не пропускаем
-                        await this.rejectGoogleSignupRU(session);
-                        return;
-                    }
                     if (meta.ru_login_migrated) {
                         // Человек уже перевёл аккаунт на e-mail/Яндекс — Google закрыт
                         await this.refuseGoogleForMigratedRU();
                         return;
                     }
-                    // Старый аккаунт: пускаем, но предложим сменить способ входа
                     this._needRuLoginMigration = true;
                 }
             }

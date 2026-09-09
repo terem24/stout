@@ -4839,7 +4839,18 @@ const app = {
         if (this.state.calc_id) return;
         const hasArea = this.state.area > 0;
         const hasOwnRows = !!((this.state.userAddedEq || []).length || (this.state.userAddedWorks || []).length);
-        if (!force && !hasArea && !hasOwnRows) return;
+        // Смета бывает настоящей и без площади объекта. Водоснабжение считают по
+        // точкам разбора, снеготаяние — по площадкам, подробный расчёт — по
+        // комнатам; во всех трёх случаях поле площади так и остаётся нулём.
+        // Раньше такой расчёт номера не получал вовсе, и это тянуло за собой всё
+        // остальное: смета не находилась по «Загрузить код», не попадала в
+        // планировщик, а каждая печать заводила в базе ещё одну строку — искать
+        // по номеру было нечего, и сохранение всякий раз создавало новую
+        // (у Морозовой так вышло две одинаковые сметы на воду).
+        const hasZones = !!((this.state.waterZones || []).length
+            || (this.state.rooms || []).length
+            || (this.state.snowZones || []).length);
+        if (!force && !hasArea && !hasOwnRows && !hasZones) return;
         this.state.calc_id = String(Math.floor(100000 + Math.random() * 900000));
         const fromRecognition = this.isRecognizedEstimate();
         if (fromRecognition) this.state.from_recognition = true;
@@ -31932,7 +31943,9 @@ const app = {
 
         // Гарантируем, что смета попадёт в базу (и станет доступна через "Загрузить код"),
         // даже если сейчас нет связи с Supabase — задача уйдёт в фоновую очередь с повторами.
-        this.ensureCalcId();
+        // Номер присваиваем безусловно: строку в базе следующая же строка заведёт в любом
+        // случае, а без номера её потом не с чем сличить — каждая печать плодила бы копию.
+        this.ensureCalcId(true);
         this.queueCloudSave(JSON.parse(JSON.stringify(this.state)), app.lastEqSum || 0, app.lastWorksSum || 0);
 
         let tgUser = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) ? window.Telegram.WebApp.initDataUnsafe.user : this.state.tgUser;
@@ -32098,8 +32111,9 @@ const app = {
             scheme: false
         };
 
-        // Как и при печати: смета должна попасть в базу, даже если сейчас нет связи.
-        this.ensureCalcId();
+        // Как и при печати: смета должна попасть в базу, даже если сейчас нет связи,
+        // и так же безусловно получает номер — иначе выгрузка заведёт лишнюю строку.
+        this.ensureCalcId(true);
         this.queueCloudSave(JSON.parse(JSON.stringify(this.state)), app.lastEqSum || 0, app.lastWorksSum || 0);
 
         let tgUser = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) ? window.Telegram.WebApp.initDataUnsafe.user : this.state.tgUser;
@@ -32136,6 +32150,10 @@ const app = {
     },
     saveJobToCloud: async function (stateData, eqSum = 0, worksSum = 0) {
         console.log("[saveJobToCloud] Запущен фоновый сейв для проекта:", stateData.projectName);
+        // Без номера строку в базе не с чем сличить, и повтор задачи (или следующая
+        // печать той же сметы) заводит ещё одну копию. Номер здесь и выдаём — прямо в
+        // задаче, чтобы повтор пришёл с тем же и обновил уже созданную строку.
+        if (!stateData.calc_id) stateData.calc_id = String(Math.floor(100000 + Math.random() * 900000));
         try {
             const { data: { session } } = await supabaseClient.auth.getSession();
             const isLocal = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');

@@ -5224,30 +5224,22 @@ const app = {
             let saveError = null;
             if (this.state.calc_id) {
                 console.log("[saveToCloud] Проверяем существование сметы в БД с share_id:", this.state.calc_id);
-                const { data: existing } = await supabaseClient
-                    .from('estimates')
-                    .select('id, user_id')
-                    .eq('share_id', this.state.calc_id)
-                    .limit(1);
+                const found = await this.findOwnEstimateRow(this.state.calc_id, dbUserId);
+                // Проверка не прошла — записи не делаем вовсе (см. findOwnEstimateRow):
+                // вторая строка того же объекта хуже, чем несохранённая смета, которую
+                // человек сохранит ещё раз.
+                if (found.failed) throw new Error('Нет связи с сервером — смета не сохранена. Попробуйте ещё раз через минуту.');
 
-                console.log("[saveToCloud] Результат проверки сметы в БД:", existing);
-                if (existing && existing.length > 0) {
-                    if (String(existing[0].user_id) === String(dbUserId)) {
-                        console.log("[saveToCloud] Смета своя. Обновляем...");
-                        const { error } = await supabaseClient
-                            .from('estimates')
-                            .update(insertData)
-                            .eq('id', existing[0].id);
-                        saveError = error;
-                    } else {
-                        console.log("[saveToCloud] Смета чужая или анонимная попытка перезаписи. Создаем копию...");
-                        const { error } = await supabaseClient
-                            .from('estimates')
-                            .insert([insertData]);
-                        saveError = error;
-                    }
+                console.log("[saveToCloud] Результат проверки сметы в БД:", found.row);
+                if (found.row) {
+                    console.log("[saveToCloud] Смета своя. Обновляем...");
+                    const { error } = await supabaseClient
+                        .from('estimates')
+                        .update(insertData)
+                        .eq('id', found.row.id);
+                    saveError = error;
                 } else {
-                    console.log("[saveToCloud] Сметы с таким share_id нет. Создаем...");
+                    console.log("[saveToCloud] Своей сметы с таким номером нет. Создаем...");
                     const { error } = await supabaseClient
                         .from('estimates')
                         .insert([insertData]);
@@ -15673,17 +15665,20 @@ const app = {
             const desCell = this.designAccessCell(u, isViewer);
 
             // Третья строка статистики: чем человек занимался, если сохранённых
-            // смет у него нет. «Расчётов» — сколько объектов он начинал считать
-            // (отметка ставится один раз на объект), в скобках — сколько из них
-            // так и не сохранил. «Распозн.» — загрузок в распознавание.
+            // смет у него нет. «Сохранено» — сколько расчётов он довёл до сметы в
+            // облаке, в скобках — сколько всего начинал (отметка ставится один раз
+            // на объект). «0 (расчётов 4)» и есть тот, кто считает и уходит.
+            // «Распознано» — загрузок в распознавание.
             // Прочерк вместо нуля значит «не посчитали», а не «ничего не делал».
-            const cUnsaved = u.calcUnsaved === null || u.calcUnsaved === undefined ? '—' : u.calcUnsaved;
-            const cStarted = u.calcStarted === null || u.calcStarted === undefined ? '—' : u.calcStarted;
+            const cSaved = (typeof u.calcStarted === 'number' && typeof u.calcUnsaved === 'number')
+                ? u.calcStarted - u.calcUnsaved : null;
+            const savedTxt = cSaved === null ? '—' : cSaved;
+            const startedTxt = u.calcStarted === null || u.calcStarted === undefined ? '—' : u.calcStarted;
             const recN = u.recognitions === null || u.recognitions === undefined ? '—' : u.recognitions;
-            const unsavedColor = (typeof u.calcUnsaved === 'number' && u.calcUnsaved > 0 && u.projectsCount === 0) ? '#D97706' : 'inherit';
+            const nothingSavedColor = (cSaved === 0 && typeof u.calcStarted === 'number' && u.calcStarted > 0) ? '#D97706' : 'inherit';
             const activityLine =
-                `<span title="Начато расчётов: ${cStarted}. Не доведено до сохранённой сметы: ${cUnsaved}." style="color:${unsavedColor};">Расчётов: ${cStarted} <b>(бросил ${cUnsaved})</b></span>`
-                + ` | <span title="Загрузок в распознавание за два года (архив на сервере)">Распозн.: ${recN}</span>`;
+                `<span title="Довёл до сохранённой сметы: ${savedTxt}. Всего начинал расчётов: ${startedTxt}." style="color:${nothingSavedColor};">Сохранено: <b>${savedTxt}</b> (расчётов ${startedTxt})</span>`
+                + ` | <span title="Загрузок в распознавание за два года (архив на сервере)">Распознано: ${recN}</span>`;
 
             h += `<tr class="active-row admin-list-row" data-search="${searchStr}" style="cursor: pointer; transition: 0.2s;" onclick="app.viewAdminUser('${u.id}')" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
                         <!-- Нумерация сквозная по всему списку, а не по странице: на второй
@@ -32126,25 +32121,20 @@ const app = {
 
             let saveError = null;
             if (stateData.calc_id) {
-                const { data: existing } = await supabaseClient
-                    .from('estimates')
-                    .select('id, user_id')
-                    .eq('share_id', stateData.calc_id)
-                    .limit(1);
+                const found = await this.findOwnEstimateRow(stateData.calc_id, dbUserId);
+                // Задача из очереди: возвращаем неуспех, и очередь повторит попытку
+                // позже. Записать «на всякий случай» нельзя — получится двойник.
+                if (found.failed) {
+                    console.warn('[saveJobToCloud] Не удалось проверить смету в облаке — откладываем на повтор');
+                    return false;
+                }
 
-                if (existing && existing.length > 0) {
-                    if (String(existing[0].user_id) === String(dbUserId)) {
-                        const { error } = await supabaseClient
-                            .from('estimates')
-                            .update(insertData)
-                            .eq('id', existing[0].id);
-                        saveError = error;
-                    } else {
-                        const { error } = await supabaseClient
-                            .from('estimates')
-                            .insert([insertData]);
-                        saveError = error;
-                    }
+                if (found.row) {
+                    const { error } = await supabaseClient
+                        .from('estimates')
+                        .update(insertData)
+                        .eq('id', found.row.id);
+                    saveError = error;
                 } else {
                     const { error } = await supabaseClient
                         .from('estimates')
@@ -32169,6 +32159,36 @@ const app = {
             return false;
         }
     },
+    /**
+     * Своя строка сметы в облаке по номеру расчёта.
+     *
+     * Раньше этот запрос делало каждое из трёх мест сохранения само — и ни одно не
+     * смотрело на его ошибку. Не ответил Supabase на долю секунды — считалось, что
+     * записи нет, и сохранение заводило вторую строку того же объекта. Так у
+     * монтажника появились два «Сойкино» с разными суммами и одним номером.
+     *
+     * Ищем сразу по паре «номер + владелец». Номер расчёта — случайные шесть цифр
+     * (см. ensureCalcId), и на всю платформу он не уникален: в базе уже есть один
+     * такой на двоих. По одному номеру можно наткнуться на чужую смету и уйти в
+     * создание копии вместо обновления своей.
+     *
+     * Возвращает { row, failed }. failed означает «неизвестно, есть она или нет» —
+     * в этом случае писать нельзя: лучше повторить сохранение позже, чем оставить
+     * человеку два одинаковых объекта, из которых непонятно, какой настоящий.
+     */
+    findOwnEstimateRow: async function (calcId, dbUserId) {
+        if (!calcId) return { row: null, failed: false };
+        let q = supabaseClient.from('estimates').select('id, user_id').eq('share_id', String(calcId));
+        // Без известного владельца (анонимное сохранение) сузить запрос нечем —
+        // тогда, как и раньше, смотрим на user_id найденной строки.
+        if (dbUserId) q = q.eq('user_id', dbUserId);
+        const { data, error } = await q.limit(1);
+        if (error) return { row: null, failed: true };
+        const row = (data && data[0]) || null;
+        if (row && !dbUserId && String(row.user_id) !== String(dbUserId)) return { row: null, failed: false };
+        return { row: row, failed: false };
+    },
+
     // Ставит фоновую задачу "только сохранить смету в облаке" (без письма) в общую
     // очередь с retry — используется при печати и формировании ссылки клиенту, чтобы
     // номер КП (calc_id/share_id) гарантированно стал доступен через "Загрузить код"
@@ -33203,19 +33223,22 @@ const app = {
             };
 
             // 8. Проверяем: есть ли уже запись с этим auto_calc_id — если да, UPDATE, иначе INSERT
-            const { data: existing } = await supabaseClient
-                .from('estimates')
-                .select('id, user_id')
-                .eq('share_id', this._autoCalcId)
-                .limit(1);
+            const found = await this.findOwnEstimateRow(this._autoCalcId, dbUserId);
+            // Автосохранение повторяется каждые 15 минут само, поэтому при неудачной
+            // проверке просто уходим: следующий заход запишет. Иначе один сбой связи
+            // заводил бы лишний дневной слот при каждом срабатывании.
+            if (found.failed) {
+                console.warn('[runAutoSave] Не удалось проверить слот в облаке — пропускаем этот заход');
+                return;
+            }
 
             let saveError = null;
             let isNewSlot = false;
-            if (existing && existing.length > 0 && String(existing[0].user_id) === String(dbUserId)) {
+            if (found.row) {
                 const { error } = await supabaseClient
                     .from('estimates')
                     .update(autoData)
-                    .eq('id', existing[0].id);
+                    .eq('id', found.row.id);
                 saveError = error;
                 console.log("[runAutoSave] Updated existing auto-slot.");
             } else {

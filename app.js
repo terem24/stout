@@ -14775,7 +14775,8 @@ const app = {
             expiry: document.getElementById('admin_filter_expiry')?.value || 'all',
             region: document.getElementById('admin_filter_region')?.value || '',
             activity: document.getElementById('admin_filter_activity')?.value || 'all',
-            recog: document.getElementById('admin_filter_recog')?.value || 'all'
+            recog: document.getElementById('admin_filter_recog')?.value || 'all',
+            suspect: document.getElementById('admin_filter_suspect')?.value || 'all'
         };
 
         const estSearchInputBefore = document.getElementById('admin_est_search_input');
@@ -14807,6 +14808,10 @@ const app = {
             // всего списка целиком: страницу нарезаем сами уже после отбора.
             const recogFilter = (this._pendingAdminFilters && this._pendingAdminFilters.recog) || 'all';
             const isRecogFilter = recogFilter === 'on' || recogFilter === 'off';
+            // Признаки выдуманной анкеты считаются на клиенте — базе они неизвестны,
+            // поэтому фильтру по ним тоже нужен весь список целиком.
+            const suspectFilter = (this._pendingAdminFilters && this._pendingAdminFilters.suspect) || 'all';
+            const isSuspectFilter = suspectFilter === 'yes';
 
             if (sortType === 'login_desc') {
                 query = query
@@ -14842,7 +14847,7 @@ const app = {
             let users = [];
             let totalUsers = 0;
 
-            if (isClientSort || isRecogFilter) {
+            if (isClientSort || isRecogFilter || isSuspectFilter) {
                 let { data, error, count } = await query;
                 if (error) throw error;
                 users = data || [];
@@ -14854,18 +14859,23 @@ const app = {
                 totalUsers = count || users.length;
             }
 
-            // Отбор по доступу к распознаванию — раньше всего остального: и тариф, и LTV
-            // должны сортировать уже отобранных, а счётчик «Пользователей» — показывать
-            // их число, а не число всех подходящих по региону.
+            // Отбор по доступу к распознаванию и по сомнительным анкетам — раньше всего
+            // остального: и тариф, и LTV должны сортировать уже отобранных, а счётчик
+            // «Пользователей» — показывать их число, а не число всех подходящих по региону.
             if (isRecogFilter) {
                 if (!this._recognitionAccess) await this.loadRecognitionAccess();
                 const want = recogFilter === 'on';
                 users = users.filter(u => this.recognitionStateFor(u).on === want);
+            }
+            if (isSuspectFilter) {
+                users = users.filter(u => this.suspiciousProfileFlags(u).length > 0);
+            }
+            if (isRecogFilter || isSuspectFilter) {
                 totalUsers = users.length;
                 // Массовое назначение дистрибьютора повторяет фильтры запросом к базе,
-                // а про доступ к распознаванию база не знает — поэтому запоминаем, кто
-                // именно отобран, иначе «назначить отфильтрованным (17)» задело бы всех
-                // в регионе.
+                // а про доступ к распознаванию и про сомнительные анкеты база не знает —
+                // поэтому запоминаем, кто именно отобран, иначе «назначить отфильтрованным
+                // (17)» задело бы всех в регионе.
                 this._recogFilteredIds = users.map(u => u.id);
                 if (!isClientSort) users = users.slice(offset, offset + this._adminPageSize);
             } else {
@@ -15460,6 +15470,7 @@ const app = {
             region: '',
             activity: 'all',
             recog: 'all',
+            suspect: 'all',
             search: ''
         };
         const tariffFilter = filters.tariff;
@@ -15467,6 +15478,7 @@ const app = {
         const regionFilter = filters.region;
         const activityFilter = filters.activity;
         const recogFilter = filters.recog || 'all';
+        const suspectFilter = filters.suspect || 'all';
         const sortArrow = (key) => sortType === key + '_asc' ? ' ▲' : (sortType === key + '_desc' ? ' ▼' : '');
         // Проектирование: переключатели работают, только если на сервере лежит
         // обновлённый recognize_archive.php (см. designAccessSupported).
@@ -15524,6 +15536,13 @@ const app = {
                                 <option value="all" ${recogFilter === 'all' ? 'selected' : ''}>🔍 Распознавание: все</option>
                                 <option value="on" ${recogFilter === 'on' ? 'selected' : ''}>🔍 Распознавание: включено</option>
                                 <option value="off" ${recogFilter === 'off' ? 'selected' : ''}>🔍 Распознавание: выключено</option>
+                            </select>
+                            <!-- Сомнительные анкеты база тоже не знает: признаки считаются
+                                 на клиенте (suspiciousProfileFlags), поэтому при этом фильтре,
+                                 как и при фильтре доступа, список тянется целиком. -->
+                            <select id="admin_filter_suspect" onchange="app.loadAdminData(0)" title="Анкеты, похожие на выдуманные: латиница в ФИО, несуществующий номер, вход из чужого региона" style="background: var(--surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-size: 12px; outline: none; cursor: pointer; height: 34px; box-sizing: border-box;">
+                                <option value="all" ${suspectFilter === 'all' ? 'selected' : ''}>⚠️ Анкета: любая</option>
+                                <option value="yes" ${suspectFilter === 'yes' ? 'selected' : ''}>⚠️ Анкета: сомнительные</option>
                             </select>
                             <select id="admin_filter_activity" onchange="app.loadAdminData(0)" style="background: var(--surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-size: 12px; outline: none; cursor: pointer; height: 34px; box-sizing: border-box;">
                                 <option value="all" ${activityFilter === 'all' ? 'selected' : ''}>Вся сфера деят-ти</option>
@@ -15732,7 +15751,14 @@ const app = {
             let activityBadges = (u.activity_types || []).map(a => `<span style="background:var(--primary-light); color:var(--primary); font-size:9px; font-weight:700; padding:1px 6px; border-radius:8px; margin-right:3px;">${a}</span>`).join('');
             let extraHTML = (birthStr || activityBadges) ? `<div style="font-size:10px; color:var(--text-sec); margin-top:2px;">${birthStr ? '🎂 ' + birthStr + (ageStr ? ' · ' + ageStr : '') + ' ' : ''}${activityBadges}</div>` : '';
 
-            let searchStr = `${name} ${phone} ${u.email || ''} ${cityText} ${ipLoc} ${u.region || ''} ${(u.activity_types || []).join(' ')}`.toLowerCase();
+            // Анкета не похожа на настоящую — помечаем строку. Не блокирует ничего:
+            // решение по такой учётке принимает человек, см. suspiciousProfileFlags.
+            const suspectFlags = this.suspiciousProfileFlags(u);
+            const suspectMark = suspectFlags.length
+                ? `<span title="Сомнительная анкета: ${suspectFlags.join('; ')}" style="cursor:help; margin-right:4px;">⚠️</span>`
+                : '';
+
+            let searchStr = `${name} ${phone} ${u.email || ''} ${cityText} ${ipLoc} ${u.region || ''} ${(u.activity_types || []).join(' ')}${suspectFlags.length ? ' сомнительная анкета' : ''}`.toLowerCase();
 
             const distOptions = `<option value="">— Не назначен —</option>` + (this.adminData.distributors || []).map(d => `<option value="${d.id}" ${u.distributor_id === d.id ? 'selected' : ''}>${d.company_name} (${d.promo_code})</option>`).join('');
             // Ширину не ограничиваем: у дистрибьюторов длинные названия,
@@ -15770,7 +15796,7 @@ const app = {
                         <!-- Нумерация сквозная по всему списку, а не по странице: на второй
                              странице отсчёт снова с 1 сбивал с толку (44 записи → 1…44) -->
                         <td style="color:var(--text-sec);">${this._adminOffset + i + 1}</td>
-                        <td><div style="display:flex; align-items:center;">${avatarImg} <div><b style="font-size:13px;">${name}</b><br><span style="font-size:11px;color:var(--text-sec);">${phone}</span>${locHTML}${extraHTML}</div></div></td>
+                        <td><div style="display:flex; align-items:center;">${avatarImg} <div><b style="font-size:13px;">${suspectMark}${name}</b><br><span style="font-size:11px;color:var(--text-sec);">${phone}</span>${locHTML}${extraHTML}</div></div></td>
                         <!-- admin-cell-half: на телефоне карточка ставит помеченную
                              пару в один ряд по половине ширины (см. style.css).
                              Содержимое коротких и однотипных ячеек — сумма со
@@ -24521,6 +24547,13 @@ const app = {
 
                         <div style="padding-top:20px; border-top:1px dashed var(--border); margin-bottom:20px;">
                             <h4 style="margin:0 0 12px 0; font-size:14px; color:var(--text-main);">👤 Личные данные</h4>
+                            ${(() => {
+                                const flags = this.suspiciousProfileFlags(user);
+                                if (!flags.length) return '';
+                                return `<div style="background:rgba(217,119,6,0.12); border:1px solid #D97706; color:#D97706; border-radius:8px; padding:8px 12px; margin-bottom:12px; font-size:12px; line-height:1.4;">
+                                    <b>⚠️ Анкета похожа на выдуманную:</b> ${flags.join('; ')}.
+                                </div>`;
+                            })()}
                             <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:8px 20px; font-size:12px;">
                                 <div><span style="color:var(--text-sec);">ФИО:</span> <b style="color:var(--text-main);">${[user.last_name, user.first_name, user.middle_name].filter(Boolean).join(' ') || '—'}</b></div>
                                 <div><span style="color:var(--text-sec);">Дата рождения:</span> <b style="color:var(--text-main);">${user.birth_date ? new Date(user.birth_date).toLocaleDateString('ru-RU') : '—'}</b></div>
@@ -28143,13 +28176,23 @@ const app = {
             .filter(chk => chk && chk.checked)
             .map(chk => chk.value);
 
-        if (!lastName || !firstName || !middleName) { app.alert('Фамилия, имя и отчество не могут быть пустыми.'); return; }
-        // Считаем цифры, а не длину строки: номер из базы (вход через Яндекс/Google/Telegram)
-        // приходит без маски — «+79530044333» короче 18 символов, но он корректный
-        if (!phone || phone.replace(/\D/g, '').length !== 11) { app.alert('Введите корректный номер телефона.'); return; }
+        // ФИО: регистр правим молча, а вот латиницу, цифры и набор наугад
+        // («маркеев Антон Fghh») дальше не пускаем — см. checkNamePart
+        lastName = this.tidyNamePart(lastName);
+        firstName = this.tidyNamePart(firstName);
+        middleName = this.tidyNamePart(middleName);
+        document.getElementById('profile_last_name_input').value = lastName;
+        document.getElementById('profile_first_name_input').value = firstName;
+        document.getElementById('profile_middle_name_input').value = middleName;
+        const nameErr = this.checkNamePart(lastName, 'Фамилия')
+            || this.checkNamePart(firstName, 'Имя')
+            || this.checkNamePart(middleName, 'Отчество');
+        if (nameErr) { app.alert(nameErr); return; }
+        const phoneErr = this.checkPhoneValue(phone);
+        if (phoneErr) { app.alert(phoneErr); return; }
         if (!birthDate) { app.alert('Пожалуйста, укажите дату рождения.'); return; }
         const profileAge = this.calcAge(birthDate);
-        if (profileAge < 18 || profileAge > 90) { app.alert('Возраст должен быть от 18 до 90 лет.'); return; }
+        if (profileAge < 18 || profileAge > this.PROFILE_MAX_AGE) { app.alert('Возраст должен быть от 18 до ' + this.PROFILE_MAX_AGE + ' лет.'); return; }
         if (!region) { app.alert('Пожалуйста, укажите регион.'); return; }
         if (!city) { app.alert('Пожалуйста, укажите ваш город. Это необходимо для формирования смет.'); return; }
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { app.alert('Пожалуйста, введите корректный email.'); return; }
@@ -28253,6 +28296,133 @@ const app = {
     },
     // Возраст на сегодня по дате рождения (ISO-строка вида "YYYY-MM-DD") — используется
     // для проверки диапазона 18-90 лет в регистрации и профиле
+    // ——— Проверка анкеты на выдуманные данные ————————————————————————————
+    // Раньше ФИО принималось любым: «маркеев Антон Fghh» уходило в базу как есть.
+    // Здесь отсекается то, чего живой человек ввести не мог: латиница, цифры,
+    // набор наугад, несуществующий номер. Мягкие сомнения (странное отчество,
+    // город по IP из другого региона) форму не держат — они поднимают флаг в
+    // админке, см. suspiciousProfileFlags.
+
+    // Возраст выше этого в анкете почти всегда означает выдуманную дату: раньше
+    // граница стояла на 90 годах, и «1936 год рождения» проходил насквозь.
+    PROFILE_MAX_AGE: 75,
+
+    // Куски клавиатурных рядов. Список намеренно короткий: «кен», «про», «уке»
+    // встречаются в настоящих фамилиях (Кенжаев, Прохоров, Букеева), и попади они
+    // сюда — форма отшивала бы живых людей.
+    NAME_JUNK_SEQ: ['фыв', 'вап', 'йцу', 'цук', 'ячс', 'чсм', 'ждл', 'ьбю'],
+
+    // Обычные окончания отчеств: -ич (Иванович, а заодно Ильич и Кузьмич),
+    // -вна/-чна и тюркские -оглы, -кызы, -улы
+    PATRONYMIC_END: /(ич|вна|чна|оглы|огли|улы|уулу|кызы|кизи|гызы)$/i,
+
+    isJunkNameWord: function (word) {
+        const w = String(word || '').toLowerCase().replace(/ё/g, 'е');
+        if (w.length < 2) return true;
+        if (/(.)\1\1/.test(w)) return true;          // три одинаковые буквы подряд
+        if (!/[аеиоуыэюя]/.test(w)) return true;     // слово без единой гласной
+        return this.NAME_JUNK_SEQ.some(seq => w.indexOf(seq) !== -1);
+    },
+
+    // «маркеев» → «Маркеев», «мамедов-оглы» → «Мамедов-Оглы».
+    // Регистр правим молча: придираться к строчной букве незачем.
+    tidyNamePart: function (value) {
+        return String(value || '').trim().replace(/\s+/g, ' ')
+            .split(/([\s-])/)
+            .map(p => (p === ' ' || p === '-') ? p : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+            .join('');
+    },
+
+    /** Текст ошибки для части ФИО или пустая строка, если поле в порядке. */
+    checkNamePart: function (value, label) {
+        const v = String(value || '').trim();
+        if (!v) return 'Заполните поле «' + label + '».';
+        if (/\d/.test(v)) return 'В поле «' + label + '» не должно быть цифр.';
+        if (/[A-Za-z]/.test(v)) return 'Поле «' + label + '» заполняется русскими буквами.';
+        if (!/^[А-Яа-яЁё'’\s-]+$/.test(v)) return 'В поле «' + label + '» есть лишние символы: допустимы только буквы, дефис и пробел.';
+        if (v.replace(/[^А-Яа-яЁё]/g, '').length < 2) return 'Поле «' + label + '» слишком короткое — не меньше двух букв.';
+        if (v.split(/[\s-]+/).some(part => this.isJunkNameWord(part))) {
+            return 'Похоже, поле «' + label + '» набрано наугад. Впишите настоящие данные: их видит клиент в смете, счёте и договоре.';
+        }
+        return '';
+    },
+
+    /** Текст ошибки для телефона или пустая строка. Считаем цифры, а не длину строки:
+     *  номер из Яндекса/Google/Telegram приходит без маски. */
+    checkPhoneValue: function (phone) {
+        const d = String(phone || '').replace(/\D/g, '');
+        if (d.length !== 11) return 'Введите корректный номер телефона: 11 цифр, начиная с +7.';
+        if (d[0] !== '7' && d[0] !== '8') return 'Номер должен начинаться с +7 или 8.';
+        const rest = d.slice(1);
+        // Мобильные: Россия — 9xx, Казахстан — 7xx. Городской номер в анкете бесполезен:
+        // на него не приходит ни сообщение в мессенджере, ни уведомление о смете.
+        if (rest[0] !== '9' && rest[0] !== '7') return 'Укажите мобильный номер: он начинается на 9 (Россия) или 7 (Казахстан).';
+        if (/^(\d)\1+$/.test(rest)) return 'Такого номера не существует. Впишите свой настоящий телефон.';
+        if ('12345678901234567890'.indexOf(rest) !== -1 || '09876543210987654321'.indexOf(rest) !== -1) {
+            return 'Такого номера не существует. Впишите свой настоящий телефон.';
+        }
+        return '';
+    },
+
+    // Транслитерация для сверки города по IP: ipapi.co отдаёт его латиницей
+    translitCity: function (name) {
+        const map = { 'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya' };
+        return String(name || '').toLowerCase().split('').map(ch => (map[ch] !== undefined ? map[ch] : ch)).join('');
+    },
+
+    // Приводит латинское написание к виду, в котором «Yekaterinburg» и «Ekaterinburg»,
+    // «Nizhniy Novgorod» и «Nizhny Novgorod» — одно и то же слово
+    cityKeyLatin: function (name) {
+        return String(name || '').toLowerCase().replace(/[^a-z]/g, '').replace(/[yh]/g, '');
+    },
+
+    /** Регион по названию города из IP. Словарь строим один раз за сеанс. */
+    regionByIpCity: function (ipCity) {
+        const key = this.cityKeyLatin(ipCity);
+        if (!key) return '';
+        if (!this._latinCityRegions) {
+            this._latinCityRegions = {};
+            if (typeof CITY_REGION_MAP !== 'undefined') {
+                Object.keys(CITY_REGION_MAP).forEach(ru => {
+                    this._latinCityRegions[this.cityKeyLatin(this.translitCity(ru))] = CITY_REGION_MAP[ru];
+                });
+            }
+        }
+        return this._latinCityRegions[key] || '';
+    },
+
+    /**
+     * Признаки выдуманной анкеты для админки. Никого не блокирует — только
+     * помечает строку списка, чтобы такие учётки было видно и можно было отобрать.
+     *
+     * Жёсткий признак (латиница в ФИО, несуществующий телефон) сам по себе повод
+     * присмотреться. Мягкие — только вдвоём: и уехавший в командировку монтажник,
+     * и человек без отчества по одному такому признаку попадали бы под подозрение зря.
+     */
+    suspiciousProfileFlags: function (u) {
+        if (!u) return [];
+        const hard = [], soft = [];
+        const parts = [u.last_name, u.first_name, u.middle_name].filter(Boolean);
+        // Пустая анкета — не подделка: человек просто ещё не дошёл до кабинета
+        if (parts.length) {
+            const all = parts.join(' ');
+            if (/[A-Za-z]/.test(all)) hard.push('латиница в ФИО');
+            if (/\d/.test(all)) hard.push('цифры в ФИО');
+            if (parts.some(p => String(p).split(/[\s-]+/).some(w => this.isJunkNameWord(w)))) hard.push('ФИО набрано наугад');
+        }
+        if (u.phone && this.checkPhoneValue(u.phone)) hard.push('телефон не похож на настоящий');
+        if (u.birth_date) {
+            const age = this.calcAge(u.birth_date);
+            if (age < 18 || age > this.PROFILE_MAX_AGE) hard.push('возраст ' + age + ' ' + this.plural(age, 'год', 'года', 'лет'));
+        }
+        if (u.middle_name && !this.PATRONYMIC_END.test(String(u.middle_name).trim())) soft.push('отчество не похоже на отчество');
+        const ipRegion = this.regionByIpCity(u.location);
+        if (ipRegion && u.region && this.regionAccessKey(ipRegion) !== this.regionAccessKey(u.region)) {
+            soft.push('вход из региона «' + ipRegion + '», а в анкете другой');
+        }
+        return (hard.length || soft.length >= 2) ? hard.concat(soft) : [];
+    },
+
     calcAge: function (birthDateStr) {
         const birth = new Date(birthDateStr);
         const today = new Date();
@@ -28262,13 +28432,14 @@ const app = {
         return age;
     },
     // Ограничивает диапазон дат в native date-picker'ах формы регистрации/профиля
-    // 18-90 годами — чтобы некорректную дату нельзя было выбрать даже из календаря
+    // (18 лет — PROFILE_MAX_AGE), чтобы выдуманную дату нельзя было выбрать даже
+    // из календаря. Границы держим общими с проверкой в saveProfile.
     setBirthDateRange: function (input) {
         if (!input) return;
         const today = new Date();
         const pad = (n) => String(n).padStart(2, '0');
         const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-        const minDate = new Date(today.getFullYear() - 90, today.getMonth(), today.getDate());
+        const minDate = new Date(today.getFullYear() - this.PROFILE_MAX_AGE, today.getMonth(), today.getDate());
         input.max = `${maxDate.getFullYear()}-${pad(maxDate.getMonth() + 1)}-${pad(maxDate.getDate())}`;
         input.min = `${minDate.getFullYear()}-${pad(minDate.getMonth() + 1)}-${pad(minDate.getDate())}`;
     },

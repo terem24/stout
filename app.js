@@ -1021,7 +1021,7 @@ const app = {
     currentAuthTab: 'login',
     pendingRegistration: null,
     adminData: { users: [], estimates: [], recentEstimates: [], userEstimates: [] },
-    state: { objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: false, optItems: {}, rigOff: {}, qtyOverrides: {}, darkMode: false, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: false, collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", ufhMixType: 'std', ufhDT: null, sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150', radRegime: 'r8060', servoType: null, snowMelt: false, snowZones: [], snowCtrl: 'sensor', snowInBoilerPower: true, showSnowPanel: false, snowPipe: 'thin' },
+    state: { objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: false, optItems: {}, rigOff: {}, qtyOverrides: {}, darkMode: false, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: false, collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneySystem: 'coax', chimneyExit: 'wall', chimneyMore: false, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", ufhMixType: 'std', ufhDT: null, sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150', radRegime: 'r8060', servoType: null, snowMelt: false, snowZones: [], snowCtrl: 'sensor', snowInBoilerPower: true, showSnowPanel: false, snowPipe: 'thin' },
 
     lastSavedStateString: "",
 
@@ -32552,7 +32552,7 @@ const app = {
 
         // Полный сброс данных расчета
         this.state = {
-            objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: currentShowScheme, optItems: {}, qtyOverrides: {}, darkMode: currentDarkMode, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: (currentAccType === 'pro'), collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150',
+            objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: currentShowScheme, optItems: {}, qtyOverrides: {}, darkMode: currentDarkMode, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: (currentAccType === 'pro'), collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneySystem: 'coax', chimneyExit: 'wall', chimneyMore: false, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150',
             // ВОЗВРАЩАЕМ АВТОРИЗАЦИЮ И ТАРИФ НА МЕСТО
             tgUser: currentTgUser,
             accountType: currentAccType,
@@ -34607,6 +34607,7 @@ const app = {
         this.migrateSnowPipeSwap();
         this.migrateElCostDefaultOff();
         this.migrateBoilerSectionTitles();
+        this.migrateChimneyRoute();
         // Адрес ?type=flat открывает калькулятор сразу на квартире — под это можно
         // будет дать отдельную ссылку в рекламе. Право здесь не проверяем: его
         // проверит objectType(), и чужому человеку ссылка ничего не переключит.
@@ -35668,18 +35669,30 @@ const app = {
     // он видит объект.
     chimneyFacadeDoubtful: function () { return (this.state.floors || 1) > 1; },
 
-    // По умолчанию — через стену, сколько бы этажей ни было. Двухэтажный частный
-    // дом не «многоэтажное здание», и вывод рядом с котельной там обычное дело;
-    // уводить его на вертикаль под конёк значило бы навязывать семиметровую
-    // трассу, которую турбированный котёл всё равно не продавит. Про ограничение
-    // одноэтажными домами предупреждаем (см. buildChimney), решает монтажник.
-    //
-    // 'split' — раздельная система D80: две трубы вместо «трубы в трубе». Это уже
-    // не про то, куда выходит дымоход, а про то, какой он, но в одном ряду с
-    // маршрутом монтажнику понятнее: он выбирает, чем выводит котёл.
+    // Дымоход настраивается только в подробном режиме. Быстрый — прикидка цены по
+    // площади, и трассу там задавать не из чего: он считает типовой комплект через
+    // стену, как считал до появления этого блока. Иначе сумма быстрой сметы
+    // зависела бы от настройки, которую в быстром режиме не видно.
+    chimneyDetailed: function () { return !!this.state.detailedRooms; },
+
+    // Два независимых выбора: чем выводим (коаксиал или раздельная D80) и куда
+    // (через стену или над кровлей). Раньше это было одним рядом из трёх кнопок,
+    // где D80 стоял наравне с маршрутом, хотя это другое понятие: раздельную
+    // систему тоже можно вывести и на фасад, и над кровлей.
+    chimneySystem: function () {
+        if (!this.chimneyDetailed()) return 'coax';
+        return (this.state.chimneySystem === 'split') ? 'split' : 'coax';
+    },
+    chimneyExit: function () {
+        if (!this.chimneyDetailed()) return 'wall';
+        return (this.state.chimneyExit === 'roof') ? 'roof' : 'wall';
+    },
+
+    // Сводный признак для сборщика трассы: 'wall' | 'roof' | 'split'.
+    // Раздельная система собирается своим кодом, и куда она выходит, знает он сам
+    // (см. buildChimneySplit) — сюда достаточно донести, что система раздельная.
     chimneyRouteMode: function () {
-        const r = this.state.chimneyRoute;
-        return (r === 'roof' || r === 'split') ? r : 'wall';
+        return (this.chimneySystem() === 'split') ? 'split' : this.chimneyExit();
     },
 
     // Длина воздушного канала раздельной системы. Дым идёт над кровлей, воздух
@@ -35704,27 +35717,43 @@ const app = {
         return own || list.find(x => x.role === 'adapter_d80' && x.kind === 'trad' && !x.d80Group) || null;
     },
 
-    // Длина трассы по умолчанию. Через стену — метр (типовой вывод из котельной
-    // наружу). Над кровлей — высоты этажей плюс полтора метра над кровлей: по
-    // рис. 15.2 каталога STOUT оголовок поднимают над коньком, а не вровень.
+    // Длина трассы по умолчанию.
+    //   коаксиал через стену — ровно то, что закрывает готовый комплект: смета
+    //     типового дома не меняется ни на рубль, пока монтажник сам не скажет,
+    //     что котёл стоит дальше от стены;
+    //   раздельная через стену — метр: комплекта у неё нет, трассу собирают из
+    //     труб, и метр это типовой вывод из котельной наружу;
+    //   над кровлей — высоты этажей плюс полтора метра: по рис. 15.2 каталога
+    //     STOUT оголовок поднимают над коньком, а не вровень с ним.
     chimneyDefaultLen: function () {
-        // Через стену по умолчанию — ровно то, что закрывает готовый комплект.
-        // Так смета типового одноэтажного дома не меняется ни на рубль, пока
-        // монтажник сам не скажет, что трасса длиннее.
-        // Раздельная и вертикаль считаются одинаково: дым идёт над кровлей.
-        if (this.chimneyRouteMode() === 'wall') return this.CHIMNEY_KIT_RUN;
+        if (this.chimneyExit() === 'wall') {
+            return (this.chimneySystem() === 'split') ? 1 : this.CHIMNEY_KIT_RUN;
+        }
         const h1 = parseFloat(this.state.h1) || 2.7;
         const h2 = (this.state.floors || 1) > 1 ? (parseFloat(this.state.h2) || 2.7) : 0;
         return Math.round((h1 + h2 + 1.5) * 2) / 2;
     },
 
     chimneyRunLen: function () {
+        if (!this.chimneyDetailed()) return this.CHIMNEY_KIT_RUN;
         const v = parseFloat(this.state.chimneyLen);
         return (isNaN(v) || v <= 0) ? this.chimneyDefaultLen() : v;
     },
     chimneyBends: function () {
+        if (!this.chimneyDetailed()) return 0;
         const v = parseInt(this.state.chimneyBends);
         return (isNaN(v) || v < 0) ? 0 : Math.min(6, v);
+    },
+
+    // Показывать ли поля длины и отводов. Коаксиал через стену их не спрашивает:
+    // готовый комплект и есть вся трасса, а «0,8 м» — это его собственная длина,
+    // а не то, что монтажник меряет на объекте. Поля раскрываются ссылкой «котёл
+    // стоит дальше от стены» — либо сами, если в них уже что-то задано.
+    chimneyShowFields: function () {
+        if (this.chimneySystem() === 'split' || this.chimneyExit() === 'roof') return true;
+        if (this.state.chimneyMore) return true;
+        const v = parseFloat(this.state.chimneyLen);
+        return (!isNaN(v) && v > this.CHIMNEY_KIT_RUN) || this.chimneyBends() > 0;
     },
 
     /**
@@ -35779,14 +35808,23 @@ const app = {
         add(this.chimneyD80Adapter(b), 1, 'Переход с выхода котла 60/100 на две трубы Ø80.');
         let pieces = 1;
 
-        // Дымовой канал
+        // Дымовой канал. Над кровлей ему нужен оголовок с ветрозащитой и сбор
+        // конденсата: тот стекает по вертикали вниз, к котлу. На фасаде конденсата
+        // не собирают — трасса идёт с уклоном, и он уходит наружу сам.
+        const onRoof = (this.chimneyExit() === 'roof');
         pieces += fill(run, 'Дымовой канал.');
-        add(pick('term_flue_roof'), 1, 'Оголовок с ветрозащитой на дымовом канале.');
-        add(pick('drain'), 1, 'Сбор конденсата: на вертикальном дымовом канале он стекает вниз, к котлу.');
-        pieces += 2;
+        if (onRoof) {
+            add(pick('term_flue_roof'), 1, 'Оголовок с ветрозащитой на дымовом канале.');
+            add(pick('drain'), 1, 'Сбор конденсата: на вертикальном дымовом канале он стекает вниз, к котлу.');
+            pieces += 2;
+        } else {
+            add(pick('term_flue_wall'), 1, 'Наконечник дымового канала на фасад.');
+            add(pick('rosette'), 1, 'Закрывает проход дымового канала через стену изнутри.');
+            pieces += 1;
+        }
         if (bends > 0) { add(pick('bend90'), bends, 'Поворот дымового канала.'); pieces += bends; }
 
-        // Воздушный канал
+        // Воздушный канал — всегда через стену рядом с котельной
         pieces += fill(air, 'Воздухозаборный канал.');
         add(pick('term_air'), 1, 'Решётка воздухозабора: не пускает внутрь снег и птиц.');
         add(pick('rosette'), 1, 'Закрывает проход воздуховода через стену изнутри.');
@@ -35808,7 +35846,10 @@ const app = {
         if (!limit.exact) {
             warns.push(`Предел ${limit.max} м для раздельной системы взят по типу котла, а не из паспорта серии — сверьтесь с паспортом ${b && b.brand ? b.brand : ''} перед заказом.`);
         }
-        warns.push(`Посчитано так: дымовой канал ${String(run).replace('.', ',')} м над кровлей, воздухозабор ${air} м через стену рядом с котельной. Если на объекте иначе, поправьте количество труб прямо в смете.`);
+        warns.push(`Посчитано так: дымовой канал ${String(run).replace('.', ',')} м ${onRoof ? 'над кровлей' : 'на фасад'}, воздухозабор ${air} м через стену рядом с котельной. Если на объекте иначе, поправьте количество труб прямо в смете.`);
+        if (!onRoof && this.chimneyFacadeDoubtful()) {
+            warns.push('Дом выше одного этажа, а дым выходит на фасад: СП 60.13330 п. 6.5.5 запрещает фасадный выброс в многоэтажных жилых зданиях. Проверьте по объекту — обычно дымовой канал выводят над кровлей.');
+        }
         return { parts: parts, eqLen: eqLen, dn: 'D80', limit: limit, route: 'split', warns: warns };
     },
 
@@ -35954,14 +35995,29 @@ const app = {
         return { parts: res.parts, eqLen: res.eqLen, dn: res.dn, limit: limit, route: route, warns: warns };
     },
 
-    setChimneyRoute: function (r) {
-        this.state.chimneyRoute = r;
-        // Длина трассы у стены и над кровлей отличается втрое — сбрасываем на
-        // расчётную по умолчанию, если монтажник её не правил руками.
+    // Смена системы или выхода меняет и разумную длину трассы: у стены это метр,
+    // над кровлей — высота дома. Сбрасываем её на расчётную, если монтажник не
+    // правил длину руками, иначе его цифра осталась бы от другого случая.
+    _chimneySwitched: function () {
         if (!this._chimneyLenTouched) this.state.chimneyLen = null;
         this.saveState();
         this.syncUI();
         this.render();
+    },
+    setChimneySystem: function (s) {
+        this.state.chimneySystem = (s === 'split') ? 'split' : 'coax';
+        this._chimneySwitched();
+    },
+    setChimneyExit: function (e) {
+        this.state.chimneyExit = (e === 'roof') ? 'roof' : 'wall';
+        this._chimneySwitched();
+    },
+    // «Котёл стоит дальше от стены» — раскрывает поля длины и отводов там, где по
+    // умолчанию их не спрашиваем (коаксиал через стену).
+    toggleChimneyMore: function () {
+        this.state.chimneyMore = !this.state.chimneyMore;
+        this.saveState();
+        this.syncUI();
     },
     setChimneyLen: function (v) {
         const n = parseFloat(String(v).replace(',', '.').replace(/[^\d.]/g, ''));
@@ -35985,21 +36041,40 @@ const app = {
         this.setChimneyBends(this.chimneyBends() + d);
     },
 
-    // Блок дымохода в панели параметров: виден только при газовом котле.
+    // Блок дымохода в панели параметров: газовый котёл и подробный режим.
     syncChimneyUI: function () {
         const blk = document.getElementById('blk_chimney');
         if (!blk) return;
-        const on = (this.state.fuels || []).includes('gas');
+        const on = (this.state.fuels || []).includes('gas') && this.chimneyDetailed();
         blk.style.display = on ? 'block' : 'none';
         if (!on) return;
 
-        const route = this.chimneyRouteMode();
-        const wall = document.getElementById('chim_route_wall');
-        const roof = document.getElementById('chim_route_roof');
-        const split = document.getElementById('chim_route_split');
-        if (wall) wall.className = 'mode-tab' + (route === 'wall' ? ' active' : '');
-        if (roof) roof.className = 'mode-tab' + (route === 'roof' ? ' active' : '');
-        if (split) split.className = 'mode-tab' + (route === 'split' ? ' active' : '');
+        const sys = this.chimneySystem();
+        const exit = this.chimneyExit();
+        const mark = (id, active) => {
+            const el = document.getElementById(id);
+            if (el) el.className = 'mode-tab' + (active ? ' active' : '');
+        };
+        mark('chim_sys_coax', sys === 'coax');
+        mark('chim_sys_split', sys === 'split');
+        mark('chim_exit_wall', exit === 'wall');
+        mark('chim_exit_roof', exit === 'roof');
+
+        // Длина у стены и над кровлей называется по-разному: у стены это то, на
+        // сколько котёл отнесён от неё, над кровлей — высота подъёма.
+        const lblLen = document.getElementById('lbl_chim_len');
+        if (lblLen) lblLen.innerText = (exit === 'roof') ? 'Высота трассы' : 'Длина трассы';
+
+        const fields = document.getElementById('blk_chim_fields');
+        const moreRow = document.getElementById('chim_more_row');
+        const showFields = this.chimneyShowFields();
+        if (fields) fields.style.display = showFields ? '' : 'none';
+        // Ссылка-раскрывашка нужна только там, где поля спрятаны по умолчанию, —
+        // у коаксиала через стену. Раскрытые поля сворачиваются ею же.
+        const canCollapse = (sys === 'coax' && exit === 'wall');
+        if (moreRow) moreRow.style.display = canCollapse ? '' : 'none';
+        const moreLink = document.getElementById('chim_more_link');
+        if (moreLink) moreLink.innerText = showFields ? 'Котёл стоит у стены' : 'Котёл стоит дальше от стены';
 
         const lenEl = document.getElementById('val_chim_len');
         if (lenEl && document.activeElement !== lenEl) lenEl.innerText = String(this.chimneyRunLen()).replace('.', ',');
@@ -36020,7 +36095,13 @@ const app = {
         const r = this.buildChimney(boiler, this.chimneyKitFor(boiler));
         if (!r) { note.innerHTML = ''; return; }
         const tight = r.eqLen > r.limit.max;
-        note.innerHTML =
+        // Первой строкой — что уже входит в комплект. Без неё поле «Доп. отводы: 0»
+        // читается как «отводов нет вовсе», хотя отвод 90° лежит внутри готового
+        // комплекта (каталог STOUT, табл. 15.11) и в эквивалентную длину посчитан.
+        const kitLine = (this.chimneySystem() === 'coax' && this.chimneyExit() === 'wall')
+            ? `В комплекте уже есть отвод 90° и труба ${String(this.CHIMNEY_KIT_RUN).replace('.', ',')} м — они в длине учтены.<br>`
+            : '';
+        note.innerHTML = kitLine +
             `Эквивалентная длина <b>${String(r.eqLen).replace('.', ',')} м</b> при пределе <b>${r.limit.max} м</b>` +
             (r.limit.exact ? '' : ' (по типу котла, сверьтесь с паспортом)') +
             `, дымоход ${r.dn}.` +
@@ -41345,6 +41426,18 @@ const app = {
      * отдельным разделом со старым именем, а снятая галочка перестала бы
      * действовать — раздела с таким названием больше нет.
      */
+    // Дымоход задавался одним полем chimneyRoute со значениями wall/roof/split.
+    // Теперь это два независимых выбора: система (коаксиал или раздельная D80) и
+    // выход (стена или кровля). Разовый перенос сохранённых смет — без него в
+    // старом расчёте дымоход молча вернулся бы к коаксиалу через стену.
+    migrateChimneyRoute: function () {
+        const old = this.state.chimneyRoute;
+        if (!old) return;
+        if (old === 'split') { this.state.chimneySystem = 'split'; this.state.chimneyExit = 'roof'; }
+        else { this.state.chimneySystem = 'coax'; this.state.chimneyExit = (old === 'roof') ? 'roof' : 'wall'; }
+        delete this.state.chimneyRoute;
+    },
+
     migrateBoilerSectionTitles: function () {
         // Теплоизоляция котельной была отдельным разделом «2.9. Теплоизоляция
         // трубопроводов котельной», а стала подразделом 2.8.2 внутри обвязки.

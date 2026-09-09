@@ -11718,6 +11718,16 @@ const app = {
                 <div style="font-size: 11px; color: var(--text-sec);">останется при сумме ${fmt(w.client)}${w.capped ? ` — дальше ${this.DISCOUNT_MAX} % ползунок не идёт` : ''}</div>
             </div>`).join('');
 
+        // Единственная строка таблицы, которой нет ни в одной другой части сметы:
+        // складывается она из двух полей подвала — рублей на объект и процента
+        // с оборота, — и без расшифровки непонятно, откуда взялась сумма.
+        // m здесь уже проверен marginSettings(): все поля — числа.
+        const ohPctSum = Math.round(rep.client * m.overheadPct / 100);
+        const ohNote = [
+            m.overheadFix ? fmt(m.overheadFix) + ' на объект' : '',
+            m.overheadPct ? m.overheadPct + ' % от суммы — ' + fmt(ohPctSum) : ''
+        ].filter(Boolean).join(' + ');
+
         panel.innerHTML = `
             <div style="max-width: 860px; margin: 6px auto 30px;">
                 <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
@@ -11730,7 +11740,7 @@ const app = {
                     ${head('Из чего складывается')}
                     ${row('Оборудование', rep.eq.client, rep.eq.cost, '')}
                     ${row('Монтажные работы', rep.works.client, rep.works.cost, '')}
-                    ${row('Накладные', 0, rep.overhead, '')}
+                    ${row('Накладные', 0, rep.overhead, ohNote)}
                     <tr>
                         <td style="padding: 12px 8px; font-size: 14px; font-weight: 800;">Итого</td>
                         <td style="padding: 12px 8px; text-align: right; font-size: 14px; font-weight: 800; white-space: nowrap;">${fmt(rep.client)}</td>

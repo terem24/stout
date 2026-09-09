@@ -3315,12 +3315,29 @@ const RecognizeUI = {
             r._coil = null;
             r._coilFrom = null;
             r._coilNote = null;
+            r._coilFixed = null;
             const m = r._m;
             if (!m || r._packed) return;
             if (!/^(м|м\.?п\.?|мп|метр[а-яё]*)$/i.test(String(r.unit || '').trim())) return;
             const len = (typeof RecognizeMatch !== 'undefined' && RecognizeMatch.pipeCoil)
                 ? RecognizeMatch.pipeCoil(m.item) : null;
-            if (len) r._coil = len;
+            if (!len) return;
+
+            /**
+             * Гофру считаем только бухтами, без вопросов.
+             *
+             * Трубу монтажник иногда меряет метрами — режет от бухты по месту,
+             * и остаток идёт в дело. Гофру так не берут: её продают целой
+             * бухтой по 50 м (сороковую — по 30), и семьдесят метров означают
+             * две бухты. Выбор тут ничего не решает, поэтому и не предлагаем:
+             * такие строки в вопрос не попадают и переключателем не двигаются.
+             */
+            if (/гофр/i.test(String(m.item.name || '') + ' ' + String(r.raw || ''))) {
+                r._coilFixed = len;
+                this.roundToCoil(r, len);
+                return;
+            }
+            r._coil = len;
         });
 
         /**
@@ -3337,6 +3354,22 @@ const RecognizeUI = {
             this._coilAsked = true;
             this.applyCoilMode(saved);
         }
+    },
+
+    /**
+     * Округление метража вверх до целой бухты.
+     *
+     * Исходное число помним в _coilFrom: пересчёт можно повторять сколько
+     * угодно, сам на себя он не накладывается.
+     */
+    roundToCoil(r, len) {
+        const qty = (Number(r.qty) || 0) + (Number(r.qtyExtra) || 0);
+        if (!qty) return;
+        if (r._coilFrom == null) r._coilFrom = qty;
+        const n = Math.ceil(r._coilFrom / len);
+        r.qty = n * len;
+        r.qtyExtra = 0;
+        r._coilNote = r._coilFrom + ' м \u2192 ' + n + ' ' + this.coilWord(n) + ' по ' + len + ' м';
     },
 
     /** Строки, которых касается выбор «метры или бухты». */
@@ -3380,13 +3413,7 @@ const RecognizeUI = {
         this._rows.forEach(r => {
             if (!r._coil) return;
             if (next === 'coil') {
-                const qty = (Number(r.qty) || 0) + (Number(r.qtyExtra) || 0);
-                if (!qty) return;
-                if (r._coilFrom == null) r._coilFrom = qty;
-                const n = Math.ceil(r._coilFrom / r._coil);
-                r.qty = n * r._coil;
-                r.qtyExtra = 0;
-                r._coilNote = r._coilFrom + ' м \u2192 ' + n + ' ' + this.coilWord(n) + ' по ' + r._coil + ' м';
+                this.roundToCoil(r, r._coil);
             } else if (r._coilFrom != null) {
                 r.qty = r._coilFrom;
                 r.qtyExtra = 0;

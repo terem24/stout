@@ -255,7 +255,11 @@ const RecognizeMatch = (function () {
     if (!item) return null;
     const unit = String(item.unit || '').trim().toLowerCase();
     if (unit && unit !== 'м') return null;
-    const len = Number(item.len) || parseCoil(String(item.name || ''));
+    const name = String(item.name || '');
+    // Длину бухты пишут и в скобках («Труба 16x2.0 (100 м)»), и словом в
+    // конце названия — так подписана гофра: «…красная, бухта 50 м».
+    const said = name.match(/бухт[а-яё]*\s*(\d{2,4})\s*м(?![а-яё])/i);
+    const len = Number(item.len) || parseCoil(name) || (said ? +said[1] : 0);
     return len && len >= 10 ? len : null;
   }
 

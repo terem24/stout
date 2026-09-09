@@ -37683,7 +37683,13 @@ const app = {
             let topPrice = topItem?.price || 16078;
             let basePriceVal = baseItem?.price || 5141;
 
-            let epc12Item = catalog.well_auto ? catalog.well_auto.find(x => x.id === 'RCS-0001-000063') : null;
+            // EPC-12 auto лежит в каталоге не отдельной строкой, а ROMMER-аналогом
+            // внутри SIRIO, и поиск по well_auto его не находил: цифровой регулятор
+            // ROMMER просто не показывался в таблице замены. В режиме ROMMER он и так
+            // стоит первой строкой (SIRIO подменяется на него), поэтому там второй раз
+            // его не предлагаем.
+            let epc12Item = (catalog.well_auto ? catalog.well_auto.find(x => x.id === 'RCS-0001-000063') : null)
+                || (!isRommer ? (sirioItem && sirioItem.rommer) : null);
             let epc2Item = catalog.well_auto ? catalog.well_auto.find(x => x.id === 'RCS-0001-000052') : null;
             let epc4Item = catalog.well_auto ? catalog.well_auto.find(x => x.id === 'RCS-0001-000064') : null;
             let epc5Item = catalog.well_auto ? catalog.well_auto.find(x => x.id === 'RCS-0001-000055') : null;
@@ -57820,7 +57826,12 @@ const app = {
                 activeAuto = catalog.well_auto.find(a => a.id === 'SCS-0001-000063');
                 autoDesc = `<span style="font-size:11px; line-height:1.4;"><b>Автоматика (Премиум):</b> Цифровой контроллер STOUT BRIO-TOP. Настройка давления включения/выключения с кнопок, защита от сухого хода с авто-рестартом, защита от замерзания.</span>`;
             } else if (this.state.wellAutoType === 'epc12auto') {
-                activeAuto = catalog.well_auto.find(a => a.id === 'RCS-0001-000063');
+                // Тот же артикул, что и в таблице замены: отдельной строки у него нет,
+                // он живёт ROMMER-аналогом внутри SIRIO. Без этого выбор «EPC-12 auto»
+                // не находил ничего и падал на запасную ветку — первую позицию
+                // well_auto, то есть SIRIO за 38 236 ₽ вместо регулятора за 5 880 ₽.
+                activeAuto = catalog.well_auto.find(a => a.id === 'RCS-0001-000063')
+                    || (catalog.well_auto.find(a => a.id === 'SCS-0001-000070') || {}).rommer;
                 autoDesc = `<span style="font-size:11px; line-height:1.4;"><b>Автоматика (ROMMER):</b> Цифровой регулятор давления EPC-12 auto. Запускается и останавливается в соответствии с данными о состоянии давления воды в трубопроводе.</span>`;
             } else if (this.state.wellAutoType === 'epc2') {
                 activeAuto = catalog.well_auto.find(a => a.id === 'RCS-0001-000052');

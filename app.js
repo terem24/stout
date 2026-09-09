@@ -36046,6 +36046,112 @@ const app = {
             p(catalog.american_34) * 2 + p(catalog.ball_valve_34) * 2 +
             (cascade ? p(catalog.check_valve_34) : 0);
     },
+    // Запас мощности источника к расчётным теплопотерям. Теплопотери считаются на
+    // расчётную пятидневку и на установившийся режим, а котлу нужно ещё и выводить
+    // дом на температуру после ночного понижения, держать зиму холоднее расчётной
+    // и работать с загрязнённым теплообменником. Меньше 1,1 не берут нигде, 1,15 —
+    // обычная проектная норма.
+    BOILER_RESERVE_K: 1.15,
+    // Мощность нагрева бойлера, кВт на литр объёма: прогрев с 10 до 60 °C за час,
+    // V · 4,187 кДж/(кг·К) · 50 К / 3600 с = V · 0,0582 кВт.
+    DHW_TANK_KW_PER_L: 0.0582,
+
+    /**
+     * Расчётный объём ГВС по составу санузлов, л воды 60 °C. Ноль — санузлы не
+     * заданы (водоснабжение выключено или зоны пустые), тогда объём бака
+     * подбирается по числу проживающих.
+     */
+    dhwFixturesVolume: function () {
+        const s = this.state;
+        if (!s.water || !s.waterZones || !s.waterZones.length) return { vol: 0, fixtures: null };
+        let b = 0, sh = 0, bs = 0;
+        s.waterZones.forEach(z => {
+            if (z && z.fixtures) {
+                b += (z.fixtures.bath || 0);
+                sh += (z.fixtures.shower || 0);
+                bs += (z.fixtures.basin || 0) + (z.fixtures.bidet || 0);
+            }
+        });
+        let raw_vol = (b * 120) + (sh * 50) + (bs * 10);
+        // 1. Коэффициент разбавления горячей воды 60°C холодной 10°C до комфортных 40°C составляет 0.6 (60% горячей воды)
+        let mixed_vol = raw_vol * 0.6;
+        // 2. Коэффициент одновременного использования (СП 30.13330.2020)
+        let k_sim = 1.0;
+        let totalFixtures = b + sh;
+        if (totalFixtures === 2) k_sim = 0.7;
+        else if (totalFixtures === 3) k_sim = 0.5;
+        else if (totalFixtures >= 4) k_sim = 0.4;
+        return {
+            vol: Math.round(mixed_vol * k_sim),
+            fixtures: { bath: b, shower: sh, basin: bs, kSim: k_sim }
+        };
+    },
+
+    /**
+     * Объём бойлера косвенного нагрева, который встанет в смету, и по чему он
+     * подобран. Вынесено из render отдельным методом: тот же объём нужен подбору
+     * газового котла, а сам бак добавляется в смету заметно ниже по коду.
+     */
+    dhwTankPlan: function () {
+        const s = this.state;
+        const fx = this.dhwFixturesVolume();
+        const volByRes = s.res >= 10 ? 500 : s.res >= 7 ? 300 : s.res >= 5 ? 200 : s.res >= 3 ? 150 : 100;
+        let targetVol = volByRes;
+        let chosenBy = 'res';
+        if (s.water && fx.vol > 0) {
+            targetVol = Math.max(volByRes, fx.vol);
+            chosenBy = 'fixtures';
+        }
+        const isWall = (s.tankMount === 'wall');
+        let vol;
+        if (s.tankVol) {
+            vol = s.tankVol;
+        } else {
+            vol = isWall ? 80 : 100;
+            if (targetVol > 80 && targetVol <= 100) vol = 100;
+            else if (targetVol > 100 && targetVol <= 150) vol = 150;
+            else if (targetVol > 150 && targetVol <= 200) vol = 200;
+            else if (targetVol > 200 && targetVol <= 300) vol = isWall ? 200 : 300;
+            else if (targetVol > 300) vol = isWall ? 200 : 500;
+        }
+        return {
+            vol: vol, targetVol: targetVol, chosenBy: chosenBy,
+            fixturesVol: fx.vol, fixtures: fx.fixtures, isWall: isWall
+        };
+    },
+
+    /**
+     * Требуемая мощность источника тепла, кВт.
+     *
+     * Раньше котёл подбирался ровно по теплопотерям: дом на 15,7 кВт получал
+     * котёл на 18 и ни одного киловатта на нагрев бойлера. Теперь берётся большее
+     * из двух — теплопотери с запасом BOILER_RESERVE_K и мощность, которой бойлер
+     * прогревается за час. Именно большее, а не сумма: настенные котлы работают с
+     * приоритетом ГВС, отопление на время нагрева бака отключается, и складывать
+     * две нагрузки значило бы закладывать вдвое лишнего.
+     *
+     * Второе слагаемое считается только при включённом бойлере: у двухконтурного
+     * котла проточное ГВС и так обеспечено его собственной мощностью.
+     */
+    boilerTargetPower: function (heatKw) {
+        const heat = parseFloat(heatKw) || 0;
+        const withReserve = heat * this.BOILER_RESERVE_K;
+        let dhwKw = 0, tankVol = 0;
+        if (this.state.hotWater) {
+            tankVol = this.dhwTankPlan().vol || 0;
+            dhwKw = tankVol * this.DHW_TANK_KW_PER_L;
+        }
+        return {
+            heat: heat,
+            k: this.BOILER_RESERVE_K,
+            withReserve: withReserve,
+            dhwKw: dhwKw,
+            tankVol: tankVol,
+            kw: Math.max(withReserve, dhwKw),
+            byDhw: dhwKw > withReserve
+        };
+    },
+
     // Автоподбор газового котла: какая модель и сколько штук.
     // Пока хватает Haier (18 и 24 кВт) — ставим его, это базовая линейка сметы.
     // Выше 24 кВт линейка кончается, и раньше подбор молча собирал каскад из двух
@@ -48907,9 +49013,36 @@ const app = {
                 let gbBrand = (gb && gb.brand) || 'Haier';
                 let gbModel = (gb && gb.brand && gb.brand !== 'Haier' && gb.name && !/^Котёл газовый/.test(gb.name)) ? ` ${gb.name}` : '';
 
-                let formulaStr = `Q_требуемая = Q_теплопотери (согласно расчёту теплопотерь здания по СП 60.13330.2020).`;
+                // val6 — разбор требуемой мощности из boilerTargetPower: теплопотери,
+                // коэффициент запаса, мощность прогрева бойлера. Без него (старые
+                // вызовы) остаётся прежняя формула по голым теплопотерям.
+                let need = (val6 && typeof val6 === 'object' && val6.kw > 0) ? val6 : null;
+                let kStr = need ? String(need.k).replace('.', ',') : '';
+                let formulaStr = need
+                    ? (need.tankVol > 0
+                        ? `Q_требуемая = max(Q_теплопотери × ${kStr} ; Q_нагрева_бойлера). Теплопотери — по СП 60.13330.2020, коэффициент ${kStr} — запас на разогрев после понижения температуры, на зиму холоднее расчётной пятидневки и на загрязнение теплообменника. Мощности не складываются: котёл работает с приоритетом ГВС, на время нагрева бойлера отопление отключается.`
+                        : `Q_требуемая = Q_теплопотери × ${kStr}. Теплопотери — по СП 60.13330.2020, коэффициент ${kStr} — запас на разогрев после понижения температуры, на зиму холоднее расчётной пятидневки и на загрязнение теплообменника.`)
+                    : `Q_требуемая = Q_теплопотери (согласно расчёту теплопотерь здания по СП 60.13330.2020).`;
                 if (qty > 1) {
                     formulaStr += ` При каскаде: N_котлов = ⌈Q_требуемая / ${singlePower} кВт⌉.`;
+                }
+
+                // Строки разбора требуемой мощности и итоговый запас к теплопотерям.
+                // Без них смета показывала только теплопотери и мощность котла, и
+                // понять, есть ли запас вообще, было не по чему.
+                let needLines = '';
+                if (need) {
+                    needLines += `• Запас на разогрев и отклонение от расчётной пятидневки (×${kStr}): ${need.withReserve.toFixed(1)} кВт.<br>`;
+                    if (need.tankVol > 0) {
+                        needLines += `• Нагрев бойлера ${need.tankVol} л с 10 до 60 °C за час: ${need.dhwKw.toFixed(1)} кВт.<br>`;
+                    }
+                    needLines += `• Требуемая мощность котла: <b>${need.kw.toFixed(1)} кВт</b>` +
+                        (need.tankVol > 0 ? ` (определяет ${need.byDhw ? 'нагрев бойлера' : 'отопление'})` : '') + `.<br>`;
+                }
+                let marginLine = '';
+                if (targetPwr > 0) {
+                    const _mrg = Math.round((totalPwrLimit / targetPwr - 1) * 100);
+                    marginLine = `• Запас к расчётным теплопотерям: <b style="color:${_mrg >= 10 ? '#10B981' : (_mrg >= 0 ? '#F59E0B' : '#EF4444')};">${_mrg >= 0 ? '+' : ''}${_mrg} %</b>.<br>`;
                 }
 
                 // Расход ГВС и ΔT, при котором он дан, — из позиции (dhw, dhwDt; без поля — 25 °C).
@@ -48966,8 +49099,10 @@ const app = {
                     `<b>Формула подбора:</b> ${formulaStr}<br><br>` +
                     `<b>Подставленные значения:</b><br>` +
                     `• Расчетные теплопотери здания: ${targetPwr.toFixed(1)} кВт.<br>` +
+                    needLines +
                     `• Количество котлов${qty > 1 ? ' в каскаде' : ''}: ${qty} шт.<br>` +
                     `• Мощность подобранного котла: ${singlePower} кВт (${bkText}).<br>` +
+                    marginLine +
                     `${gvsValLine}` +
                     builtInValveLine +
                     condLine +
@@ -51181,8 +51316,12 @@ const app = {
                     }
                 } else if (ft === 'gas') {
                     // === ПОДБОР ГАЗОВОГО КОТЛА ===
-                    // Расчетная мощность (без запаса)
-                    let targetPower = parseFloat(pwrBoiler);
+                    // Теплопотери с запасом, а при бойлере косвенного нагрева — не
+                    // меньше мощности, которой он прогревается за час (см.
+                    // boilerTargetPower). По голым теплопотерям котёл подбирался
+                    // раньше: на нагрев бака не оставалось ничего.
+                    const _gbNeed = this.boilerTargetPower(pwrBoiler);
+                    let targetPower = _gbNeed.kw;
 
                     // Расчет необходимого количества котлов (каскад)
                     let qty = Math.ceil(targetPower / 24);
@@ -51249,7 +51388,7 @@ const app = {
                             extra: Math.round(_gbSingleAlt.extra || 0)
                         } : null;
                         gasBoiler = { ...gasBoiler, sortRank: -1, name: `Котёл газовый, ${_gbCircStr} (${gasBoiler.power} кВт)`, originalId: 'gas_boiler_auto', alts: this.gasBoilerPool(), ...(_gbAlt ? { gasSingleAlt: _gbAlt } : {}) };
-                        addToBill(gasBoiler, qty, this.getDesc('boiler_gas', parseFloat(pwrBoiler), gasBoiler.power, qty, _gbSrc, _gbBeyondHaier));
+                        addToBill(gasBoiler, qty, this.getDesc('boiler_gas', parseFloat(pwrBoiler), gasBoiler.power, qty, _gbSrc, _gbBeyondHaier, _gbNeed));
                         markRigAnchor('gas', 'gas_boiler_auto');
                         for (let k = 0; k < qty; k++) selBoilers.push(gasBoiler);
                     }
@@ -51305,61 +51444,22 @@ const app = {
         };
 
         if (this.state.hotWater) {
-            let hw_fixtures_vol = 0;
             this.state.waterZones = this.state.waterZones || [];
-            // Сбрасываем на каждом рендере: заполняется только при непустых санузлах,
-            // и без сброса подбор смесительного клапана ниже брал бы состав приборов
-            // от предыдущего пересчёта — на объекте без водоснабжения это давало
-            // клапан 1 1/4" вместо минимального.
-            this._dhwFixtures = null;
-            // Считаем потребность по санузлам (60°C вода)
-            if (this.state.water && this.state.waterZones.length > 0) {
-                let b = 0, s = 0, bs = 0;
-                this.state.waterZones.forEach(z => {
-                    if (z && z.fixtures) {
-                        b += (z.fixtures.bath || 0);
-                        s += (z.fixtures.shower || 0);
-                        bs += (z.fixtures.basin || 0) + (z.fixtures.bidet || 0);
-                    }
-                });
-                let raw_vol = (b * 120) + (s * 50) + (bs * 10);
+            // Объём бака, потребность по санузлам и состав приборов считает
+            // dhwTankPlan. Раньше всё это лежало здесь же по месту, но тот же
+            // объём нужен подбору котла выше по коду (мощность прогрева бака), а
+            // держать одно правило в двух местах нельзя — разъедется.
+            const _tankPlan = this.dhwTankPlan();
+            let hw_fixtures_vol = _tankPlan.fixturesVol;
+            // Состав приборов нужен ниже, в обвязке бойлера: по нему считается
+            // расчётный расход ГВС для подбора термостатического клапана. При
+            // пустых санузлах это null, и клапан берётся минимальный.
+            this._dhwFixtures = _tankPlan.fixtures;
 
-                // 1. Коэффициент разбавления горячей воды 60°C холодной 10°C до комфортных 40°C составляет 0.6 (60% горячей воды)
-                let mixed_vol = raw_vol * 0.6;
-
-                // 2. Коэффициент одновременного использования (СП 30.13330.2020)
-                let k_sim = 1.0;
-                let totalFixtures = b + s;
-                if (totalFixtures === 2) k_sim = 0.7;
-                else if (totalFixtures === 3) k_sim = 0.5;
-                else if (totalFixtures >= 4) k_sim = 0.4;
-
-                hw_fixtures_vol = Math.round(mixed_vol * k_sim);
-                // Состав приборов нужен ниже, в обвязке бойлера: по нему считается
-                // расчётный расход ГВС для подбора термостатического клапана.
-                this._dhwFixtures = { bath: b, shower: s, basin: bs, kSim: k_sim };
-            }
-
-            let volByRes = this.state.res >= 10 ? 500 : this.state.res >= 7 ? 300 : this.state.res >= 5 ? 200 : this.state.res >= 3 ? 150 : 100;
-            let targetVol = volByRes;
-            let chosenBy = 'res';
-            if (this.state.water && hw_fixtures_vol > 0) {
-                targetVol = Math.max(volByRes, hw_fixtures_vol);
-                chosenBy = 'fixtures';
-            }
-
-            let isWall = (this.state.tankMount === 'wall');
-            let vol;
-            if (this.state.tankVol) {
-                vol = this.state.tankVol;
-            } else {
-                vol = isWall ? 80 : 100;
-                if (targetVol > 80 && targetVol <= 100) vol = 100;
-                else if (targetVol > 100 && targetVol <= 150) vol = 150;
-                else if (targetVol > 150 && targetVol <= 200) vol = 200;
-                else if (targetVol > 200 && targetVol <= 300) vol = isWall ? 200 : 300;
-                else if (targetVol > 300) vol = isWall ? 200 : 500;
-            }
+            let targetVol = _tankPlan.targetVol;
+            let chosenBy = _tankPlan.chosenBy;
+            let isWall = _tankPlan.isWall;
+            let vol = _tankPlan.vol;
 
             let tankDb = this.getTankDb();
             let t = { ...( tankDb.find(x => x.vol === vol) || tankDb[tankDb.length - 1] ) };

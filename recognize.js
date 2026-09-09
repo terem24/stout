@@ -2985,6 +2985,14 @@ const RecognizeUI = {
         this.packPipes();
         this.markCoils();
         this.progressStop();
+        // Документ разобран — заводим карточку в планировщике прямо сейчас, не
+        // дожидаясь переноса в смету. Брошенный на этом экране разбор иначе не
+        // виден нигде: архив пишется только внутри apply().
+        app.beginRecognitionCard({
+            source: this._fileKind || (this._img ? 'image' : 'text'),
+            fileName: this._fileName || null,
+            rows: this._rows.length,
+        });
         this.step(2);
         this.renderReview();
     },
@@ -6434,6 +6442,11 @@ const RecognizeUI = {
             ourWorkPrices: this.ourWorkPricesOn(),
             addWorks,
         });
+
+        // Карточка, заведённая при разборе, идёт дальше по воронке: из «Распознано»
+        // в «Расчёты». Если номер у объекта был свой, отметка уже стоит — метод
+        // это проверяет сам.
+        app.markRecognitionApplied();
 
         // Смета перенесена — черновику здесь больше делать нечего: предлагать
         // «продолжить разбор» того, что уже уехало в смету, значит звать

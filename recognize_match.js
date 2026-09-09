@@ -580,6 +580,10 @@ const RecognizeMatch = (function () {
      * названная нейлоновой или кабельной, ловится прямо.
      */
     /^(?=[\s\S]*стяжк)(?![\s\S]*(цемент|бетон|раствор|присадк|армир|песчан|толщин|пистолет|лент|пола|полу))(?=[\s\S]*(нейлон|кабельн|пластиков|[хx*]\s*\d{2,3}))/i,
+    // «Хомут-стяжки ленточные 5х300 бел.» — та же кабельная стяжка, но слово
+    // «ленточные» попадало в исключение, оставленное для демпферной ленты.
+    // Пара «хомут-стяжка» другого смысла не имеет, поэтому ловим её прямо.
+    /хомут[\s-]*стяжк/i,
   ];
 
   function notOurRange(raw) {
@@ -1020,7 +1024,10 @@ const RecognizeMatch = (function () {
      * Ставим красную: в комплекте их две, и вторую строку монтажник добавит
      * сам — об этом сказано в пометке на экране проверки.
      */
-    { test: /vtp\.?\s?792|тестов\w*\s+заглуш/i, id: 'SFA-0035-200012',
+    // Окончание пишем классом букв: \w в JavaScript кириллицы не знает, и
+    // «тестовЫХ заглушек» это правило пропускало. Заодно ловим «временные
+    // заглушки» — так их называют в других счетах, изделие то же.
+    { test: /vtp\.?\s?792|(тестов|временн)[а-яё]*\s+заглуш/i, id: 'SFA-0035-200012',
       note: 'комплект Valtec = две пробки STOUT: красная SFA-0035-200012 и синяя SFA-0035-100012; синюю добавьте отдельной строкой' },
   ];
 
@@ -1660,6 +1667,59 @@ const RecognizeMatch = (function () {
     };
   }
 
+  /**
+   * Защитная втулка — не монтажная гильза.
+   *
+   * Это пластиковый стакан, который надевают на трубу в месте выхода из
+   * стяжки; цвет у него маркировочный — красная подача, синяя обратка, чёрная
+   * закрывает оба вывода. Монтажная гильза, с которой её путал подбор, —
+   * деталь аксиального соединения и вдвое дороже: «Русстар защитная втулка 20,
+   * чёрная» уходила в гильзу за 112 ₽ вместо втулки за 66 ₽.
+   *
+   * Своей формы у неё нет: в SHAPE_PATTERNS перечислены только монтажная
+   * гильза и зажимная втулка, поэтому втулка не попадала в кандидаты вовсе.
+   * Разбираем её отдельно — как гофру и монтажную планку, которые тоже не
+   * принадлежат ни одной трубной системе.
+   */
+  function isProtectSleeve(rec) {
+    const raw = String(rec.raw || '').toLowerCase();
+    return /втулк/.test(raw) && /защитн/.test(raw);
+  }
+
+  function matchProtectSleeve(rec) {
+    const pool = [].concat(
+      (typeof catalog !== 'undefined' && catalog.protective_sleeves) || [],
+      (typeof catalog !== 'undefined' && catalog.protective_sleeves_black) || []
+    ).filter((it) => it && it.name && /защитная втулка/i.test(it.name));
+    if (!pool.length) return null;
+
+    const raw = String(rec.raw || '').toLowerCase();
+    // Цвет назван — берём его. Не назван — чёрную: она универсальна.
+    const color = /красн/.test(raw) ? /красн/i
+      : /син/.test(raw) ? /син/i
+        : /чёрн|черн/.test(raw) ? /чёрн|черн/i : /чёрн|черн/i;
+
+    // «16/20» и «16-20» — это универсальная втулка на оба диаметра, а не
+    // выбор между ними: так она и подписана в каталоге.
+    const both = /16\s*[\/\-–]\s*20/.test(raw);
+    const size = both ? '16-20'
+      : /(^|[^\d])20([^\d]|$)/.test(raw) || rec.d === 20 ? '20' : '16';
+    const sizeRe = new RegExp('трубы\\s+' + size + '\\s*мм', 'i');
+
+    let best = pool.find((it) => color.test(it.name) && sizeRe.test(it.name))
+      || pool.find((it) => sizeRe.test(it.name))
+      || pool.find((it) => color.test(it.name));
+    if (!best) return null;
+
+    return {
+      item: best,
+      score: 1,
+      brandRank: brandRank(best),
+      needsApproval: brandRank(best) >= 3,
+      alternatives: pool.filter((it) => it !== best).slice(0, 3),
+    };
+  }
+
   function matchCatalog(rec, sysHint) {
     rec = normalize(rec);
 
@@ -1670,6 +1730,10 @@ const RecognizeMatch = (function () {
     // Бак к трубопроводу тоже не относится: его выбирают объём и назначение.
     if (isTank(rec)) return matchTank(rec);
     if (isCorrugated(rec)) return matchCorrugated(rec);
+    if (isProtectSleeve(rec)) {
+      const s = matchProtectSleeve(rec);
+      if (s) return s;
+    }
     // Консоль выбирают по вылету, а не по трубной системе.
     if (isConsole(rec)) {
       const c = matchConsole(rec);

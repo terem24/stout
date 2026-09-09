@@ -14923,7 +14923,9 @@ const app = {
                         byId[String(u.id)] = String(u.id);
                         if (u.email) byEmail[String(u.email).trim().toLowerCase()] = String(u.id);
                     });
-                    const evSel = 'calc_id, user_id, user_email, event';
+                    // source из meta — откуда взялся расчёт (распознавание, быстрый старт).
+                    // Тянем именно поле, а не весь meta: столбцу нужно одно слово.
+                    const evSel = 'calc_id, user_id, user_email, event, source:meta->>source';
                     const emails = Object.keys(byEmail);
                     const queries = [supabaseClient.from('invoice_events').select(evSel).in('user_id', userIds.map(String))];
                     if (emails.length) queries.push(supabaseClient.from('invoice_events').select(evSel).in('user_email', emails));
@@ -14949,11 +14951,18 @@ const app = {
                         if (e.calc_data && e.calc_data.calc_id) own.add(String(e.calc_data.calc_id));
                         if (e.share_id) own.add(String(e.share_id));
                     });
+                    // Отдельно — расчёты, выросшие из распознавания: метка source ставится
+                    // один раз, на событие 'calculated' (см. ensureCalcId). По ней видно,
+                    // сколько разобранных накладных дошло до сметы, а сколько осталось
+                    // лежать в архиве.
+                    const fromRecByUser = {};
                     evRows.forEach(e => {
                         if (!e.calc_id) return;
                         const owner = byId[String(e.user_id)]
                             || byEmail[String(e.user_email || '').trim().toLowerCase()];
-                        if (owner) bagIn(startedByUser, owner).add(String(e.calc_id));
+                        if (!owner) return;
+                        bagIn(startedByUser, owner).add(String(e.calc_id));
+                        if (e.source === 'recognition') bagIn(fromRecByUser, owner).add(String(e.calc_id));
                     });
                     // Расчёты — объединение: что видно по событиям плюс то, что уже лежит
                     // сохранённой сметой. У смет, сохранённых до появления отметки
@@ -14966,7 +14975,10 @@ const app = {
                         (startedByUser[owner] || new Set()).forEach(cid => all.add(cid));
                         let unsaved = 0;
                         all.forEach(cid => { if (!saved.has(cid)) unsaved++; });
-                        userCalcStats[owner] = { total: all.size, unsaved: unsaved };
+                        userCalcStats[owner] = {
+                            total: all.size, unsaved: unsaved,
+                            fromRec: (fromRecByUser[owner] || new Set()).size
+                        };
                     });
                 }
             } catch (e) {
@@ -15425,7 +15437,8 @@ const app = {
             // расчёта вовсе (старые записи), а «Смет 3, расчётов 1» — бессмыслица.
             u.calcStarted = calcStats ? Math.max((calcStats[String(u.id)] || {}).total || 0, u.projectsCount) : null;
             u.calcUnsaved = calcStats ? ((calcStats[String(u.id)] || {}).unsaved || 0) : null;
-            u.recognitions = this.recognitionCountFor(u);
+            u.calcFromRec = calcStats ? ((calcStats[String(u.id)] || {}).fromRec || 0) : null;
+            u.recStats = this.recognitionStatsFor(u);
         });
         // Архив распознаваний лежит на Beget и тянется отдельно от Supabase:
         // спрашиваем один раз за открытие панели, ответ перерисует список сам.
@@ -15786,11 +15799,22 @@ const app = {
                 ? u.calcStarted - u.calcUnsaved : null;
             const savedTxt = cSaved === null ? '—' : cSaved;
             const startedTxt = u.calcStarted === null || u.calcStarted === undefined ? '—' : u.calcStarted;
-            const recN = u.recognitions === null || u.recognitions === undefined ? '—' : u.recognitions;
             const nothingSavedColor = (cSaved === 0 && typeof u.calcStarted === 'number' && u.calcStarted > 0) ? '#D97706' : 'inherit';
             const activityLine =
-                `<span title="Довёл до сохранённой сметы: ${savedTxt}. Всего начинал расчётов: ${startedTxt}." style="color:${nothingSavedColor};">Сохранено: <b>${savedTxt}</b> (расчётов ${startedTxt})</span>`
-                + ` | <span title="Загрузок в распознавание за два года (архив на сервере)">Распознано: ${recN}</span>`;
+                `<span title="Довёл до сохранённой сметы: ${savedTxt}. Всего начинал расчётов: ${startedTxt}." style="color:${nothingSavedColor};">Сохранено: <b>${savedTxt}</b> (расчётов ${startedTxt})</span>`;
+
+            // Четвёртая строка — про распознавание. Накладные и планы этажей порознь:
+            // план в смету не превращается, он ложится подложкой под разметку, и в общем
+            // числе он только мешал бы понять, сколько разобрано закупок.
+            // «в смету» — сколько разобранных накладных дошло до расчёта; расхождение с
+            // первым числом и есть то, что осталось лежать в архиве.
+            const docsTxt = u.recStats ? u.recStats.docs : '—';
+            const plansTxt = u.recStats ? u.recStats.plans : '—';
+            const inBillTxt = u.calcFromRec === null || u.calcFromRec === undefined ? '—' : u.calcFromRec;
+            const recLostColor = (u.recStats && u.recStats.docs > 0 && u.calcFromRec === 0) ? '#D97706' : 'inherit';
+            const recognitionLine =
+                `<span title="Разобрано накладных и смет за два года: ${docsTxt}. Из них доведено до расчёта: ${inBillTxt}." style="color:${recLostColor};">Распознано: <b>${docsTxt}</b> (в смету ${inBillTxt})</span>`
+                + ` | <span title="Планы этажей, прочитанные распознаванием (в смету не переносятся — идут подложкой в разметку)">Планов: ${plansTxt}</span>`;
 
             h += `<tr class="active-row admin-list-row" data-search="${searchStr}" style="cursor: pointer; transition: 0.2s;" onclick="app.viewAdminUser('${u.id}')" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
                         <!-- Нумерация сквозная по всему списку, а не по странице: на второй
@@ -15802,7 +15826,7 @@ const app = {
                              Содержимое коротких и однотипных ячеек — сумма со
                              сметами, тариф с устройством, два переключателя
                              доступа — отдельной строки на каждую не стоило. -->
-                        <td class="admin-cell-half"><b style="color:var(--primary);">${u.ltv.toLocaleString()} ₽</b><br><span style="font-size:10px;color:var(--text-sec);">Смет: ${u.projectsCount} | Ср.объект: ${u.avgArea} м²</span><br><span style="font-size:10px;color:var(--text-sec);">${activityLine}</span></td>
+                        <td class="admin-cell-half"><b style="color:var(--primary);">${u.ltv.toLocaleString()} ₽</b><br><span style="font-size:10px;color:var(--text-sec);">Смет: ${u.projectsCount} | Ср.объект: ${u.avgArea} м²</span><br><span style="font-size:10px;color:var(--text-sec);">${activityLine}</span><br><span style="font-size:10px;color:var(--text-sec);">${recognitionLine}</span></td>
                         <td class="admin-cell-half">${badge}<br><span style="font-size:10px;color:var(--text-sec);">${device}</span></td>
                         <td onclick="event.stopPropagation();">${distCell}</td>
                         <td class="admin-cell-half" onclick="event.stopPropagation();" style="text-align:center;">${recCell}</td>
@@ -20442,17 +20466,23 @@ const app = {
     },
 
     /**
-     * Число распознаваний одного монтажника для списка пользователей.
+     * Распознавания одного монтажника для списка пользователей.
+     *
+     * Планы этажей считаются отдельно от накладных: это разная работа, и мешать
+     * их в одном числе нельзя — план не превращается в смету, он ложится
+     * подложкой под разметку.
      *
      * Ключ архива — почта (см. recognitionUserKey), а не id: архив лежит не в
      * Supabase и о внутренних идентификаторах базы не знает.
      */
-    recognitionCountFor: function (u) {
+    recognitionStatsFor: function (u) {
         const box = this._recCounts;
         if (!box) return null;                       // ещё считается
         if (box.error || box.serverOld) return null; // нечем считать — прочерк
         const row = box.byUser[this.recognitionUserKey(u)];
-        return row ? (row.n || 0) : 0;
+        const all = row ? (row.n || 0) : 0;
+        const plans = row ? (row.plans || 0) : 0;
+        return { docs: Math.max(0, all - plans), plans: plans, all: all };
     },
 
     /**
@@ -24444,9 +24474,9 @@ const app = {
         // «посчитать». Разница с числом сохранённых смет и показывает, сколько
         // человек бросил на полпути. Спрашиваем по своему монтажнику отдельно, а не
         // берём из списка: карточку открывают и из переписки, где страницы списка нет.
-        let calcStarted = null, calcUnsaved = null, calcSaved = null;
+        let calcStarted = null, calcUnsaved = null, calcSaved = null, calcFromRec = null;
         try {
-            const evSel = 'calc_id, event';
+            const evSel = 'calc_id, event, source:meta->>source';
             const qs = [supabaseClient.from('invoice_events').select(evSel).eq('user_id', String(user.id))];
             // До появления колонки user_id отметки подписывались только почтой
             if (user.email) qs.push(supabaseClient.from('invoice_events').select(evSel).eq('user_email', user.email));
@@ -24466,13 +24496,18 @@ const app = {
             // Плитка показывает доведённые до сметы, а не брошенные: та же
             // арифметика, что и в строке списка, только с положительной стороны.
             calcSaved = calcStarted - calcUnsaved;
+            // Сколько расчётов выросло из распознавания: метка ставится на событие
+            // 'calculated' (см. ensureCalcId). Разница с числом разобранных накладных
+            // и показывает, сколько так и осталось лежать в архиве.
+            calcFromRec = new Set(evRows.filter(e => e.source === 'recognition' && e.calc_id)
+                .map(e => String(e.calc_id))).size;
         } catch (e) {
             console.warn('[админка] расчёты монтажника не посчитаны:', e.message || e);
         }
         // Архив распознаваний лежит на Beget; на карточку он обычно уже загружен
         // списком пользователей. Если нет — просим и показываем прочерк.
         this.ensureRecognitionCounts();
-        const recCount = this.recognitionCountFor(user);
+        const recStats = this.recognitionStatsFor(user);
 
         let date = new Date(user.created_at).toLocaleDateString();
         let lastVis = user.last_visited ? new Date(user.last_visited).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Нет данных';
@@ -24539,9 +24574,15 @@ const app = {
                                 <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">расчётов: ${calcStarted === null ? '—' : calcStarted}</div>
                             </div>
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
-                                 title="Загрузок в распознавание за два года (архив на сервере)">
+                                 title="Накладных и смет, разобранных распознаванием за два года, и сколько из них дошло до расчёта">
                                 <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Распознано</div>
-                                <div style="font-size:20px; font-weight:800; color:var(--text-main);">${recCount === null ? '—' : recCount}</div>
+                                <div style="font-size:20px; font-weight:800; color:${(recStats && recStats.docs > 0 && calcFromRec === 0) ? '#D97706' : 'var(--text-main)'};">${recStats === null ? '—' : recStats.docs}</div>
+                                <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">в смету: ${calcFromRec === null ? '—' : calcFromRec}</div>
+                            </div>
+                            <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
+                                 title="Планы этажей, прочитанные распознаванием. В смету не переносятся — идут подложкой в разметку помещений">
+                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Планов</div>
+                                <div style="font-size:20px; font-weight:800; color:var(--text-main);">${recStats === null ? '—' : recStats.plans}</div>
                             </div>
                         </div>
 

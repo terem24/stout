@@ -37511,7 +37511,8 @@ const app = {
                     brand: _pprIsPA ? 'Pro Aqua' : 'Wavin Ekoplastik',
                     price: 0,
                     imgId: _pprIsPA ? 'PA39012' : 'STRS032RCT'
-                }
+                },
+                { id: 'bp_mp', name: 'Металлопластик PE-Xb/Al/PE-Xb, пресс', brand: 'STOUT', price: 0, imgId: 'SPM-0001-053230' }
             ];
         }
         else if (item.originalId && (item.originalId.startsWith('PA') || item.originalId.includes('RCT'))) {
@@ -38898,8 +38899,8 @@ const app = {
                 else if (alt.id === 'standard' || alt.id === 'basic') {
                     isActive = (alt.id === this.state.chimneyType);
                 }
-                else if (alt.id === 'ss304' || alt.id === 'ss316' || alt.id === 'bp_ppr') {
-                    isActive = ((alt.id === 'bp_ppr' ? 'ppr' : alt.id) === this.boilerPipeSystem());
+                else if (alt.id === 'ss304' || alt.id === 'ss316' || alt.id === 'bp_ppr' || alt.id === 'bp_mp') {
+                    isActive = ((alt.id === 'bp_ppr' ? 'ppr' : (alt.id === 'bp_mp' ? 'mp' : alt.id)) === this.boilerPipeSystem());
                 }
                 else if (alt.id === 'proaqua' || alt.id === 'wavin') {
                     isActive = (alt.id === this.state.pprSystemBrand);
@@ -40353,8 +40354,8 @@ const app = {
         // обжимается инструментом STOUT, а на полипропиленовую трубу не встанет ни тот,
         // ни другой. Поэтому выбор в любой строке раздела переключает материал всей
         // котельной — трубы, фитингов, хомутов и подводки баков (см. boilerPipeSystem).
-        if (chosenId === 'ss304' || chosenId === 'ss316' || chosenId === 'bp_ppr') {
-            this.state.boilerPipeSystem = (chosenId === 'bp_ppr') ? 'ppr' : chosenId;
+        if (chosenId === 'ss304' || chosenId === 'ss316' || chosenId === 'bp_ppr' || chosenId === 'bp_mp') {
+            this.state.boilerPipeSystem = (chosenId === 'bp_ppr') ? 'ppr' : ((chosenId === 'bp_mp') ? 'mp' : chosenId);
             // Точечные замены прежней системы больше не к чему привязать: тех артикулов
             // в смете не осталось, а висящий ключ вернул бы чужую позицию при возврате.
             Object.keys(this.state.swaps).forEach(k => {
@@ -48654,11 +48655,12 @@ const app = {
     //   'ss304' — нержавейка ROMMER AISI 304, пресс (RSS-10xx)
     //   'ss316' — нержавейка STOUT AISI 316L, пресс (SSS-20xx)
     //   'ppr'   — полипропилен PP-RCT / PP-R (Wavin либо Pro Aqua, см. pprSystemBrand)
+    //   'mp'    — металлопластик PE-Xb/Al/PE-Xb STOUT, латунный пресс (SPM-0001 + SFP-xxxx)
     //
     // null (монтажник не выбирал) — берём то же, что и раньше: посекционный тумблер
     // «Аналог» раздела 2, а если и он не тронут — режим бренда. Так поведение старых
     // смет не меняется от одного лишь появления линейки STOUT.
-    BOILER_PIPE_SYSTEMS: ['ss304', 'ss316', 'ppr'],
+    BOILER_PIPE_SYSTEMS: ['ss304', 'ss316', 'ppr', 'mp'],
     boilerPipeSystem: function () {
         const v = this.state.boilerPipeSystem;
         if (this.BOILER_PIPE_SYSTEMS.includes(v)) return v;
@@ -52662,6 +52664,28 @@ const app = {
                         addToBill(itemCopy, 1, "Крепление расширительного бака ГВС (L-кронштейн или комплект STOUT).", grp);
                     }
                     addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Подключение расширительного бака ГВС.", grp);
+                } else if (this.boilerPipeSystem() === 'mp') { // Металлопластик STOUT
+                    // Подводка та же по смыслу, что и на нержавейке (хомут + жёсткая
+                    // труба на пресс-фитингах), только типоразмер трубы 26, а не 22.
+                    // Хомут 3/4" (25–29 мм) на неё садится тот же.
+                    const _mp = (id) => (catalog.water_fittings_press_mp || []).find(x => x.id === id);
+                    let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
+                    let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
+                    if (clampItem) addToBill(clampItem, 1, "Хомут 3/4\" для фиксации трубы подводки перед расширительным баком ГВС.", grp);
+                    if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака ГВС.", grp);
+
+                    addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Отсечной вентиль для подключения расширительного бака ГВС.", grp);
+                    let maleElbow = _mp("SFP-0011-003426");
+                    let pressElbow = _mp("SFP-0009-002626");
+                    if (maleElbow) addToBill(maleElbow, 1, "Пресс-угольник-переходник 90° с наружной резьбой 3/4\"х26 для подключения к вентилю бака.", grp);
+                    if (pressElbow) addToBill(pressElbow, 2, "Пресс-угольник 90° 26х26 для обвязки бака.", grp);
+
+                    let frameBoilerPower = boilerPowerForPipes(selBoilers);
+                    let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
+                    let teeItem = (frameSsDiameter === 22) ? _mp("SFP-0006-262626") : _mp("SFP-0005-322632");
+                    if (teeItem) addToBill(teeItem, 1, (frameSsDiameter === 22)
+                        ? "Пресс-тройник равнопроходный 26х26х26 для врезки расширительного бака ГВС."
+                        : "Пресс-тройник переходной 32х26х32 для врезки расширительного бака ГВС.", grp);
                 } else { // Stainless steel (Stout)
                     let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
                     let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
@@ -53101,6 +53125,26 @@ const app = {
                         addToBill(itemCopy, 1, "Крепление расширительного бака.");
                     }
                     addToBill(catalog.tank_kit, 1, "Подключение бака.");
+                } else if (this.boilerPipeSystem() === 'mp') { // Металлопластик STOUT
+                    // См. бак ГВС выше: та же подводка, типоразмер трубы 26 вместо 22.
+                    const _mp = (id) => (catalog.water_fittings_press_mp || []).find(x => x.id === id);
+                    let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
+                    let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
+                    if (clampItem) addToBill(clampItem, 1, "Хомут 3/4\" для фиксации трубы подводки перед расширительным баком отопления.");
+                    if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака отопления.");
+
+                    addToBill(catalog.tank_kit, 1, "Отсечной вентиль для подключения расширительного бака.");
+                    let maleElbow = _mp("SFP-0011-003426");
+                    let pressElbow = _mp("SFP-0009-002626");
+                    if (maleElbow) addToBill(maleElbow, 1, "Пресс-угольник-переходник 90° с наружной резьбой 3/4\"х26 для подключения к вентилю бака.");
+                    if (pressElbow) addToBill(pressElbow, 2, "Пресс-угольник 90° 26х26 для обвязки бака.");
+
+                    let frameBoilerPower = boilerPowerForPipes(selBoilers);
+                    let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
+                    let teeItem = (frameSsDiameter === 22) ? _mp("SFP-0006-262626") : _mp("SFP-0005-322632");
+                    if (teeItem) addToBill(teeItem, 1, (frameSsDiameter === 22)
+                        ? "Пресс-тройник равнопроходный 26х26х26 для врезки расширительного бака."
+                        : "Пресс-тройник переходной 32х26х32 для врезки расширительного бака.");
                 } else { // Stainless steel (Stout)
                     let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
                     let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
@@ -53198,6 +53242,14 @@ const app = {
                     clampId = (ppr_diam === 32) ? "SAC-0020-200001" : "SAC-0020-300114"; // fallback to single M8 1 1/4" for 40
                 } else {
                     clampId = (ppr_diam === 32) ? "SAC-0020-300001" : "SAC-0020-300114";
+                }
+            } else if (this.boilerPipeSystem() === 'mp') { // Металлопластик STOUT
+                // Наружные диаметры 26 и 32 → хомуты 3/4" (25–28) и 1" (31–35).
+                let mp_diam = (frameSsDiameter === 22) ? 26 : 32;
+                if (isDoubleMode) {
+                    clampId = (mp_diam === 26) ? "SAC-0020-200034" : "SAC-0020-200001";
+                } else {
+                    clampId = (mp_diam === 26) ? "SAC-0020-300034" : "SAC-0020-300001";
                 }
             } else { // Stainless steel/Stout
                 if (isDoubleMode) {
@@ -53550,8 +53602,8 @@ const app = {
             }
         }
 
-        // === РАСЧЕТ ТРУБ И ПРЕСС-ФИТИНГОВ: НЕРЖАВЕЙКА ROMMER 304 / STOUT 316L / PPR (АНАЛОГ) ===
-        // Какая из трёх систем идёт в смету — решает boilerPipeSystem(), одно поле на всю
+        // === РАСЧЕТ ТРУБ И ПРЕСС-ФИТИНГОВ: НЕРЖАВЕЙКА ROMMER 304 / STOUT 316L / PPR / МЕТАЛЛОПЛАСТИК ===
+        // Какая из четырёх систем идёт в смету — решает boilerPipeSystem(), одно поле на всю
         // котельную. isAnalog оставлен под полипропилен: под ним завязана вся ветка ППР
         // ниже, включая изоляцию и подбор диаметра.
         let totalBoilerPower = boilerPowerForPipes(selBoilers);
@@ -53559,6 +53611,20 @@ const app = {
         let _bpSystem = this.boilerPipeSystem();
         let isAnalog = (_bpSystem === 'ppr');
         let is316 = (_bpSystem === 'ss316');
+        let isMp = (_bpSystem === 'mp');
+
+        // Металлопластик STOUT: труба PE-Xb/Al/PE-Xb (SPM-0001) на латунных пресс-фитингах
+        // SFP. Логический диаметр котельной 22/28 (он же наружный у нержавейки) ложится на
+        // 26х3,0 и 32х3,0 — внутренние 20,0 и 26,0 мм против 19,6 и 25,6 у нержавейки,
+        // то есть пропускная способность та же, и порог 30 кВт менять не пришлось.
+        const mpD = (d) => (d === 22 ? 26 : 32);
+        const mpItem = (id) => (catalog.water_fittings_press_mp || []).find(x => x.id === id);
+        // Резьбовые переходы линейки SFP: НР — SFP-0001, ВР — SFP-0002, номер собирается
+        // из кода резьбы и диаметра трубы. Пары 3/4" с Ø32 в линейке нет (вернётся
+        // undefined) — там сначала идёт муфта-переход 32х26, как у ППР с 40 на 32.
+        const _mpThCode = { '1/2': '0012', '3/4': '0034', '1': '0001' };
+        const mpThread = (kind, d, thKey) => mpItem(`SFP-000${kind === 'mi' ? '1' : '2'}-${_mpThCode[thKey]}${d}`);
+        const MP_RED_32_26 = 'SFP-0004-003226';
 
         // Расшифровка подбора диаметра для подсказки позиции: монтажник должен иметь
         // возможность пересчитать её на бумаге, а не верить порогу «30 кВт» на слово.
@@ -53568,8 +53634,12 @@ const app = {
             const dT = 20;
             let gasKw = 0, elKw = 0;
             selBoilers.forEach(b => { if (b) { if (b.type === 'gas') gasKw += b.power || 0; else elKw += b.power || 0; } });
-            const inner = isAnalog ? (ss_diameter === 22 ? 23.2 : 29.0) : (ss_diameter === 22 ? 19.6 : 25.6);
-            const label = isAnalog ? (ss_diameter === 22 ? '32х4,4 мм' : '40х5,5 мм') : (ss_diameter === 22 ? '22х1,2 мм' : '28х1,2 мм');
+            const inner = isAnalog ? (ss_diameter === 22 ? 23.2 : 29.0)
+                : isMp ? (ss_diameter === 22 ? 20.0 : 26.0)
+                    : (ss_diameter === 22 ? 19.6 : 25.6);
+            const label = isAnalog ? (ss_diameter === 22 ? '32х4,4 мм' : '40х5,5 мм')
+                : isMp ? (ss_diameter === 22 ? '26х3,0 мм' : '32х3,0 мм')
+                    : (ss_diameter === 22 ? '22х1,2 мм' : '28х1,2 мм');
             const flow = totalBoilerPower / (1.163 * dT);
             const area = Math.PI * Math.pow(inner / 1000, 2) / 4;
             const v = flow / 3600 / area;
@@ -53581,7 +53651,10 @@ const app = {
                     : `• Каскад однотипных котлов складывается по мощности.<br>`) +
                 `• Расход через контур: G = Q / (1,163 × Δt) = ${totalBoilerPower} / (1,163 × ${dT}) = <b>${flow.toFixed(2)} м³/ч</b> при Δt = ${dT} °C.<br>` +
                 `• Скорость: v = G / (3600 × S), труба ${label}, внутренний Ø ${String(inner).replace('.', ',')} мм → S = ${area.toExponential(2).replace('.', ',')} м² → <b>v = ${v.toFixed(2)} м/с</b>.<br>` +
-                `• Норма для жилых зданий — не более 1,2 м/с (СП 60.13330.2020, по шуму и износу). Отсюда и порог 30 кВт: на Ø22 он даёт 1,19 м/с, выше — переход на Ø28.<br>` +
+                (isMp
+                    ? `• Норма для жилых зданий — не более 1,2 м/с (СП 60.13330.2020, по шуму и износу). Порог 30 кВт общий для всех систем обвязки: на металлопластике 26х3,0 он даёт 1,14 м/с, выше — переход на 32х3,0.<br>` +
+                      `• Больше 32 мм в линейке металлопластика STOUT нет: с 53 кВт (там на Ø32 те же 1,2 м/с) обвязку надо вести нержавейкой или полипропиленом — переключите систему в строке трубы.<br>`
+                    : `• Норма для жилых зданий — не более 1,2 м/с (СП 60.13330.2020, по шуму и износу). Отсюда и порог 30 кВт: на Ø22 он даёт 1,19 м/с, выше — переход на Ø28.<br>`) +
                 (bothFuels
                     ? `• <b style="color:#F59E0B;">Проверьте схему:</b> если котлы у вас работают ОДНОВРЕМЕННО (электрический как пиковый, а не резервный), диаметр надо считать по сумме ${gasKw + elKw} кВт — тогда замените трубу и фитинги вручную.<br>`
                     : '');
@@ -53601,6 +53674,29 @@ const app = {
                 if (p_4m) {
                     let qty_4m = Math.ceil(L / 4);
                     addToBill(p_4m, qty_4m, desc.replace('из нержавеющей стали AISI 304', `PP-RCT STABI PLUS ${ppr_diam}x${ppr_diam === 32 ? '4.4' : '5.5'} мм (Чехия)`).replace('нержавеющей трубы', 'трубы PP-RCT STABI PLUS'), grp);
+                }
+            } else if (isMp) {
+                // Металлопластик считаем метрами, а не бухтами: на обвязку котельной
+                // уходит 10–20 м, а бухта у 26/32 мм — 50 м, и целая бухта в смете
+                // завысила бы трубу втрое. Цена в каталоге у этих позиций уже за метр
+                // (её так пишет парсер), поэтому asCoilPrice здесь не нужен — нужен
+                // ровно противоположный ему шаг: убрать len, чтобы строка не считалась
+                // бухтовой. Из названия по той же причине убираем хвост «(50 м)».
+                const _d = mpD(diam);
+                const _base = (catalog.metal_plastic_pipes || []).find(p => p.id === (_d === 26 ? 'SPM-0001-052630' : 'SPM-0001-053230'));
+                if (_base) {
+                    const { len, ..._rest } = _base;
+                    addToBill({
+                        ..._rest,
+                        name: `Труба металлопластиковая PE-Xb/Al/PE-Xb ${_d}x3.0`,
+                        unit: 'м',
+                        // originalId синтетический, не «SPM-0001-…»: по этому префиксу
+                        // getSwapAlternatives раньше отдаёт выбор материала разводки
+                        // (PEX / металлопластик / стабильная), и до ветки обвязки
+                        // котельной строка бы не дошла — см. ту же ловушку у трубы
+                        // тройниковой схемы.
+                        originalId: 'boiler_pipe_mp_' + _d
+                    }, Math.ceil(L), desc, grp);
                 }
             } else {
                 let p_4m = this.ssItem(catalog.ss_pipe_4m, `RSS-1001-0000${diam}`);
@@ -53665,6 +53761,18 @@ const app = {
                 const _pprMi = (_sepThKey === '1') ? 'SZE03232OKRCT' : 'SZE03225RCT';
                 addToBill(this.getPprItem(catalog.ppr_ekoplastik_adapter_mi, _pprMi), 2,
                     `Муфта комбинированная с наружной резьбой 32х${_sepTh} PP-RCT для присоединения сепаратора воздуха — у него внутренняя резьба с обеих сторон. Требуется: 2 шт.`, _airSepGrp);
+            } else if (isMp) {
+                let _mpDia = mpD(ss_diameter);
+                let _adp = mpThread('mi', _mpDia, _sepThKey);
+                if (!_adp) {
+                    // Пары 3/4" с Ø32 в линейке SFP нет — переходим муфтой на 26.
+                    addToBill(mpItem(MP_RED_32_26), 2,
+                        `Муфта пресс переходная 32х26 для перехода на диаметр 26 мм перед сепаратором воздуха. Требуется: 2 шт.`, _airSepGrp);
+                    _mpDia = 26;
+                    _adp = mpThread('mi', _mpDia, _sepThKey);
+                }
+                if (_adp) addToBill(_adp, 2,
+                    `Переходник с пресс-соединения ${_mpDia} на наружную резьбу ${_sepTh} для присоединения сепаратора воздуха — у него внутренняя резьба с обеих сторон. Требуется: 2 шт.`, _airSepGrp);
             } else {
                 const _adpId = { '22|3/4': 'RSS-1021-002234', '22|1': 'RSS-1021-000221', '28|3/4': 'RSS-1021-002834', '28|1': 'RSS-1021-000281' }[ss_diameter + '|' + _sepThKey];
                 const _adp = _adpId && this.ssItem(catalog.ss_adapter_mi, _adpId);
@@ -53693,6 +53801,10 @@ const app = {
                 }
                 addToBill(this.getPprItem(catalog.ppr_ekoplastik_adapter_mi, 'SZE03232OKRCT'), 2,
                     `Муфта комбинированная с наружной резьбой 32х1" PP-RCT — вкручивается в муфту на патрубке узла гидроразделения. Требуется: 2 шт.`, _hydroTieGrp);
+            } else if (isMp) {
+                const _tieAdp = mpThread('mi', mpD(ss_diameter), '1');
+                if (_tieAdp) addToBill(_tieAdp, 2,
+                    `Переходник с пресс-соединения ${mpD(ss_diameter)} на наружную резьбу 1" — вкручивается в муфту на патрубке узла гидроразделения. Требуется: 2 шт.`, _hydroTieGrp);
             } else {
                 const _tieAdp = this.ssItem(catalog.ss_adapter_mi, (ss_diameter === 22 ? 'RSS-1021-000221' : 'RSS-1021-000281'));
                 if (_tieAdp) addToBill(_tieAdp, 2,
@@ -53727,6 +53839,10 @@ const app = {
                 if (isAnalog) {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_elbow90, ss_diameter === 22 ? 'SKO03290RCT' : 'SKO04090RCT'), 2,
                         `Угольник 90° PP-RCT ${ss_diameter === 22 ? 32 : 40} мм на повороте подводки от котла (${bName}) к узлу гидроразделения. Требуется: 2 шт.`, grp);
+                } else if (isMp) {
+                    const _mpElb = mpItem(ss_diameter === 22 ? 'SFP-0009-002626' : 'SFP-0009-003232');
+                    if (_mpElb) addToBill(_mpElb, 2,
+                        `Пресс-угольник 90° ${mpD(ss_diameter)}х${mpD(ss_diameter)} на повороте подводки от котла (${bName}) к узлу гидроразделения. Требуется: 2 шт.`, grp);
                 } else {
                     const _elb = this.ssItem(catalog.ss_elbow90_ff, (ss_diameter === 22 ? 'RSS-1003-000022' : 'RSS-1003-000028'));
                     if (_elb) addToBill(_elb, 2,
@@ -53746,6 +53862,19 @@ const app = {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_elbow90, 'SKO04090RCT'), 2, `Угольник 90° PP-RCT 40 мм для поворотов трубопровода при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_elbow45, 'SKO04045RCT'), 2, `Угольник 45° PP-RCT 40 мм для обхода препятствий и плавных поворотов при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee_red, 'STKR04032RCT'), 2, `Тройник переходной 40х32х40 PP-RCT для ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
+                }
+            } else if (isMp) {
+                // Угольников 45° в линейке SFP нет, и они не нужны: металлопластик
+                // держит форму и плавные обходы на нём делают гибкой трубой, а не
+                // фитингом. Поэтому здесь только 90°, тройник и резьбовой переход.
+                if (ss_diameter === 22) {
+                    addToBill(mpThread('fi', 26, '3/4'), 2, `Переходник с пресс-соединения 26 на внутреннюю резьбу 3/4" для подключения металлопластиковой трубы к патрубкам котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(mpItem('SFP-0009-002626'), 2, `Пресс-угольник 90° 26х26 для выполнения поворотов трубопровода при обвязке котла (${bName}). Плавные обходы делаются гибом самой трубы. Требуется: 2 шт.`, grp);
+                    addToBill(mpItem('SFP-0006-262626'), 2, `Пресс-тройник равнопроходный 26х26х26 для создания ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
+                } else {
+                    addToBill(mpThread('fi', 32, '1'), 2, `Переходник с пресс-соединения 32 на внутреннюю резьбу 1" для подключения металлопластиковой трубы к патрубкам котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(mpItem('SFP-0009-003232'), 2, `Пресс-угольник 90° 32х32 для выполнения поворотов трубопровода при обвязке котла (${bName}). Плавные обходы делаются гибом самой трубы. Требуется: 2 шт.`, grp);
+                    addToBill(mpItem('SFP-0005-322632'), 2, `Пресс-тройник переходной 32х26х32 для создания ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
                 }
             } else {
                 if (ss_diameter === 22) {
@@ -53780,6 +53909,28 @@ const app = {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_elbow90, 'SKO04090RCT'), 4, `Угольник 90° PP-RCT 40 мм для поворотов трубопровода греющего контура бойлера ГВС. Требуется: 4 шт.`, grp);
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_elbow45, 'SKO04045RCT'), 2, `Угольник 45° PP-RCT 40 мм для обхода препятствий и плавных поворотов в обвязке бойлера ГВС. Требуется: 2 шт.`, grp);
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee_red, 'STKR04032RCT'), 2, `Тройник переходной 40х32х40 PP-RCT для ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
+                }
+            } else if (isMp) {
+                // Резьба переходника — по ПАСПОРТНОМУ патрубку змеевика, а не по трубе.
+                // В линейке SFP на Ø26 есть и 3/4", и 1", поэтому на 26-й трубе змеевик
+                // любого размера закрывается одним переходником — в отличие от
+                // нержавейки, где под 1" приходится добирать резьбовым переходом.
+                const _coilPort = (this._tankPorts && this._tankPorts.coil) || '1"';
+                const _coilKey = (_coilPort === '1"') ? '1' : '3/4';
+                if (ss_diameter === 22) {
+                    addToBill(mpThread('fi', 26, _coilKey), 2, `Переходник с пресс-соединения 26 на внутреннюю резьбу ${_coilPort} для подключения металлопластиковой трубы к патрубкам змеевика бойлера ГВС. Патрубок змеевика — ${_coilPort} по паспорту. Требуется: 2 шт.`, grp);
+                    addToBill(mpItem('SFP-0009-002626'), 4, `Пресс-угольник 90° 26х26 для поворотов трубопровода греющего контура бойлера ГВС. Плавные обходы делаются гибом самой трубы. Требуется: 4 шт.`, grp);
+                    addToBill(mpItem('SFP-0006-262626'), 2, `Пресс-тройник равнопроходный 26х26х26 для ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
+                } else {
+                    // 3/4" на Ø32 в линейке нет — под такой змеевик сначала муфта 32х26.
+                    if (_coilKey === '3/4') {
+                        addToBill(mpItem(MP_RED_32_26), 2, `Муфта пресс переходная 32х26 для перехода на диаметр 26 мм перед змеевиком бойлера ГВС (патрубок 3/4"). Требуется: 2 шт.`, grp);
+                        addToBill(mpThread('fi', 26, '3/4'), 2, `Переходник с пресс-соединения 26 на внутреннюю резьбу 3/4" для подключения к патрубкам змеевика бойлера ГВС. Требуется: 2 шт.`, grp);
+                    } else {
+                        addToBill(mpThread('fi', 32, '1'), 2, `Переходник с пресс-соединения 32 на внутреннюю резьбу 1" для подключения металлопластиковой трубы к патрубкам змеевика бойлера ГВС. Требуется: 2 шт.`, grp);
+                    }
+                    addToBill(mpItem('SFP-0009-003232'), 4, `Пресс-угольник 90° 32х32 для поворотов трубопровода греющего контура бойлера ГВС. Плавные обходы делаются гибом самой трубы. Требуется: 4 шт.`, grp);
+                    addToBill(mpItem('SFP-0005-322632'), 2, `Пресс-тройник переходной 32х26х32 для ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
                 }
             } else {
                 // Резьба переходника — по ПАСПОРТНОМУ патрубку змеевика, а не по
@@ -53816,6 +53967,14 @@ const app = {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee, 'STK032RCTX'), 1, `Тройник PP-RCT 32 мм для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
                 } else {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee_red, 'STKR04032RCT'), 1, `Тройник переходной 40х32х40 PP-RCT для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
+                }
+            } else if (isMp) {
+                addToBill(mpThread('mi', 26, '3/4'), 1, `Переходник с пресс-соединения 26 на наружную резьбу 3/4" для подключения металлопластиковой трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
+                addToBill(mpItem('SFP-0009-002626'), 1, `Пресс-угольник 90° 26х26 для подведения трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
+                if (ss_diameter === 22) {
+                    addToBill(mpItem('SFP-0006-262626'), 1, `Пресс-тройник равнопроходный 26х26х26 для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
+                } else {
+                    addToBill(mpItem('SFP-0005-322632'), 1, `Пресс-тройник переходной 32х26х32 для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
                 }
             } else {
                 addToBill(this.ssItem(catalog.ss_adapter_mi, 'RSS-1021-002234'), 1, `Переходник с пресс-соединения на наружную резьбу 3/4" для подключения нержавеющей трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
@@ -53865,6 +54024,14 @@ const app = {
                 } else {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee_red, 'STKR04032RCT'), 1, `Тройник переходной 40х32х40 PP-RCT для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
                 }
+            } else if (isMp) {
+                addToBill(mpThread('mi', 26, '3/4'), 1, `Переходник с пресс-соединения 26 на наружную резьбу 3/4" для подключения металлопластиковой трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
+                addToBill(mpItem('SFP-0009-002626'), 1, `Пресс-угольник 90° 26х26 для подведения трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
+                if (ss_diameter === 22) {
+                    addToBill(mpItem('SFP-0006-262626'), 1, `Пресс-тройник равнопроходный 26х26х26 для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
+                } else {
+                    addToBill(mpItem('SFP-0005-322632'), 1, `Пресс-тройник переходной 32х26х32 для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
+                }
             } else {
                 addToBill(this.ssItem(catalog.ss_adapter_mi, 'RSS-1021-002234'), 1, `Переходник с пресс-соединения на наружную резьбу 3/4" для подключения нержавеющей трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
                 addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000022'), 1, `Пресс-угольник 90° В-В диаметром 22 мм для подведения трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
@@ -53885,7 +54052,9 @@ const app = {
                 let listComponents = uniqueComponents.join(", ");
                 let pipeName = isAnalog
                     ? ((this.state.pprSystemBrand === 'proaqua' || !this.state.pprSystemBrand) ? "Труба PP-R DUO SDR 6" : "Труба PP-RCT")
-                    : (is316 ? "Труба из нержавеющей стали AISI 316L" : "Труба из нержавеющей стали AISI 304");
+                    : isMp
+                        ? "Труба металлопластиковая PE-Xb/Al/PE-Xb"
+                        : (is316 ? "Труба из нержавеющей стали AISI 316L" : "Труба из нержавеющей стали AISI 304");
                 // Расшифровка подбора диаметра идёт отдельным хвостом: addPipesToBill
                 // подменяет в описании название трубы под ППР, и её текст под замену
                 // попадать не должен.
@@ -53912,7 +54081,10 @@ const app = {
             const _insMap = catalog.boiler_insulation || {};
             // В режиме ROMMER магистрали котельной идут в PP-RCT: логический диаметр
             // 22 — это труба 32, а 28 — труба 40. Изоляция считается по фактической.
-            const _insDiamOf = d => isAnalog ? (d === 22 ? 35 : 42) : d;
+            // Металлопластик 26 и 32 — своего типоразмера трубки под 26 в линейках нет,
+            // поэтому берётся ближайшая большая: 28/6 ПРОТЕКТ ПРО на Ø26 и K-FLEX 35/9
+            // на Ø32. Обе садятся на трубу с натягом по шву, зазора не остаётся.
+            const _insDiamOf = d => isAnalog ? (d === 22 ? 35 : 42) : (isMp ? (d === 22 ? 28 : 35) : d);
             Object.keys(ss_pipes_demand).forEach(diam => {
                 const _len = ss_pipes_demand[diam].length;
                 if (_len <= 0) return;
@@ -53920,7 +54092,9 @@ const app = {
                 if (!_set) return;
                 const _pipeLabel = isAnalog
                     ? `PP-RCT ${_insDiamOf(parseInt(diam, 10)) === 35 ? 32 : 40} мм`
-                    : `нержавейка Ø${diam} мм`;
+                    : isMp
+                        ? `металлопластик ${mpD(parseInt(diam, 10))}х3,0 мм`
+                        : `нержавейка Ø${diam} мм`;
                 if (_set.blue) {
                     // Половина метража на подачу, половина на обратку — как в разводке.
                     const _half = Math.ceil(_len / 2);

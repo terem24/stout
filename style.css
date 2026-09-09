@@ -11047,6 +11047,22 @@ select.rec-btn-g { padding-right: 8px; }
     text-align: left; vertical-align: top;
 }
 .rec-table th { background: var(--surface-light, #f1f5f9); position: sticky; top: 0; z-index: 1; }
+
+/**
+ * Колонке без ширины нужен пол, иначе она схлопывается в ноль.
+ *
+ * В таблицах распознавания у одной колонки ширина не задана — она забирает
+ * остаток: в проверке это «Подобрано в каталоге», в работах «Работа из
+ * документа», в сравнении «Наш аналог». При table-layout: fixed остаток может
+ * оказаться нулевым, и тогда текст ячейки не переносится, а вылезает поверх
+ * соседней: на экране проверки название подобранной позиции ложилось прямо на
+ * цену. Порог — сумма заданных ширин плюс место для этой колонки; уже него
+ * таблица прокручивается вбок (у .rec-tablewrap для этого есть overflow-x).
+ */
+.rec-rev-table { min-width: 1160px; }     /* 970 заданных + 190 на подбор */
+.rec-works-table { min-width: 1080px; }   /* 858 заданных + 222 на работу */
+.rec-cmp-table { min-width: 930px; }      /* 730 заданных + 200 на аналог */
+
 /* Жёлтый — только «не нашлось в каталоге». Неполное совпадение пишется
    текстом в ячейке подбора и фон не красит. */
 .rec-table tr.rec-nomatch td { background: rgba(245, 158, 11, .2); }
@@ -11092,7 +11108,7 @@ body.dark-mode .rec-nohave { color: #FBBF24; }
 
 /* Тип резьбы — самая частая ошибка распознавания, поэтому переключается
    кнопкой, а не правкой текста. */
-.rec-tgroup { display: flex; gap: 2px; margin-top: 3px; }
+.rec-tgroup { display: flex; gap: 2px; margin-top: 3px; flex-wrap: wrap; }
 .rec-tbtn {
     background: var(--surface-light, #e2e8f0); color: var(--text-sec, #64748b);
     border: 0; border-radius: 4px; padding: 2px 5px;

@@ -4313,7 +4313,7 @@ const RecognizeUI = {
           ${this.renderControls(found.length, eqTotal, works, noQty, badN)}
           ${this.renderSelectionBar(selN)}
           <div class="rec-tablewrap">
-            <table class="rec-table">
+            <table class="rec-table rec-rev-table">
               <colgroup><col style="width:30px"><col style="width:170px"><col style="width:140px">
                 <col style="width:50px"><col style="width:100px"><col style="width:70px">
                 <col><col style="width:72px"><col style="width:82px">
@@ -4920,7 +4920,7 @@ const RecognizeUI = {
           </div>` : ''}
 
           ${!works.length ? '' : `<div class="rec-tablewrap">
-            <table class="rec-table">
+            <table class="rec-table rec-works-table">
               <colgroup><col><col style="width:110px"><col style="width:86px"><col style="width:96px">
                 <col style="width:300px"><col style="width:96px"><col style="width:96px">
                 <col style="width:74px"></colgroup>

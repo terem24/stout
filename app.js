@@ -35021,24 +35021,76 @@ const app = {
         { key: 'flat', icon: '🏢', title: 'Квартира', note: 'приборы отопления от стояка, вода, канализация' }
     ],
 
-    // Выбор объекта в окне первого запуска. Дом ведёт дальше, к типовым объектам;
-    // квартира пока просто включает режим — типовых квартир ещё нет.
-    applyQuickStartType: function (type) {
-        if (type === 'flat') {
-            this.closeQuickStart(true);
-            try { localStorage.setItem('quick_start_used', '1'); } catch (e) { }
-            this.setObjectType('flat');
-            return;
+    // Типовые квартиры. Смысл тот же, что и у домов: человек берёт похожее на
+    // своё и правит частности уже по готовой смете, а не по пустой форме.
+    //
+    // Различает образцы не метраж, а разводка отопления: в старом фонде приборы
+    // висят на стояках и покупается только их обвязка, в новостройке разводка
+    // своя, от этажного коллектора, — при одной и той же площади это две разные
+    // сметы. Поэтому два образца стояковых и один коллекторный.
+    //
+    // Тёплый пол везде электрический: водяной от общедомового стояка разрешён
+    // только на первом этаже (см. flatUfhKind), а типовая квартира — средний.
+    QUICK_START_FLAT_PRESETS: [
+        {
+            key: 'flat40',
+            icon: '🛋️',
+            title: 'Однушка 40 м²',
+            note: 'панельный дом, приборы на стояках, вода и канализация',
+            state: {
+                area: 40, flatHouse: 'panel', flatPosition: 'middle', flatCorner: false,
+                flatRiser: 'riser', flatHotRiser: true, flatBaths: 1,
+                systems: ['rad'], tp1: 0, tp2: 0,
+                water: true, flatSewer: true
+            }
+        },
+        {
+            key: 'flat60',
+            icon: '🏢',
+            title: 'Двушка 60 м², угловая',
+            note: 'кирпичный дом, приборы на стояках, тёплый пол в санузле',
+            state: {
+                area: 60, flatHouse: 'brick', flatPosition: 'middle', flatCorner: true,
+                flatRiser: 'riser', flatHotRiser: true, flatBaths: 1,
+                systems: ['rad', 'tp'], tp1: 6, tp2: 0,
+                flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'electro',
+                flatUfhZones: 1,
+                water: true, flatSewer: true
+            }
+        },
+        {
+            key: 'flat75new',
+            icon: '🏗️',
+            title: 'Новостройка 75 м²',
+            note: 'монолит, своя разводка от коллектора, два санузла',
+            state: {
+                area: 75, flatHouse: 'monolith', flatPosition: 'middle', flatCorner: false,
+                flatRiser: 'own', flatHotRiser: true, flatBaths: 2,
+                systems: ['rad', 'tp'], tp1: 12, tp2: 0,
+                flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'wifi',
+                flatUfhZones: 2,
+                water: true, flatSewer: true
+            }
         }
-        this.setObjectType('house');
+    ],
+
+    // Выбор объекта в окне первого запуска. Оба ответа ведут дальше, к типовым
+    // объектам своего рода: дома к домам, квартиры к квартирам.
+    applyQuickStartType: async function (type) {
+        const flat = (type === 'flat');
+        // Режим переключаем до окна, а не после: setObjectType чистит расчёт
+        // (внутри await reset), и пресет, применённый раньше, был бы стёрт.
+        // Ждём по той же причине — функция асинхронная.
+        await this.setObjectType(flat ? 'flat' : 'house');
         this.closeQuickStart(true);
         // Не через кадр и не через ноль: closeQuickStart снимает узел своим
         // таймером, и окно, открытое раньше, увидело бы старое и не открылось.
-        setTimeout(() => this.showQuickStart('presets'), 30);
+        setTimeout(() => this.showQuickStart(flat ? 'flats' : 'presets'), 30);
     },
 
     showQuickStart: function (step) {
         if (document.getElementById('quick_start_overlay')) return;
+        if (step === 'flats') return this.showQuickStartFlats();
         if (step !== 'presets' && this.flatModeAllowed()) return this.showQuickStartTypes();
         const cards = this.QUICK_START_PRESETS.map(p => `
             <button type="button" class="quick-start-card" onclick="app.applyQuickStart('${p.key}')"
@@ -35120,6 +35172,46 @@ const app = {
         setTimeout(() => { wrap.classList.add('active'); this.syncModalOverlayClass(); }, 20);
     },
 
+    // Окно типовых квартир. Отдельным методом, а не общим с домами: заголовок
+    // и список свои, а разводить их условиями внутри одного метода — тот же
+    // объём кода, только читать труднее.
+    showQuickStartFlats: function () {
+        if (document.getElementById('quick_start_overlay')) return;
+        const cards = this.QUICK_START_FLAT_PRESETS.map(p => `
+            <button type="button" class="quick-start-card" onclick="app.applyQuickStart('${p.key}')"
+                aria-label="${p.title}: ${p.note}"
+                style="display:flex; align-items:center; gap:14px; width:100%; text-align:left; cursor:pointer;
+                       background:var(--bg); border:1px solid var(--border); border-radius:14px;
+                       padding:14px 16px; margin-bottom:10px; transition:0.15s;">
+                <span style="font-size:30px; line-height:1; flex:0 0 auto;">${p.icon}</span>
+                <span style="flex:1 1 auto;">
+                    <span style="display:block; font-size:15px; font-weight:700; color:var(--text-main);">${p.title}</span>
+                    <span style="display:block; font-size:12.5px; color:var(--text-sec); margin-top:2px;">${p.note}</span>
+                </span>
+                <span style="font-size:18px; color:var(--primary); flex:0 0 auto;">›</span>
+            </button>`).join('');
+        const wrap = document.createElement('div');
+        wrap.id = 'quick_start_overlay';
+        wrap.className = 'custom-modal-overlay';
+        wrap.onclick = (e) => { if (e.target === wrap) app.closeQuickStart(); };
+        wrap.innerHTML = `
+            <div class="custom-modal" style="max-width:520px; padding:32px 28px; text-align:left;">
+                <span class="auth-modal-close" onclick="app.closeQuickStart()"
+                    style="top:6px; right:8px; padding:10px 14px;">&times;</span>
+                <div class="custom-modal-title" style="font-size:20px; margin-bottom:6px;">Похожая квартира</div>
+                <div class="custom-modal-text" style="margin-bottom:18px;">
+                    Выберите ближайшую к вашей — калькулятор сразу подберёт приборы, обвязку,
+                    воду и работы. Площадь, этаж и оборудование поправите уже по готовой смете.
+                </div>
+                ${cards}
+                <button type="button" class="custom-modal-btn custom-modal-close" style="margin-top:6px;"
+                    onclick="app.closeQuickStart()">Настрою сам</button>
+            </div>`;
+        document.body.appendChild(wrap);
+        if (typeof Tour !== 'undefined' && Tour.active()) Tour.hideCard();
+        setTimeout(() => { wrap.classList.add('active'); this.syncModalOverlayClass(); }, 20);
+    },
+
     closeQuickStart: function (instant) {
         const wrap = document.getElementById('quick_start_overlay');
         if (!wrap) return;
@@ -35128,7 +35220,11 @@ const app = {
     },
 
     applyQuickStart: function (key) {
-        const preset = this.QUICK_START_PRESETS.find(p => p.key === key);
+        // Ключи домов и квартир не пересекаются, поэтому ищем в обоих списках:
+        // окно квартир зовёт этот же метод, и второй, почти такой же, разошёлся
+        // бы с первым на первой же правке.
+        const flatPreset = this.QUICK_START_FLAT_PRESETS.find(p => p.key === key);
+        const preset = flatPreset || this.QUICK_START_PRESETS.find(p => p.key === key);
         if (!preset) return;
         this.closeQuickStart(true);
         // Больше не показываем: человек стартом воспользовался.
@@ -35137,8 +35233,28 @@ const app = {
         // Метка для события 'calculated' (см. ensureCalcId): по ней видно, сколько
         // смет начинается с шаблона, а сколько — с пустой формы.
         this._quickStartPreset = preset.key;
-        this.state.objectType = 'house';
-        this.autoCalcZones();
+        this.state.objectType = flatPreset ? 'flat' : 'house';
+        if (flatPreset) {
+            // Тип дома — это множитель теплопотерь, тот же state.mat, что у дома.
+            this.state.mat = this.FLAT_HOUSE_MAT[this.state.flatHouse] || 1.0;
+            // Комнаты, окна и жильцы в квартире считаются от площади. Ручные
+            // отметки снимаем: они могли остаться от прежнего расчёта, и тогда
+            // однушка получила бы окна и жильцов от трёхкомнатной.
+            this.state.flatRoomsManual = false;
+            this.state.flatResManual = false;
+            this.state.winManual = false;
+            this.syncFlatWindows();
+            // На стояке приборы только бокового подключения
+            this.applyRiserRadType();
+            // Вода в квартире — один выключатель: за ним ввод и горячая
+            this.syncFlatWater();
+            // Точки водоразбора типовым набором по числу санузлов. Подробный
+            // режим гасим: быстрый старт на то и быстрый.
+            this.state.detailedRooms = false;
+            this.syncFlatWaterZones();
+        } else {
+            this.autoCalcZones();
+        }
         this.syncUI();
         this.render();
         this.saveState();

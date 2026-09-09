@@ -178,8 +178,10 @@ def collect_catalog_items(content):
         brand = brand_m.group(1) if brand_m else None
         unit_m = re.search(r'["\']?unit["\']?\s*:\s*["\']([^"\']*)["\']', own_text, re.IGNORECASE)
         unit = unit_m.group(1) if unit_m else None
-        has_len = bool(re.search(r'\blen\s*:\s*\d', own_text))
-        items.append({'sku': sku, 'old_price': old_price, 'match': match, 'start_idx': start_idx, 'end_idx': end_idx, 'obj_text': obj_text, 'price_date': price_date, 'brand': brand, 'unit': unit, 'coil_family': has_len})
+        len_m = re.search(r'\blen\s*:\s*(\d+(?:\.\d+)?)', own_text)
+        own_len = float(len_m.group(1)) if len_m else None
+        has_len = own_len is not None
+        items.append({'sku': sku, 'old_price': old_price, 'match': match, 'start_idx': start_idx, 'end_idx': end_idx, 'obj_text': obj_text, 'price_date': price_date, 'brand': brand, 'unit': unit, 'coil_family': has_len, 'own_len': own_len})
 
     # «Бухтовое» семейство: у позиции или у объекта, в который она вложена, есть
     # поле len — длина бухты. Калькулятор (asCoilPrice в app.js) умножает на неё
@@ -187,6 +189,11 @@ def collect_catalog_items(content):
     # даже если unit не проставлен (теплоизоляция Energoflex внутри труб SPI).
     # Признак наследуется от родителя: проход по объектам в порядке текста со
     # стеком открытых родителей.
+    #
+    # Тем же способом наследуется unit "м": у вложенной замены ROMMER своего
+    # unit нет, а цена у неё за метр — ровно как у родителя (труба PEX-a в
+    # water_pipes, 175 ₽/м, и её ROMMER-аналог за 86 ₽/м). Без наследования
+    # такая замена считалась «ценой за штуку», и в неё уехала бы цена бухты.
     items.sort(key=lambda x: x['start_idx'])
     parents = []
     for it in items:
@@ -194,8 +201,80 @@ def collect_catalog_items(content):
             parents.pop()
         if parents and parents[-1]['coil_family']:
             it['coil_family'] = True
+        if parents and not (it.get('unit') or '').strip()                 and (parents[-1].get('unit') or '').strip().lower() in PER_METER_UNITS:
+            it['unit'] = parents[-1]['unit']
         parents.append(it)
     return items
+
+
+# ---------------------------------------------------------------------------
+# Цена за метр
+# ---------------------------------------------------------------------------
+#
+# Часть каталога хранит цену ЗА МЕТР, а сайт продаёт ту же позицию бухтой или
+# штангой: труба 16х2,0 стоит в каталоге 143 ₽, а на карточке — 14 300 ₽. Раньше
+# такие позиции целиком выбрасывались из очереди, и все трубы каталога
+# обновлялись только руками — 106 строк на 09.09.2026.
+#
+# Пересчитать их есть чем: над ценой карточка пишет, сколько товара эта цена
+# покрывает — «цена за 100 м», «цена за 10 м», «цена за 2 м», «цена за шт.»
+# (в разметке это title_price, рядом лежит то же число в RATIO). Делим цену на
+# это количество — и позиция обновляется наравне со всеми.
+#
+# Брать длину бухты из каталога вместо этой подписи нельзя, хотя соблазн есть:
+# у трубы стабильной SPS-0002-001626 в каталоге бухта 100 м, а карточка даёт
+# «цена за 10 м» — деление на 100 записало бы 26,6 ₽/м вместо 266. Считает
+# только то, что написано на самой карточке.
+#
+# «Цена за шт.» у метровой позиции — это штанга (трубка изоляции 2 м): длину
+# берём из её собственного поля len. Собственного, не родительского: у
+# теплоизоляции Energoflex внутри трубы SPI своя фасовка при родительской бухте
+# 100 м. Нет ни того, ни другого — позиция остаётся ручной, цену не трогаем.
+PER_METER_UNITS = ('м', 'м.', 'метр', 'п.м', 'п.м.')
+
+# «цена за 100 м», «цена за 2 м», «цена за шт.»
+PRICE_RATIO_RE = re.compile(r'цена\s+за\s+(?:(\d+(?:[.,]\d+)?)\s*)?(метр\w*|м|шт\w*)', re.IGNORECASE)
+
+
+def is_per_meter(item):
+    """Цена позиции в каталоге записана за метр, а не за штуку или бухту."""
+    item = item or {}
+    unit = (item.get('unit') or '').strip().lower()
+    if unit in PER_METER_UNITS:
+        return True
+    return not unit and item.get('coil_family', False)
+
+
+def parse_price_ratio(text):
+    """Подпись над ценой -> ('м'|'шт', количество). Не нашли — None."""
+    m = PRICE_RATIO_RE.search(text or '')
+    if not m:
+        return None
+    qty = float((m.group(1) or '1').replace(',', '.'))
+    unit = 'м' if m.group(2).lower().startswith('м') else 'шт'
+    return unit, qty
+
+
+def to_catalog_price(price, ratio, item):
+    """Цена с карточки -> цена в единицах каталога. None — пересчитать нечем."""
+    if not price:
+        return None
+    if not is_per_meter(item):
+        return price
+    length = None
+    if ratio and ratio[0] == 'м':
+        length = ratio[1]
+    elif (item or {}).get('own_len'):
+        length = item['own_len']
+    if not length:
+        return None
+    value = round(price / length, 2)
+    return int(value) if abs(value - round(value)) < 1e-9 else value
+
+
+def fmt_qty(qty):
+    """Количество для лога: 100, а не 100.0."""
+    return '%g' % qty
 
 
 # Переписывает одну позицию каталога: цена, дата и наличие. Вынесено из основного
@@ -274,9 +353,13 @@ def fetch_brand_listing(url):
                 continue
             price_m = re.search(r'class="price-value">([^<]+)<', block)
             status_m = re.search(r'class="sar-stock[^"]*"[^>]*>([^<]+)<', block)
+            # Подпись над ценой: «цена за 100 м», «цена за шт.» — без неё
+            # цену бухты не отличить от цены метра (см. to_catalog_price).
+            ratio_m = re.search(r'class="title_price">\s*([^<]*?)\s*</div>', block, re.S)
             found[art_m.group(1)] = {
                 'price': clean_price(price_m.group(1)) if price_m else None,
                 'status': read_status(status_m.group(1)) if status_m else None,
+                'ratio': parse_price_ratio(ratio_m.group(1)) if ratio_m else None,
             }
         # Страницы листинга помечены data-page_num — идём по ним, не угадывая
         # имя параметра: у разных разделов это PAGEN_1, PAGEN_2 и т.д.
@@ -318,7 +401,14 @@ def update_from_brand_listings():
         data = site.get(item['sku'])
         if not data or not data['price']:
             continue
-        old_price, new_price = item['old_price'], data['price']
+        # Цена за метр пересчитывается теми же правилами, что и в поштучном
+        # проходе: делим на «цена за N м» с карточки. Подписи нет и длины
+        # штанги каталог не знает — позиция остаётся ручной.
+        old_price = item['old_price']
+        new_price = to_catalog_price(data['price'], data.get('ratio'), item)
+        if new_price is None:
+            skipped += 1
+            continue
         # Та же защита, что и в поштучном режиме: расхождение больше чем вдвое —
         # это почти всегда чужая карточка или сломанная вёрстка, а не новая цена.
         if old_price and (new_price > old_price * 2 or new_price * 2 < old_price):
@@ -345,7 +435,7 @@ def update_from_brand_listings():
     return set(site)
 
 
-def get_price_card_isolation(driver, sku, old_price):
+def get_price_card_isolation(driver, sku, old_price, item=None):
     if "404" in driver.title or "Страница не найдена" in driver.page_source: 
         return "NOT_FOUND"
     soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -414,6 +504,9 @@ def get_price_card_isolation(driver, sku, old_price):
 
     candidates = [t for t in soup.find_all(string=sku_re) if _looks_like_code(t) and _is_exact_code(t)]
     found_items = []
+    # Цена на карточке нашлась, а пересчитать её в единицы каталога нечем
+    # (см. to_catalog_price): отличаем такой случай от «товара нет на сайте».
+    ratio_failed = False
     
     fallback_status = None
     if soup.body:
@@ -422,6 +515,7 @@ def get_price_card_isolation(driver, sku, old_price):
     for text_node in candidates:
         card = text_node.find_parent()
         price_in_card = None
+        price_raw = price_ratio = None
         status_in_card = None
         for _ in range(10):
             if not card: break
@@ -430,20 +524,30 @@ def get_price_card_isolation(driver, sku, old_price):
                 status_in_card = read_status(card.get_text(" ", strip=True))
             
             if not price_in_card:
+                # Сколько товара покрывает цена — «цена за 100 м», «цена за шт.».
+                # В разметке это title_price рядом с ценой; если класса нет,
+                # ищем ту же подпись в тексте карточки.
+                ratio_el = card.find(class_=re.compile(r'title_price', re.I))
+                ratio = parse_price_ratio(ratio_el.get_text(" ", strip=True) if ratio_el
+                                          else card.get_text(" ", strip=True))
                 # price-value — так цена лежит в исходном HTML страницы поиска (его же
                 # читает листинг, см. fetch_brand_listing); остальные классы — варианты
                 # вёрстки после отработки скриптов сайта в браузере.
                 price_el = card.find(class_=re.compile(r'price__value|price-value|product-price|club-price|catalog-item__price', re.I))
                 if price_el and 'old' not in str(price_el.get('class', [])) and 'old' not in str(price_el.parent.get('class', [])):
-                    p = clean_price(price_el.get_text())
+                    raw = clean_price(price_el.get_text())
+                    p = to_catalog_price(raw, ratio, item)
+                    if raw and p is None: ratio_failed = True
                     if p and p >= price_floor:
-                        price_in_card = p
+                        price_in_card, price_raw, price_ratio = p, raw, ratio
                 if not price_in_card:
                     m = re.search(r'(\d{1,3}(?:\s\d{3})*|\d+)\s?(?:₽|руб)', card.get_text(" ", strip=True), re.IGNORECASE)
                     if m:
-                        p = clean_price(m.group(1))
+                        raw = clean_price(m.group(1))
+                        p = to_catalog_price(raw, ratio, item)
+                        if raw and p is None: ratio_failed = True
                         if p and p >= price_floor:
-                            price_in_card = p
+                            price_in_card, price_raw, price_ratio = p, raw, ratio
             
             if price_in_card and status_in_card:
                 break
@@ -451,9 +555,16 @@ def get_price_card_isolation(driver, sku, old_price):
             
         if price_in_card:
             final_status = status_in_card or fallback_status
-            found_items.append({'price': price_in_card, 'status': final_status})
+            note = None
+            if price_raw != price_in_card:
+                qty = fmt_qty(price_ratio[1]) + ' м' if price_ratio and price_ratio[0] == 'м' else 'штангу'
+                note = f"цена за {qty}: {price_raw} ₽"
+            found_items.append({'price': price_in_card, 'status': final_status, 'note': note})
         
-    if not found_items: return "NOT_FOUND"
+    if not found_items:
+        # Цену нашли, а пересчитать нечем: карточка даёт цену за штуку, в
+        # каталоге позиция за метр, и длины штуки каталог не знает.
+        return "ERR_RATIO" if ratio_failed else "NOT_FOUND"
     try: old_price_int = int(float(old_price))
     except: old_price_int = 0
     
@@ -581,7 +692,7 @@ def search_via_form(driver, raw_sku):
     return None
 
 
-def process_sku_v42(driver, sku, old_price):
+def process_sku_v42(driver, sku, old_price, item=None):
     """Один артикул.
 
     Быстрый путь — прямая ссылка /search/?q=АРТИКУЛ по уже прогретой сессии:
@@ -625,7 +736,7 @@ def process_sku_v42(driver, sku, old_price):
 
         res = "NOT_FOUND"
         for _ in range(8):
-            res = get_price_card_isolation(driver, sku, old_price)
+            res = get_price_card_isolation(driver, sku, old_price, item)
             if isinstance(res, dict): return res
             time.sleep(1)
         return res
@@ -725,22 +836,15 @@ def update_catalog_prices():
         if skipped_foreign:
             print(f"Пропущено чужих артикулов (не STOUT/ROMMER): {skipped_foreign} — их обновляет прогон --others")
 
-    # Цена за метр — трубки изоляции, трубы в бухтах, трос. Сайт продаёт их штукой
-    # или бухтой (трубка 2 м, бухта 100 м), а длину штуки карточка поиска не отдаёт:
-    # пересчитать в метры нечем, и парсер записал бы цену трубки в поле «за метр» —
-    # RIC-0001-220602 стоит 29 ₽/м в каталоге и 58 ₽ за трубку 2 м на сайте,
-    # коридор ±200% такое пропускает. Признак «за метр»: unit "м", либо unit не
-    # проставлен, а позиция из бухтового семейства (см. coil_family в
-    # collect_catalog_items). Позиции с unit "шт" и len (трубка K-FLEX 2 м) — за
-    # штуку, как и на сайте, их обновляем. Пропущенные ведутся руками.
-    def _per_meter(i):
-        unit = (i.get('unit') or '').strip().lower()
-        if unit in ('м', 'м.', 'метр', 'п.м', 'п.м.'): return True
-        return not unit and i.get('coil_family', False)
-    per_meter_ids = {id(i) for i in items_to_process if _per_meter(i)}
-    if per_meter_ids:
-        items_to_process = [i for i in items_to_process if id(i) not in per_meter_ids]
-        print(f"Пропущено позиций с ценой за метр: {len(per_meter_ids)} — сайт продаёт их штукой или бухтой")
+    # Цена за метр — трубы в бухтах, трубки изоляции, трос. Раньше они целиком
+    # выбрасывались из очереди: сайт продаёт их бухтой, а поделить было нечем.
+    # Теперь делитель берётся с самой карточки («цена за 100 м», см.
+    # to_catalog_price), поэтому позиции идут в общем потоке. Та, у которой
+    # карточка окажется за штуку, а каталог не знает длины штанги, вернёт
+    # ERR_RATIO и останется ручной — но таких немного.
+    per_meter_count = sum(1 for i in items_to_process if is_per_meter(i))
+    if per_meter_count:
+        print(f"Позиций с ценой за метр: {per_meter_count} — цену карточки делим на её «цена за N м»")
 
     # Сортируем от самых старых price_date к самым свежим (без даты — считаем самыми
     # старыми, в начало очереди). Прогон часто не успевает пройти весь каталог за один раз
@@ -769,11 +873,17 @@ def update_catalog_prices():
             except: pass
             not_found_streak = 0
 
-        if sku in price_cache:
-            res = price_cache[sku]; print("(Кеш)", end=" ")
+        # Ключ кеша — артикул вместе с единицей каталога: один и тот же код
+        # лежит и метражом, и бухтой (SPM-0001-101620), а разбор карточки
+        # возвращает цену уже в единицах позиции.
+        cache_key = (sku, is_per_meter(item))
+        if cache_key in price_cache:
+            res = price_cache[cache_key]; print("(Кеш)", end=" ")
         else:
-            res = process_sku_v42(driver, sku, old_price)
-            price_cache[sku] = res
+            # Позицию передаём целиком: по ней карточка понимает, за метр или
+            # за штуку записана цена в каталоге, и пересчитывает свою.
+            res = process_sku_v42(driver, sku, old_price, item)
+            price_cache[cache_key] = res
 
         if isinstance(res, str) and res == "NOT_FOUND":
             not_found_streak += 1
@@ -796,8 +906,9 @@ def update_catalog_prices():
                 new_status = 'on_order'
                 unknown_status_count += 1
 
-            if new_price != old_price: print(f"-> {new_price} ₽", end="")
-            else: print("-> OK", end="")
+            coil_note = f" ({res['note']})" if res.get('note') else ""
+            if new_price != old_price: print(f"-> {new_price} ₽{coil_note}", end="")
+            else: print(f"-> OK{coil_note}", end="")
 
             if not res['status']: print(" (наличие не прочитано -> Под заказ)")
             elif new_status == 'in_stock': print(" (В наличии)")
@@ -817,6 +928,8 @@ def update_catalog_prices():
                 
         elif isinstance(res, str) and res.startswith("ERR_DIFF"): 
             print(f"-> Блок 200% ({res.split('_')[-1]} ₽)")
+        elif res == "ERR_RATIO":
+            print("-> на сайте цена за штуку, в каталоге за метр — пропуск (ведётся руками)")
         else: print(f"-> {res}")
 
         if time.time() - last_checkpoint_ts >= CHECKPOINT_INTERVAL_SEC:

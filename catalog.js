@@ -2768,11 +2768,24 @@ const catalog = {
         { id: "SPX-0001-002535", name: "Труба PEX-a 25x3.5 (серая)", price: 407, unit: "м", rommer: { id: "RPX-0001-002535", name: "Труба PEX-a 25x3.5", price: 210, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" },
         { id: "SPX-0001-003244", name: "Труба PEX-a 32x4.4 (серая)", price: 661, unit: "м", rommer: { id: "RPX-0001-003244", name: "Труба PEX-a 32x4.4", price: 357, brand: "ROMMER", availability: "in_stock", price_date: "2026-08-10" }, availability: "in_stock", price_date: "2026-06-27" }
     ],
+    // Металлопластик, отмеренный метрами (водоснабжение, подводка полотенцесушителя).
+    //
+    // Артикулы здесь — те же полные бухты SPM-0001, что и в metal_plastic_pipes, и
+    // цена та же: бухта поставщика, делённая на её длину (16х2,0 — 14 300 ₽ за 100 м,
+    // то есть 143 ₽/м). Раньше стояли артикулы вида SPM-0002-001620 с ценой 175 ₽ —
+    // таких кодов у поставщика нет вовсе (SPM-0002 — это «неполные бухты», и номера
+    // там другие: SPM-0002-021620 — обрезок 20–39 м, SPM-0002-031620 — 40–59 м, цена
+    // за кусок целиком, а не за метр). Артикулы-призраки парсер не находил (они лежат
+    // в articles_not_found.txt), поэтому цены с 12.07 никто не обновлял, и 20-я с 26-й
+    // так и торговались вдвое-втрое дешевле бухтовых.
+    //
+    // Цена стоит ЗА МЕТР: строка добавляется в смету метражом, без asCoilPrice, и поля
+    // len здесь быть не должно — иначе метры превратятся в бухты.
     water_pipes_mp: [
-        { id: "SPM-0002-001620", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 16x2.0", price: 175, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-07-12" },
-        { id: "SPM-0002-002020", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 20x2.0", price: 175, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-07-12" },
-        { id: "SPM-0002-002630", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 26x3.0", price: 175, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-07-12" },
-        { id: "SPM-0002-003230", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 32x3.0", price: 644, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-07-12" }
+        { id: "SPM-0001-101620", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 16x2.0", price: 143, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-102020", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 20x2.0", price: 242, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-052630", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 26x3.0", price: 439, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SPM-0001-053230", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 32x3.0", price: 644, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" }
     ],
     water_insulation: [
         { id: "EFXT018092SUPRK", name: "Теплоизоляция 18/9 (Красная)", price: 34, unit: "м", brand: "Energoflex" },

@@ -14719,10 +14719,66 @@ const app = {
                 // JSON-путь PostgREST и восстанавливаем прежнюю форму e.calc_data.xxx на клиенте,
                 // чтобы не переписывать весь код рендера ниже.
                 let { data: uEsts, error: errUE } = await supabaseClient.from('estimates')
-                    .select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, users(username, phone, email), calc_id:calc_data->>calc_id, shared_invoice_id:calc_data->>shared_invoice_id, area:calc_data->>area')
+                    .select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, share_id, users(username, phone, email), calc_id:calc_data->>calc_id, shared_invoice_id:calc_data->>shared_invoice_id, area:calc_data->>area')
                     .in('user_id', userIds);
                 if (errUE) throw errUE;
                 userEsts = (uEsts || []).map(e => ({ ...e, calc_data: { calc_id: e.calc_id, shared_invoice_id: e.shared_invoice_id, area: e.area } }));
+            }
+
+            // 2б. Расчёты, которые монтажник начал, но в облако не сохранил.
+            //
+            // Колонка «Смет» показывает только сохранённые, и у половины списка там
+            // ноль — по нему не отличить того, кто заходит каждый день и считает, от
+            // того, кто просто открывает страницу. Начало расчёта отмечается событием
+            // 'calculated' (см. ensureCalcId) — один раз на объект, — поэтому число
+            // таких отметок и есть число расчётов.
+            //
+            // Событие ищем и по user_id, и по почте: до появления колонки user_id
+            // отметки подписывались только адресом, и у старых монтажников иначе
+            // получился бы ноль.
+            let userCalcStats = {};
+            try {
+                if (userIds.length > 0) {
+                    const byId = {}, byEmail = {};
+                    users.forEach(u => {
+                        byId[String(u.id)] = String(u.id);
+                        if (u.email) byEmail[String(u.email).trim().toLowerCase()] = String(u.id);
+                    });
+                    const evSel = 'calc_id, user_id, user_email, event';
+                    const emails = Object.keys(byEmail);
+                    const queries = [supabaseClient.from('invoice_events').select(evSel).in('user_id', userIds.map(String))];
+                    if (emails.length) queries.push(supabaseClient.from('invoice_events').select(evSel).in('user_email', emails));
+                    let evRows = [];
+                    (await Promise.all(queries)).forEach(r => { if (r && r.data) evRows = evRows.concat(r.data); });
+
+                    // Событий у одного расчёта много (посчитан, сохранён, отправлен…),
+                    // а расчёт один: сначала сводим их к списку номеров, потом считаем.
+                    const ownerOf = {};
+                    evRows.forEach(e => {
+                        if (!e.calc_id) return;
+                        const owner = byId[String(e.user_id)]
+                            || byEmail[String(e.user_email || '').trim().toLowerCase()];
+                        if (owner) ownerOf[String(e.calc_id)] = owner;
+                    });
+                    // Номер сохранённой сметы лежит в двух местах (см. канбан): в
+                    // calc_data.calc_id и в колонке share_id. Берём оба — иначе
+                    // сохранённая смета сойдёт за брошенный расчёт.
+                    const savedCalcIds = new Set();
+                    userEsts.forEach(e => {
+                        if (e.calc_data && e.calc_data.calc_id) savedCalcIds.add(String(e.calc_data.calc_id));
+                        if (e.share_id) savedCalcIds.add(String(e.share_id));
+                    });
+                    Object.keys(ownerOf).forEach(cid => {
+                        const owner = ownerOf[cid];
+                        if (!userCalcStats[owner]) userCalcStats[owner] = { total: 0, unsaved: 0 };
+                        userCalcStats[owner].total++;
+                        if (!savedCalcIds.has(cid)) userCalcStats[owner].unsaved++;
+                    });
+                }
+            } catch (e) {
+                // Не ломаем список из-за счётчика: колонка просто покажет прочерк.
+                console.warn('[админка] расчёты по монтажникам не посчитаны:', e.message || e);
+                userCalcStats = null;
             }
 
             if (isLtvSort) {
@@ -14869,7 +14925,10 @@ const app = {
                 // при открытии вкладки «Сообщения» — незачем гонять трафик тем, кто зашёл
                 // в админку посмотреть статистику
                 messageReceipts: null,
-                distributors: distributors
+                distributors: distributors,
+                // Расчёты (начатые и брошенные) по монтажникам этой страницы списка.
+                // null = посчитать не удалось, столбец покажет прочерк, а не ноль.
+                userCalcStats: userCalcStats
             };
             // Кто допущен к распознаванию — нужно столбцу в таблице пользователей.
             // Ошибка чтения не должна ломать админку: столбец просто покажет
@@ -15198,7 +15257,17 @@ const app = {
                 if (e.calc_data && e.calc_data.area) totalArea += parseFloat(e.calc_data.area);
             });
             u.avgArea = u.projectsCount > 0 ? Math.round(totalArea / u.projectsCount) : 0;
+            // Начатые расчёты и распознавания — вторая половина картины: по одним
+            // сохранённым сметам не видно, чем занят тот, кто заходит каждый день,
+            // а в списке смет у него ноль. null = «посчитать не удалось».
+            const calcStats = this.adminData.userCalcStats;
+            u.calcStarted = calcStats ? ((calcStats[String(u.id)] || {}).total || 0) : null;
+            u.calcUnsaved = calcStats ? ((calcStats[String(u.id)] || {}).unsaved || 0) : null;
+            u.recognitions = this.recognitionCountFor(u);
         });
+        // Архив распознаваний лежит на Beget и тянется отдельно от Supabase:
+        // спрашиваем один раз за открытие панели, ответ перерисует список сам.
+        this.ensureRecognitionCounts();
 
         // СОРТИРОВКА (Инструкция пользователя)
         const sortType = document.getElementById('sort-installers')?.value || 'login_desc';
@@ -15399,11 +15468,11 @@ const app = {
                     <!-- Ширины заданы явно и таблица фиксированной раскладки:
                          при авторазметке колонки прыгали от строки к строке,
                          а длинные названия дистрибьюторов рвали выравнивание. -->
-                    <table class="inv-table" style="margin-bottom: 30px; table-layout: fixed; width: 100%; min-width: 1150px;">
+                    <table class="inv-table" style="margin-bottom: 30px; table-layout: fixed; width: 100%; min-width: 1195px;">
                         <thead><tr>
                             <th style="width:30px;">#</th>
                             <th style="width:280px; cursor:pointer; user-select:none;" onclick="app.sortAdminColumn('name')" title="Сортировать по имени">Имя / Контакты${sortArrow('name')}</th>
-                            <th style="width:120px; cursor:pointer; user-select:none;" onclick="app.sortAdminColumn('ltv')" title="Сортировать по сумме">Статистика (LTV)${sortArrow('ltv')}</th>
+                            <th style="width:165px; cursor:pointer; user-select:none;" onclick="app.sortAdminColumn('ltv')" title="Сортировать по сумме">Статистика (LTV)${sortArrow('ltv')}</th>
                             <th style="width:135px; cursor:pointer; user-select:none;" onclick="app.sortAdminColumn('tariff')" title="Сортировать по тарифу">Тариф / Устройство${sortArrow('tariff')}</th>
                             <th style="width:205px;">Дистрибьютор</th>
                             <th style="width:100px; text-align:center;" title="Доступ монтажника к распознаванию смет">Распознавание</th>
@@ -15518,6 +15587,19 @@ const app = {
             // либо по должности (администраторам открыто всегда).
             const desCell = this.designAccessCell(u, isViewer);
 
+            // Третья строка статистики: чем человек занимался, если сохранённых
+            // смет у него нет. «Расчётов» — сколько объектов он начинал считать
+            // (отметка ставится один раз на объект), в скобках — сколько из них
+            // так и не сохранил. «Распозн.» — загрузок в распознавание.
+            // Прочерк вместо нуля значит «не посчитали», а не «ничего не делал».
+            const cUnsaved = u.calcUnsaved === null || u.calcUnsaved === undefined ? '—' : u.calcUnsaved;
+            const cStarted = u.calcStarted === null || u.calcStarted === undefined ? '—' : u.calcStarted;
+            const recN = u.recognitions === null || u.recognitions === undefined ? '—' : u.recognitions;
+            const unsavedColor = (typeof u.calcUnsaved === 'number' && u.calcUnsaved > 0 && u.projectsCount === 0) ? '#D97706' : 'inherit';
+            const activityLine =
+                `<span title="Начато расчётов: ${cStarted}. Не доведено до сохранённой сметы: ${cUnsaved}." style="color:${unsavedColor};">Расчётов: ${cStarted} <b>(бросил ${cUnsaved})</b></span>`
+                + ` | <span title="Загрузок в распознавание за два года (архив на сервере)">Распозн.: ${recN}</span>`;
+
             h += `<tr class="active-row admin-list-row" data-search="${searchStr}" style="cursor: pointer; transition: 0.2s;" onclick="app.viewAdminUser('${u.id}')" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
                         <!-- Нумерация сквозная по всему списку, а не по странице: на второй
                              странице отсчёт снова с 1 сбивал с толку (44 записи → 1…44) -->
@@ -15528,7 +15610,7 @@ const app = {
                              Содержимое коротких и однотипных ячеек — сумма со
                              сметами, тариф с устройством, два переключателя
                              доступа — отдельной строки на каждую не стоило. -->
-                        <td class="admin-cell-half"><b style="color:var(--primary);">${u.ltv.toLocaleString()} ₽</b><br><span style="font-size:10px;color:var(--text-sec);">Смет: ${u.projectsCount} | Ср.объект: ${u.avgArea} м²</span></td>
+                        <td class="admin-cell-half"><b style="color:var(--primary);">${u.ltv.toLocaleString()} ₽</b><br><span style="font-size:10px;color:var(--text-sec);">Смет: ${u.projectsCount} | Ср.объект: ${u.avgArea} м²</span><br><span style="font-size:10px;color:var(--text-sec);">${activityLine}</span></td>
                         <td class="admin-cell-half">${badge}<br><span style="font-size:10px;color:var(--text-sec);">${device}</span></td>
                         <td onclick="event.stopPropagation();">${distCell}</td>
                         <td class="admin-cell-half" onclick="event.stopPropagation();" style="text-align:center;">${recCell}</td>
@@ -20124,6 +20206,63 @@ const app = {
     },
 
     /**
+     * Сколько раз каждый монтажник что-то загружал в распознавание.
+     *
+     * Нужно столбцу статистики в списке пользователей: у монтажника может не
+     * быть ни одной сохранённой сметы и при этом десяток разобранных накладных —
+     * по одной колонке «Смет» этого не видно вовсе.
+     *
+     * Считает сервер (recognize_archive.php?counts=1) и держит час рядом с
+     * архивом: сами записи лежат на Beget по файлу на разбор, и тянуть их в
+     * браузер ради двух чисел на строку нельзя — это десятки мегабайт.
+     *
+     * Старый recognize_archive.php ключа counts не знает и отвечает списком
+     * записей (ветка ?list=1). Отличаем по отсутствию byUser — столбец тогда
+     * показывает прочерк, а не ноль как факт.
+     */
+    ensureRecognitionCounts: function () {
+        if (this._recCounts) return true;
+        if (this._loadingRecCounts) return false;
+        this._loadingRecCounts = true;
+        (async () => {
+            const out = { byUser: {}, error: null, serverOld: false };
+            try {
+                const headers = await this.recognitionAuthHeaders();
+                if (!headers) throw new Error('нет сессии для доступа к архиву');
+                const r = await fetch(`${this.RECOGNIZE_ARCHIVE}?counts=1&days=730`, { headers });
+                const data = await r.json();
+                // Менеджеру дистрибьютора архив закрыт (см. ensureRecognitionSummary)
+                if (r.status === 403) out.error = 'архив открыт владельцу, администраторам и наблюдателям';
+                else if (data && data.byUser) out.byUser = data.byUser;
+                else if (data && data.rows) out.serverOld = true;
+                else out.error = (data && data.error) || 'архив ответил непонятным';
+            } catch (e) {
+                out.error = e.message || String(e);
+            }
+            this._recCounts = out;
+            this._loadingRecCounts = false;
+            // Перерисовываем, только если на экране действительно список: карточку
+            // монтажника перерисовка закрыла бы, вернув админа обратно к таблице.
+            if (document.querySelector('.admin-list-row')) this.renderAdminMain();
+        })();
+        return false;
+    },
+
+    /**
+     * Число распознаваний одного монтажника для списка пользователей.
+     *
+     * Ключ архива — почта (см. recognitionUserKey), а не id: архив лежит не в
+     * Supabase и о внутренних идентификаторах базы не знает.
+     */
+    recognitionCountFor: function (u) {
+        const box = this._recCounts;
+        if (!box) return null;                       // ещё считается
+        if (box.error || box.serverOld) return null; // нечем считать — прочерк
+        const row = box.byUser[this.recognitionUserKey(u)];
+        return row ? (row.n || 0) : 0;
+    },
+
+    /**
      * История тарифа: продления, первые оплаты, возвраты и снятия.
      *
      * Пишет её триггер в базе (миграция 20260816_add_tariff_history.sql), а не
@@ -24103,9 +24242,39 @@ const app = {
             const { data: freshUser, error: userErr } = await supabaseClient.from('users').select('*').eq('id', userId).maybeSingle();
             if (userErr || !freshUser) { app.alert('Пользователь не найден.'); return; }
             user = freshUser;
-            const { data: freshEst } = await supabaseClient.from('estimates').select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, area:calc_data->>area').eq('user_id', userId);
-            userEstimates = (freshEst || []).map(e => ({ ...e, calc_data: { area: e.area } }));
+            const { data: freshEst } = await supabaseClient.from('estimates').select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, share_id, area:calc_data->>area, calc_id:calc_data->>calc_id').eq('user_id', userId);
+            userEstimates = (freshEst || []).map(e => ({ ...e, calc_data: { area: e.area, calc_id: e.calc_id } }));
         }
+
+        // Начатые расчёты: отметка 'calculated' ставится один раз на объект (см.
+        // ensureCalcId), поэтому число разных номеров расчёта и есть число заходов
+        // «посчитать». Разница с числом сохранённых смет и показывает, сколько
+        // человек бросил на полпути. Спрашиваем по своему монтажнику отдельно, а не
+        // берём из списка: карточку открывают и из переписки, где страницы списка нет.
+        let calcStarted = null, calcUnsaved = null;
+        try {
+            const evSel = 'calc_id, event';
+            const qs = [supabaseClient.from('invoice_events').select(evSel).eq('user_id', String(user.id))];
+            // До появления колонки user_id отметки подписывались только почтой
+            if (user.email) qs.push(supabaseClient.from('invoice_events').select(evSel).eq('user_email', user.email));
+            let evRows = [];
+            (await Promise.all(qs)).forEach(r => { if (r && r.data) evRows = evRows.concat(r.data); });
+            const calcIds = new Set(evRows.map(e => e.calc_id).filter(Boolean).map(String));
+            const savedIds = new Set();
+            userEstimates.forEach(e => {
+                if (e.calc_data && e.calc_data.calc_id) savedIds.add(String(e.calc_data.calc_id));
+                if (e.share_id) savedIds.add(String(e.share_id));
+            });
+            calcStarted = calcIds.size;
+            calcUnsaved = 0;
+            calcIds.forEach(cid => { if (!savedIds.has(cid)) calcUnsaved++; });
+        } catch (e) {
+            console.warn('[админка] расчёты монтажника не посчитаны:', e.message || e);
+        }
+        // Архив распознаваний лежит на Beget; на карточку он обычно уже загружен
+        // списком пользователей. Если нет — просим и показываем прочерк.
+        this.ensureRecognitionCounts();
+        const recCount = this.recognitionCountFor(user);
 
         let date = new Date(user.created_at).toLocaleDateString();
         let lastVis = user.last_visited ? new Date(user.last_visited).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Нет данных';
@@ -24150,7 +24319,9 @@ const app = {
                             </div>
                         </div>
 
-                        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:25px;">
+                        <!-- Плиток стало пять, и жёсткие три колонки резали бы их пополам:
+                             раскладка сама решает, сколько поместится в ряд. -->
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:25px;">
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);">
                                 <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Выручка (LTV)</div>
                                 <div style="font-size:20px; font-weight:800; color:var(--primary);">${ltv.toLocaleString()} ₽</div>
@@ -24162,6 +24333,17 @@ const app = {
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);">
                                 <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Ср. площадь</div>
                                 <div style="font-size:20px; font-weight:800; color:var(--text-main);">${avgArea} м²</div>
+                            </div>
+                            <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
+                                 title="Сколько раз человек начинал считать объект и не сохранил расчёт в облако">
+                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Бросил расчётов</div>
+                                <div style="font-size:20px; font-weight:800; color:${calcUnsaved ? '#D97706' : 'var(--text-main)'};">${calcUnsaved === null ? '—' : calcUnsaved}</div>
+                                <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">начато: ${calcStarted === null ? '—' : calcStarted}</div>
+                            </div>
+                            <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
+                                 title="Загрузок в распознавание за два года (архив на сервере)">
+                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Распознаваний</div>
+                                <div style="font-size:20px; font-weight:800; color:var(--text-main);">${recCount === null ? '—' : recCount}</div>
                             </div>
                         </div>
 

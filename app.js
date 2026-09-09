@@ -1288,6 +1288,12 @@ const app = {
             : { val: 'eqDiscount', mode: 'eqDiscountMode' };
     },
 
+    // Предел ползунка скидки/наценки. Тем же числом ограничена кнопка «Уступить»
+    // на вкладке «Деньги» (applyWhatIfDiscount) и max у самого ползунка в
+    // разметке — держим его в одном месте, иначе кнопка обещала бы скидку,
+    // которую ползунок потом не покажет.
+    DISCOUNT_MAX: 20,
+
     setEqDiscount: function (val) {
         if (!this.checkAccess('pro', window.event)) {
             this.render();
@@ -1295,7 +1301,7 @@ const app = {
         }
         const f = this.discountFields();
         let num = Math.abs(parseInt(val) || 0);
-        if (num > 20) num = 20;
+        if (num > this.DISCOUNT_MAX) num = this.DISCOUNT_MAX;
         let sign = (this.state[f.mode] === 'markup') ? -1 : 1;
         this.state[f.val] = num * sign;
         this.saveState();
@@ -11353,6 +11359,42 @@ const app = {
         this.render();
     },
 
+    /**
+     * Кнопка «Уступить» на карточке «А если уступить ещё столько-то».
+     *
+     * Скидка по объекту живёт в двух ползунках — по оборудованию и по работам, —
+     * а карточка считает уступку от всей суммы, поэтому двигаем оба сразу. Числа
+     * берём из самой карточки (marginReport().whatIf), чтобы обещанное и
+     * сделанное не разошлись: там же учтён предел ползунка.
+     */
+    applyWhatIfDiscount: async function (extra) {
+        if (!this.isPro()) { this.showModal('pro'); return; }
+        extra = parseFloat(extra) || 0;
+        if (extra <= 0) return;
+        const rep = this.marginReport();
+        if (!rep || !rep.client) return;
+        const w = (rep.whatIf || []).find(x => x.extra === extra);
+        if (!w) return;
+        if (w.room <= 0) {
+            app.alert('Скидка уже на пределе: больше ' + this.DISCOUNT_MAX + ' % ползунок под сметой не даёт.');
+            return;
+        }
+        const ask = 'Уступить клиенту ещё ' + extra + ' %?\n\n'
+            + 'Сумма по объекту станет ' + this._mgFmt(w.client) + ', вам останется ' + this._mgFmt(w.margin) + '.'
+            + (w.capped ? '\n\nЧасть скидки не поместится: ползунок останавливается на ' + this.DISCOUNT_MAX + ' %.' : '')
+            + '\n\nВернуть обратно можно ползунком скидки под сметой.';
+        if (!await app.confirm(ask)) return;
+        this.state.eqDiscount = w.eqTo;
+        this.state.worksDiscount = w.worksTo;
+        // Знак — это режим: отрицательная величина в том же поле означает наценку.
+        // Без синхронизации кнопки «Скидка/Наценка» показывали бы одно, а смета
+        // считала другое.
+        this.state.eqDiscountMode = w.eqTo < 0 ? 'markup' : 'discount';
+        this.state.worksDiscountMode = w.worksTo < 0 ? 'markup' : 'discount';
+        this.saveState();
+        this.render();
+    },
+
     resetMarginSettings: async function () {
         if (!await app.confirm('Убрать настройки закупки и вернуться к форме? Смета и цены при этом не изменятся.')) return;
         if (!this.installerSettings) this.loadInstallerSettingsLocal();
@@ -11435,10 +11477,33 @@ const app = {
         // «А если уступить ещё столько-то»: скидка режет выручку, закупка и
         // бригада остаются прежними — вычитается ровно из маржи. Накладные с
         // процентом от суммы чуть уменьшаются вместе с ней, их пересчитываем.
+        //
+        // Считаем не «минус столько-то процентов от нынешней суммы», а ровно то,
+        // что сделает кнопка «Уступить»: прибавит эти проценты к двум ползункам
+        // скидки — по оборудованию и по работам. Разница видна, когда скидка уже
+        // стоит (ползунок считает от цены прайса, а не от текущей суммы) и когда
+        // он упирается в свой предел. Обещание карточки и итог сметы после
+        // нажатия должны сходиться, иначе цифре нельзя верить.
+        const MAXD = this.DISCOUNT_MAX;
+        const curEqD = num(this.state.eqDiscount);
+        const curWkD = num(this.state.worksDiscount);
         const withDiscount = (extra) => {
-            const c2 = Math.round(client * (1 - extra / 100));
+            const eqTo = Math.min(MAXD, curEqD + extra);
+            const wkTo = Math.min(MAXD, curWkD + extra);
+            const c2 = Math.round(eq.client * (100 - eqTo) / (100 - curEqD)
+                + works.client * (100 - wkTo) / (100 - curWkD));
             const oh2 = Math.round(num(m.overheadFix) + c2 * num(m.overheadPct) / 100);
-            return { extra: extra, client: c2, margin: c2 - (eq.cost + works.cost + oh2) };
+            // Сколько ползункам ещё есть куда двигаться. Считаем только по тем
+            // половинам сметы, где вообще есть строки: пустые работы не должны
+            // гасить кнопку из-за давно выставленного там процента.
+            const roomEq = eq.client > 0 ? MAXD - curEqD : 0;
+            const roomWk = works.client > 0 ? MAXD - curWkD : 0;
+            return {
+                extra: extra, client: c2, margin: c2 - (eq.cost + works.cost + oh2),
+                eqTo: eqTo, worksTo: wkTo,
+                room: Math.max(roomEq, roomWk),
+                capped: (eq.client > 0 && eqTo - curEqD < extra) || (works.client > 0 && wkTo - curWkD < extra)
+            };
         };
 
         const rows = (o) => Object.keys(o).map(k => o[k])
@@ -11636,11 +11701,21 @@ const app = {
                </div>`
             : '';
 
+        // Карточка не только показывает, что будет, но и делает это: кнопка
+        // двигает ползунки скидки под сметой (см. applyWhatIfDiscount). Пока
+        // кнопки не было, монтажник шёл выставлять тот же процент руками, а
+        // сходится он с обещанной суммой только когда двинуты оба ползунка.
         const whatIf = rep.whatIf.map(w => `
             <div style="flex: 1 1 200px; background: var(--surface-light); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;">
-                <div style="font-size: 12px; color: var(--text-sec);">Уступить ещё ${w.extra} %</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                    <div style="font-size: 12px; color: var(--text-sec);">Уступить ещё ${w.extra} %</div>
+                    ${w.room > 0
+                        ? `<button type="button" onclick="app.applyWhatIfDiscount(${w.extra})"
+                               style="font: inherit; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 7px; border: 1px solid var(--primary); background: transparent; color: var(--primary); cursor: pointer; white-space: nowrap;">Уступить</button>`
+                        : `<span style="font-size: 11px; color: var(--text-sec); white-space: nowrap;">уже ${this.DISCOUNT_MAX} %</span>`}
+                </div>
                 <div style="font-size: 16px; font-weight: 800; margin-top: 3px; color: ${this._mgColor(w.margin)};">${fmt(w.margin)}</div>
-                <div style="font-size: 11px; color: var(--text-sec);">останется при сумме ${fmt(w.client)}</div>
+                <div style="font-size: 11px; color: var(--text-sec);">останется при сумме ${fmt(w.client)}${w.capped ? ` — дальше ${this.DISCOUNT_MAX} % ползунок не идёт` : ''}</div>
             </div>`).join('');
 
         panel.innerHTML = `
@@ -32611,7 +32686,13 @@ const app = {
         // помещений остаются висеть в DOM (rooms_list_1/2 не очищаются). state.rooms уже пуст,
         // поэтому renderRoomsUI просто очистит списки. См. баг #1.
         this.renderRoomsUI();
-        this.render();
+        // Не render(), а setViewMode: вид сметы в state сброшен на «Оборудование»,
+        // но панели «Деньги», «3D» и распознавания прячет с экрана только он.
+        // Без этого сброс, сделанный со вкладки «Деньги», оставлял на экране её
+        // старые цифры — по объекту, которого уже нет, — и они не менялись
+        // дальше ни от чего, потому что перерисовку панели заводит viewMode.
+        // setViewMode сам вызывает render() в конце.
+        this.setViewMode('equipment');
         // Распознавание держит своё состояние на RecognizeUI, а не в app.state,
         // поэтому сброс расчёта его не касался: монтажник жал «Сбросить всё»,
         // возвращался во вкладку распознавания и видел там прежнюю смету с
@@ -57678,7 +57759,11 @@ const app = {
         // Вкладка «Деньги»: и сама вкладка, и её содержимое. Списки сметы только
         // что пересобраны — значит, изменилась и маржа.
         this.syncMoneyTab();
-        if (this.state.viewMode === 'money') this.renderMoneyPanel();
+        // Панель перерисовываем и тогда, когда она просто осталась на экране, а
+        // вид сметы в state уже другой: иначе на ней висели бы цифры, которые
+        // ни на что не отзываются.
+        const _moneyPanel = document.getElementById('panel_money');
+        if (this.state.viewMode === 'money' || (_moneyPanel && _moneyPanel.style.display !== 'none')) this.renderMoneyPanel();
         // Подпись под полями дымохода считается по подобранному котлу — значит,
         // после того как смета собрана, а не до неё (syncUI отрабатывает раньше).
         this.syncChimneyUI();

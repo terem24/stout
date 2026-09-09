@@ -24332,7 +24332,7 @@ const app = {
         // «посчитать». Разница с числом сохранённых смет и показывает, сколько
         // человек бросил на полпути. Спрашиваем по своему монтажнику отдельно, а не
         // берём из списка: карточку открывают и из переписки, где страницы списка нет.
-        let calcStarted = null, calcUnsaved = null;
+        let calcStarted = null, calcUnsaved = null, calcSaved = null;
         try {
             const evSel = 'calc_id, event';
             const qs = [supabaseClient.from('invoice_events').select(evSel).eq('user_id', String(user.id))];
@@ -24351,6 +24351,9 @@ const app = {
             calcUnsaved = 0;
             calcIds.forEach(cid => { if (!savedIds.has(cid)) calcUnsaved++; });
             calcStarted = Math.max(calcIds.size, userEstimates.length);
+            // Плитка показывает доведённые до сметы, а не брошенные: та же
+            // арифметика, что и в строке списка, только с положительной стороны.
+            calcSaved = calcStarted - calcUnsaved;
         } catch (e) {
             console.warn('[админка] расчёты монтажника не посчитаны:', e.message || e);
         }
@@ -24418,14 +24421,14 @@ const app = {
                                 <div style="font-size:20px; font-weight:800; color:var(--text-main);">${avgArea} м²</div>
                             </div>
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
-                                 title="Сколько раз человек начинал считать объект и не сохранил расчёт в облако">
-                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Бросил расчётов</div>
-                                <div style="font-size:20px; font-weight:800; color:${calcUnsaved ? '#D97706' : 'var(--text-main)'};">${calcUnsaved === null ? '—' : calcUnsaved}</div>
-                                <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">начато: ${calcStarted === null ? '—' : calcStarted}</div>
+                                 title="Сколько расчётов человек довёл до сохранённой в облако сметы, из скольких начатых">
+                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Сохранено</div>
+                                <div style="font-size:20px; font-weight:800; color:${(calcSaved === 0 && calcStarted > 0) ? '#D97706' : 'var(--text-main)'};">${calcSaved === null ? '—' : calcSaved}</div>
+                                <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">расчётов: ${calcStarted === null ? '—' : calcStarted}</div>
                             </div>
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
                                  title="Загрузок в распознавание за два года (архив на сервере)">
-                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Распознаваний</div>
+                                <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Распознано</div>
                                 <div style="font-size:20px; font-weight:800; color:var(--text-main);">${recCount === null ? '—' : recCount}</div>
                             </div>
                         </div>

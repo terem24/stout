@@ -11494,7 +11494,51 @@ const app = {
     // раздел сломан. Нет тарифа — нет и вкладки.
     syncMoneyTab: function () {
         const tab = document.getElementById('tab_money');
-        if (tab) tab.style.display = (this.state.tgUser && this.isPro()) ? '' : 'none';
+        if (tab) tab.style.display = (this.state.tgUser && this.isPro() && !this.isSellerOnly()) ? '' : 'none';
+    },
+
+    // ═══ Вкладки по сфере деятельности ═══════════════════════════════════
+    // «Монтажные работы» и «Деньги» — про бригаду: расценки на монтаж и то,
+    // что остаётся монтажнику с объекта. Продавцу они не нужны и только
+    // путают: он подбирает оборудование и отдаёт спецификацию. Смотрим анкету
+    // (users.activity_types): отмечен только «Продавец» — обе вкладки убираем.
+    // Отмечен заодно «Монтажник» — человек и монтирует тоже, ничего не прячем.
+    // Админам и менеджерам панель не режем никогда.
+    isSellerOnly: function () {
+        if (this.hasAdminAccess()) return false;
+        const row = this.accessUserRow();
+        const list = row.activityTypes || row.activity_types || [];
+        if (!Array.isArray(list) || !list.length) return false;
+        const has = (word) => list.some(a => String(a).toLowerCase().indexOf(word) !== -1);
+        return has('продав') && !has('монтаж');
+    },
+
+    /**
+     * Показ вкладок по сфере деятельности. Вызывается из syncUI() — там же,
+     * где решается судьба вкладки распознавания.
+     *
+     * Нумерация вкладок сквозная и написана в разметке словами, поэтому у
+     * продавца, где «Монтажных работ» нет, цифру распознавания переписываем
+     * на 2 — иначе список читался бы как «1, 3».
+     */
+    syncRoleTabs: function () {
+        const seller = this.isSellerOnly();
+        const tWk = document.getElementById('tab_works');
+        const tMoney = document.getElementById('tab_money');
+        const tRec = document.getElementById('tab_recognize');
+        if (tWk) tWk.style.display = seller ? 'none' : '';
+        if (seller && tMoney) tMoney.style.display = 'none';
+        if (tRec) {
+            const num = tRec.querySelector('.tab-num');
+            if (num) num.textContent = seller ? '2.' : '3.';
+        }
+        // Открытой могла остаться уже скрытая вкладка: вид сметы лежит в
+        // сохранённом состоянии и переживает и перезаход, и смену анкеты.
+        // Флаг — от закольцовки: setViewMode тянет за собой render().
+        if (seller && (this.state.viewMode === 'works' || this.state.viewMode === 'money') && !this._sellerTabFix) {
+            this._sellerTabFix = true;
+            try { this.setViewMode('equipment'); } finally { this._sellerTabFix = false; }
+        }
     },
 
     _mgFmt: function (v) {
@@ -28280,6 +28324,9 @@ const app = {
     },
 
     setViewMode: function (mode) {
+        // Продавцу этих видов нет (см. syncRoleTabs) — вкладки скрыты, но
+        // вызвать setViewMode можно и мимо них (сохранённый вид, ссылка).
+        if ((mode === 'works' || mode === 'money') && this.isSellerOnly()) mode = 'equipment';
         if (mode === 'works' && !this.checkAccess('pro')) return;
         // «Деньги» — единственная вкладка, которую Базовый тариф не открывает.
         // checkAccess('pro') тут не годится: он давно означает «авторизован».
@@ -35138,6 +35185,7 @@ const app = {
             this.syncDesignUI();
             this.renderWaterPlanChecks();
             if (typeof RecognizeUI !== 'undefined') RecognizeUI.syncButton();
+            this.syncRoleTabs();
         });
         // Вернулись к вкладке — перепроверяем доступ (см. refreshAccessLists):
         // администратор мог включить инструмент, пока окно было свёрнуто.
@@ -45806,6 +45854,10 @@ const app = {
         // Файл может быть не загружен (например, на старом кэше), поэтому
         // проверяем наличие объекта, а не полагаемся на порядок скриптов.
         if (typeof RecognizeUI !== 'undefined') RecognizeUI.syncButton();
+
+        // «Монтажные работы» и «Деньги» — только монтажнику: продавцу они
+        // скрыты, а распознавание у него становится второй вкладкой.
+        this.syncRoleTabs();
 
         // Проектирование (листы проекта, редактор планов) — по такому же
         // доступу, как распознавание: по умолчанию закрыто всем, кроме админов.
@@ -58229,7 +58281,7 @@ const app = {
             // Маржа в шапке — только ПРОФИ и только когда закупка настроена.
             // Каркас пересобирается и при смене этого признака: иначе цифра либо
             // не появилась бы после настройки, либо осталась висеть после сброса.
-            const showHdrMargin = !!this.marginReport();
+            const showHdrMargin = !!this.marginReport() && !this.isSellerOnly();
 
             // Строим HTML каркас только 1 раз (или при смене тарифа), чтобы не сбрасывать анимацию
             if (!headerTotals.innerHTML.includes('anim_eq_sum') || headerTotals.dataset.isPro !== String(showWorksTotal) || headerTotals.dataset.hasMargin !== String(showHdrMargin)) {

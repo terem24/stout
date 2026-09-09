@@ -14656,38 +14656,43 @@ const app = {
                     let evRows = [];
                     (await Promise.all(queries)).forEach(r => { if (r && r.data) evRows = evRows.concat(r.data); });
 
-                    // Событий у одного расчёта много (посчитан, сохранён, отправлен…),
-                    // а расчёт один: сначала сводим их к списку номеров, потом считаем.
-                    const ownerOf = {};
+                    // Считаем строго по каждому монтажнику отдельно.
+                    //
+                    // Номер расчёта — случайные шесть цифр (см. ensureCalcId), и на всю
+                    // платформу он не уникален: в базе уже есть 767333 у двух разных
+                    // монтажников. Общая таблица «номер → владелец» отдавала такой номер
+                    // тому, чьё событие попалось последним, и у второго расчёт пропадал.
+                    //
+                    // Событий у одного расчёта много (посчитан, сохранён, напечатан…), а
+                    // расчёт один — поэтому набор номеров, а не счётчик событий.
+                    const startedByUser = {}, savedByUser = {};
+                    const bagIn = (box, owner) => (box[owner] = box[owner] || new Set());
+                    // Номер сохранённой сметы лежит в двух местах (см. канбан): в
+                    // calc_data.calc_id и в колонке share_id. Берём оба — иначе
+                    // сохранённая смета сойдёт за брошенный расчёт.
+                    userEsts.forEach(e => {
+                        const own = bagIn(savedByUser, String(e.user_id));
+                        if (e.calc_data && e.calc_data.calc_id) own.add(String(e.calc_data.calc_id));
+                        if (e.share_id) own.add(String(e.share_id));
+                    });
                     evRows.forEach(e => {
                         if (!e.calc_id) return;
                         const owner = byId[String(e.user_id)]
                             || byEmail[String(e.user_email || '').trim().toLowerCase()];
-                        if (owner) ownerOf[String(e.calc_id)] = owner;
+                        if (owner) bagIn(startedByUser, owner).add(String(e.calc_id));
                     });
-                    // Номер сохранённой сметы лежит в двух местах (см. канбан): в
-                    // calc_data.calc_id и в колонке share_id. Берём оба — иначе
-                    // сохранённая смета сойдёт за брошенный расчёт.
-                    const savedCalcIds = new Set();
-                    userEsts.forEach(e => {
-                        if (e.calc_data && e.calc_data.calc_id) savedCalcIds.add(String(e.calc_data.calc_id));
-                        if (e.share_id) savedCalcIds.add(String(e.share_id));
-                    });
-                    // Расчёты считаем объединением: что видно по событиям плюс то, что
-                    // уже лежит сохранённой сметой. У смет, сохранённых до появления
-                    // отметки 'calculated', истории нет вовсе, и по одним событиям
-                    // получалось бы «Смет: 1, Расчётов: 0» — число, которому не верят.
-                    const calcIdsByUser = {};
-                    const bagOf = (owner) => (calcIdsByUser[owner] = calcIdsByUser[owner] || new Set());
-                    Object.keys(ownerOf).forEach(cid => { bagOf(ownerOf[cid]).add(cid); });
-                    userEsts.forEach(e => {
-                        const cid = (e.calc_data && e.calc_data.calc_id) || e.share_id;
-                        if (cid) bagOf(String(e.user_id)).add(String(cid));
-                    });
-                    Object.keys(calcIdsByUser).forEach(owner => {
-                        let total = 0, unsaved = 0;
-                        calcIdsByUser[owner].forEach(cid => { total++; if (!savedCalcIds.has(cid)) unsaved++; });
-                        userCalcStats[owner] = { total: total, unsaved: unsaved };
+                    // Расчёты — объединение: что видно по событиям плюс то, что уже лежит
+                    // сохранённой сметой. У смет, сохранённых до появления отметки
+                    // 'calculated', истории нет вовсе, и по одним событиям выходило бы
+                    // «Смет: 1, Расчётов: 0» — число, которому не верят.
+                    const owners = new Set(Object.keys(startedByUser).concat(Object.keys(savedByUser)));
+                    owners.forEach(owner => {
+                        const saved = savedByUser[owner] || new Set();
+                        const all = new Set(saved);
+                        (startedByUser[owner] || new Set()).forEach(cid => all.add(cid));
+                        let unsaved = 0;
+                        all.forEach(cid => { if (!saved.has(cid)) unsaved++; });
+                        userCalcStats[owner] = { total: all.size, unsaved: unsaved };
                     });
                 }
             } catch (e) {

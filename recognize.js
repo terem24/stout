@@ -2984,6 +2984,16 @@ const RecognizeUI = {
         this.refreshSuggestions();
         this.packPipes();
         this.markCoils();
+        /**
+         * Порядок в смете — как в документе, пока не сказано иначе.
+         *
+         * Смету после распознавания первым делом сверяют с бумагой, строка за
+         * строкой, и разложенные по разделам позиции этому мешают: чтобы найти
+         * в смете третью строку счёта, приходится обойти всю смету. Поэтому по
+         * умолчанию распознанное ложится подряд, а группировка по разделам —
+         * отдельным переключателем, для тех случаев, когда смета идёт клиенту.
+         */
+        this._groupSections = false;
         this.progressStop();
         this.step(2);
         this.renderReview();
@@ -3370,6 +3380,30 @@ const RecognizeUI = {
         r.qty = n * len;
         r.qtyExtra = 0;
         r._coilNote = r._coilFrom + ' м \u2192 ' + n + ' ' + this.coilWord(n) + ' по ' + len + ' м';
+    },
+
+    /**
+     * Переключатель «как в файле» / «по разделам сметы».
+     *
+     * Выключен — распознанное уезжает в смету подряд, одним куском и в том же
+     * порядке, что в документе. Включён — расходится по разделам, как считает
+     * калькулятор: так смета выглядит для клиента, но сверять её с бумагой
+     * построчно уже нельзя.
+     */
+    toggleGroupSections(on) {
+        this._groupSections = !!on;
+        this.renderReview();
+    },
+
+    renderGroupSwitch() {
+        const on = !!this._groupSections;
+        return `<label class="rec-switch${on ? ' on' : ''}"
+                       title="Выключено — позиции лягут в смету подряд, как в файле: так их удобно сверять с документом. Включено — разойдутся по разделам сметы (котельная, водоснабжение, тёплый пол), как в обычном расчёте">
+            <input type="checkbox" ${on ? 'checked' : ''}
+                   onchange="RecognizeUI.toggleGroupSections(this.checked)">
+            <span class="rec-switch-track"><span class="rec-switch-knob"></span></span>
+            <span class="rec-switch-text">${on ? 'Группировать по разделам' : 'Порядок как в файле'}</span>
+          </label>`;
     },
 
     /** Строки, которых касается выбор «метры или бухты». */
@@ -4480,6 +4514,7 @@ const RecognizeUI = {
             <div class="rec-panel-row">
               ${this.renderSystemSelect()}
               ${this.renderBadFilter(badN || 0)}
+              ${this.renderGroupSwitch()}
               ${this.renderAnalogButton()}
               ${this.renderDocPriceButton()}
               <span class="rec-tb-right">
@@ -6405,6 +6440,9 @@ const RecognizeUI = {
             docPrices: this.docPricesOn(),
             ourWorkPrices: this.ourWorkPricesOn(),
             addWorks,
+            // Без группировки все строки уходят в один раздел — только так они
+            // останутся подряд и в порядке документа.
+            flatSection: this._groupSections ? null : '9. Дополнительные материалы',
         });
 
         // Смета перенесена — черновику здесь больше делать нечего: предлагать

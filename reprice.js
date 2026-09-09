@@ -53,7 +53,11 @@ const Reprice = {
                 art: art,
                 name: (row.snap.names && row.snap.names[art]) || art,
                 was: row.snap.prices[art],
-                q: (row.snap.qty && row.snap.qty[art]) || 1
+                q: (row.snap.qty && row.snap.qty[art]) || 1,
+                // Сколько метров в одной строке сметы: у трубы и бухты цена в каталоге
+                // за метр, а в смете — за штангу или бухту целиком. У смет постарше
+                // этого поля нет — тогда множитель 1, как и было.
+                pack: Number(row.snap.packs && row.snap.packs[art]) || 1
             }));
         } else if (row.share) {
             try {
@@ -246,7 +250,9 @@ const Reprice = {
         const changed = [], order = [];
         items.forEach(it => {
             const raw = lookup(it.art, price);
-            const now = raw === undefined ? undefined : asBill(raw);
+            // Приводим каталожную цену к единице строки сметы: у трубы это штанга или
+            // бухта (it.pack метров), у всего остального множитель 1.
+            const now = raw === undefined ? undefined : asBill(raw * (it.pack || 1));
             if (now === undefined) { gone++; return; }        // позиции больше нет в каталоге
             if (!comparable(it.was, now)) { gone++; return; }  // цены в разных единицах
             wasAll += it.was * it.q;

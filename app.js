@@ -1021,7 +1021,7 @@ const app = {
     currentAuthTab: 'login',
     pendingRegistration: null,
     adminData: { users: [], estimates: [], recentEstimates: [], userEstimates: [] },
-    state: { objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: false, optItems: {}, rigOff: {}, qtyOverrides: {}, darkMode: false, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: false, collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", ufhMixType: 'std', ufhDT: null, sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150', radRegime: 'r8060', servoType: null, snowMelt: false, snowZones: [], snowCtrl: 'sensor', snowInBoilerPower: true, showSnowPanel: false, snowPipe: 'thin' },
+    state: { objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: false, optItems: {}, rigOff: {}, qtyOverrides: {}, darkMode: false, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: false, collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", boilerPipeSystem: null, customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", ufhMixType: 'std', ufhDT: null, sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150', radRegime: 'r8060', servoType: null, snowMelt: false, snowZones: [], snowCtrl: 'sensor', snowInBoilerPower: true, showSnowPanel: false, snowPipe: 'thin' },
 
     lastSavedStateString: "",
 
@@ -1408,6 +1408,9 @@ const app = {
         }
         this.state.brandMode = val;
         this.state.sectionAnalog = {}; // Сбрасываем точечные переопределения
+        // Материал обвязки котельной тоже возвращаем к автовыбору по бренду: он и есть
+        // «точечное переопределение», только своё (см. boilerPipeSystem).
+        this.state.boilerPipeSystem = null;
         if (val === 'rommer') {
             this.state.pprSystemBrand = 'proaqua';
         }
@@ -2924,6 +2927,7 @@ const app = {
                     if (r.value !== 'stout' && !this.isPro()) break;
                     this.state.brandMode = r.value;
                     this.state.sectionAnalog = {};
+                    this.state.boilerPipeSystem = null;
                     if (r.value === 'rommer') this.state.pprSystemBrand = 'proaqua';
                     break;
                 }
@@ -4760,7 +4764,7 @@ const app = {
      */
     capturePriceSnapshot: function () {
         try {
-            const prices = {}, qty = {}, names = {};
+            const prices = {}, qty = {}, names = {}, packs = {};
             (this.currentEquipmentList || []).forEach(it => {
                 const art = String((it && (it.originalId || it.id)) || '');
                 if (!art || art.indexOf('custom_collapsed_') === 0) return;
@@ -4770,6 +4774,11 @@ const app = {
                     // артикул, а строку сметы: «Радиатор Space 11 секций, 4 шт»
                     qty[art] = Number(it.q) || 1;
                     if (it.name) names[art] = String(it.name).slice(0, 90);
+                    // Труба и бухта: в смете строка стоит целую упаковку, в каталоге
+                    // цена лежит за метр. Запоминаем множитель, иначе сверка цен
+                    // сравнит бухту с метром и объявит подорожание в разы там, где
+                    // прайс не двигался (см. Reprice.show).
+                    if (it.coilPriced && Number(it.len) > 1) packs[art] = Number(it.len);
                 }
             });
             const works = {};
@@ -4790,6 +4799,7 @@ const app = {
                 prices: prices,
                 qty: qty,
                 names: names,
+                packs: packs,
                 works: works
             };
             this.saveState();
@@ -29421,6 +29431,10 @@ const app = {
         }
         if (!this.state.sectionAnalog) this.state.sectionAnalog = {};
         this.state.sectionAnalog[title] = !!val;
+        // Тумблер раздела старше точечного выбора материала обвязки: иначе галка
+        // «Аналог» на котельной молча ничего не делала бы с трубой, если монтажник
+        // до того выбирал систему в таблице замены.
+        if (title === "2. Обвязка котельной") this.state.boilerPipeSystem = null;
         this.saveState();
         this.render();
     },
@@ -32552,7 +32566,7 @@ const app = {
 
         // Полный сброс данных расчета
         this.state = {
-            objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: currentShowScheme, optItems: {}, qtyOverrides: {}, darkMode: currentDarkMode, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: (currentAccType === 'pro'), collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150',
+            objectType: 'house', flatPosition: 'middle', flatCorner: false, flatHotRiser: true, flatRiser: 'riser', flatRooms: 2, flatRoomsManual: false, flatResManual: false, flatHouse: 'brick', flatBaths: 1, flatSewer: false, flatUfhKind: 'electric', flatUfhCover: 'tile', flatUfhCtrl: 'mech', flatUfhZones: 1, waterInput: false, outdoorFaucet: 0, bigBlueFilter: false, waterFilterLevel: 'none', waterReducer: false, waterMeter: false, waterLeakGuard: true, waterFrame: false, heatingFeed: false, convConnectionType: 'straight', detailedRooms: false, rooms: [], convectorType: 'scq', well: false, wellDepth: 30, wellDist: 15, wellAutoType: 'sirio', h1: 2.7, h2: 2.7, viewMode: 'equipment', showScheme: currentShowScheme, optItems: {}, qtyOverrides: {}, darkMode: currentDarkMode, area: 0, floors: 1, region: 100, selectedCity: null, mat: 1.0, lastQuickMat: null, wallLayersEnabled: false, wallLayers: [{ matId: "gas_d500", thick: 300 }, { matId: "minwool", thick: 50 }], fuels: ['el'], systems: [], hotWater: false, recirc: false, res: 0, win: 10, tp1: 0, tp2: 0, ufhStep1: 150, ufhStep2: 150, showSku: false, coolant: 'water', groupItems: (currentAccType === 'pro'), collapsedGroups: [], disabledSections: [], revealedToggles: [], swaps: {}, showSwapFor: null, radType: 'space', headType: 'gas', connectionType: 'angled', boilerType: 'optibase', tankMount: 'floor', tankHeat: 'cos', tankVol: null, tankSwapMount: null, tankSwapHeat: null, tankSwapVol: null, ufhZones: 1, ufhCtrl: 'mech', pumpType: 'default', boilerSeries: 'status', boilerSeriesManual: false, elBoilerPower: null, elPowerLimit: 15, elPowerLimitOff: false, elPhase: '380', elTariff: 6, elTariffNight: 3, elTariffMode: 'day_night', showElCost: false, showGasCost: false, gasTariffMode: 'main', gasTariff: null, gasTariffManual: false, lpgTariff: 26, polisKit: 'gbm', radBottomKit: 'gtube', hydroType: 'combo', pipeType: 'insulated', ufhPipeMaterial: 'pex', waterPipeMaterial: 'pex', ufhBaseType: 'mat', radManifoldType: 'standard', waterManifoldType: 'standard', water: false, waterZones: [], ufhAuto: false, boilerAuto: false, boilerAutoLevel: 'auto', leakProtect: false, leakSensors: null, feedType: 'manual', airControl: false, airDeviceType: 'sensor', airLink: 'wired', airSensors: null, ctrlPanel: false, servoAutoSwapped: false, projectName: "", brandMode: "stout", pprSystemBrand: "proaqua", boilerPipeSystem: null, customWorks: {}, showImages: true, eqDiscount: 0, worksDiscount: 0, chimneyType: 'standard', chimneyRoute: null, chimneyLen: null, chimneyBends: 0, hydroArrowType: 'standard', ventilationEnabled: false, ventilationType: 'natural', sewerType: 'std', towelWarmer: { enabled: false, type: 'electric', count: null, modelId: 'SHQ-J2RR-008050', color: 'all', series: 'all' }, roofEnabled: false, roofMatId: 'roof_mw150', floorEnabled: false, floorMatId: 'floor_ground_ins', glazingEnabled: false, glazingMatId: 'glz_2cam', showDetailedRoomsPanel: false, showWallLayersPanel: false, sectionAnalog: {}, sectionScheme: {}, last_saved_date: "", sewerClampsType: 'standard', sewerClampsD58Type: 'standard', boilerFrameType: 'profile_single', expansionTankMountType: 'standard', pipeMountType: 'hidden', boilerFrameFastenerType: 'anchor', mountPlateSingleType: 'SAC-0022-600001', mountPlateDouble100Type: 'SAC-0022-600100', mountPlateDouble150Type: 'SAC-0022-600150',
             // ВОЗВРАЩАЕМ АВТОРИЗАЦИЮ И ТАРИФ НА МЕСТО
             tgUser: currentTgUser,
             accountType: currentAccType,
@@ -36726,6 +36740,24 @@ const app = {
                 ...catalog.chimneys.slice(1).map(c => ({ id: c.id, name: c.name, brand: c.brand || 'ROMMER', price: c.price }))
             ];
         }
+        // Обвязка котельной: в таблице замены не отдельная позиция, а система целиком.
+        // Ставим ветку выше полипропиленовой: труба котельной в режиме ППР — тот же
+        // артикул RCT, что и в водоснабжении, и без этой проверки она провалилась бы
+        // в общий выбор Pro Aqua / Wavin, где нержавейки нет.
+        else if (this.isBoilerPipeRow(item)) {
+            const _pprIsPA = (this.state.pprSystemBrand === 'proaqua' || !this.state.pprSystemBrand);
+            customAlts = [
+                { id: 'ss304', name: 'Нержавеющая сталь AISI 304, пресс', brand: 'ROMMER', price: 0, imgId: 'RSS-1001-000022' },
+                { id: 'ss316', name: 'Нержавеющая сталь AISI 316L, пресс', brand: 'STOUT', price: 0, imgId: 'SSS-2001-000022' },
+                {
+                    id: 'bp_ppr',
+                    name: _pprIsPA ? 'Полипропилен PP-R DUO SDR 6 (Россия)' : 'Полипропилен PP-RCT STABI PLUS (Чехия)',
+                    brand: _pprIsPA ? 'Pro Aqua' : 'Wavin Ekoplastik',
+                    price: 0,
+                    imgId: _pprIsPA ? 'PA39012' : 'STRS032RCT'
+                }
+            ];
+        }
         else if (item.originalId && (item.originalId.startsWith('PA') || item.originalId.includes('RCT'))) {
             customAlts = [
                 { id: 'proaqua', name: 'Полипропилен Pro Aqua (Россия)', brand: 'Pro Aqua', price: 0 },
@@ -38109,6 +38141,9 @@ const app = {
                 }
                 else if (alt.id === 'standard' || alt.id === 'basic') {
                     isActive = (alt.id === this.state.chimneyType);
+                }
+                else if (alt.id === 'ss304' || alt.id === 'ss316' || alt.id === 'bp_ppr') {
+                    isActive = ((alt.id === 'bp_ppr' ? 'ppr' : alt.id) === this.boilerPipeSystem());
                 }
                 else if (alt.id === 'proaqua' || alt.id === 'wavin') {
                     isActive = (alt.id === this.state.pprSystemBrand);
@@ -39556,6 +39591,23 @@ const app = {
                 this.setSnowPipe(_sp.key);   // внутри syncUI + render + saveState
                 return;
             }
+        }
+
+        // Обвязка котельной меняется системой, а не построчно: пресс-фитинг ROMMER не
+        // обжимается инструментом STOUT, а на полипропиленовую трубу не встанет ни тот,
+        // ни другой. Поэтому выбор в любой строке раздела переключает материал всей
+        // котельной — трубы, фитингов, хомутов и подводки баков (см. boilerPipeSystem).
+        if (chosenId === 'ss304' || chosenId === 'ss316' || chosenId === 'bp_ppr') {
+            this.state.boilerPipeSystem = (chosenId === 'bp_ppr') ? 'ppr' : chosenId;
+            // Точечные замены прежней системы больше не к чему привязать: тех артикулов
+            // в смете не осталось, а висящий ключ вернул бы чужую позицию при возврате.
+            Object.keys(this.state.swaps).forEach(k => {
+                if (/^(RSS|SSS)-/.test(k)) delete this.state.swaps[k];
+            });
+            this.logEquipmentSwap(originalId, chosenId);
+            this.closeSwapModal();
+            this.render();
+            return;
         }
 
         /**
@@ -47817,6 +47869,63 @@ const app = {
         }
         return e;
     },
+
+    // === СИСТЕМА ОБВЯЗКИ КОТЕЛЬНОЙ ===
+    //
+    // Труба котельной и её фитинги — не набор независимых строк, а одна система:
+    // пресс-фитинг под нержавейку не встанет на полипропиленовую трубу, а гильза
+    // ROMMER AISI 304 не обжимается инструментом под STOUT AISI 316L. Поэтому
+    // материал хранится ОДНИМ полем на всю котельную, а не заменами отдельных
+    // артикулов в state.swaps: замена в любой строке раздела переключает систему
+    // целиком (см. selectSwapAlternative).
+    //
+    //   'ss304' — нержавейка ROMMER AISI 304, пресс (RSS-10xx)
+    //   'ss316' — нержавейка STOUT AISI 316L, пресс (SSS-20xx)
+    //   'ppr'   — полипропилен PP-RCT / PP-R (Wavin либо Pro Aqua, см. pprSystemBrand)
+    //
+    // null (монтажник не выбирал) — берём то же, что и раньше: посекционный тумблер
+    // «Аналог» раздела 2, а если и он не тронут — режим бренда. Так поведение старых
+    // смет не меняется от одного лишь появления линейки STOUT.
+    BOILER_PIPE_SYSTEMS: ['ss304', 'ss316', 'ppr'],
+    boilerPipeSystem: function () {
+        const v = this.state.boilerPipeSystem;
+        if (this.BOILER_PIPE_SYSTEMS.includes(v)) return v;
+        const sec = (this.state.sectionAnalog || {})["2. Обвязка котельной"];
+        const analog = (sec !== undefined) ? sec : (this.state.brandMode === 'rommer');
+        return analog ? 'ppr' : 'ss304';
+    },
+
+    // Артикул нержавейки в текущей системе. Линейки пронумерованы зеркально тип в тип
+    // (RSS-10NN ↔ SSS-20NN), поэтому соответствие выводится из самого артикула, а не
+    // хранится таблицей — иначе её пришлось бы пополнять при каждом новом типоразмере.
+    _ss316Index: null,
+    ssItem: function (catArr, id) {
+        const arr = catArr || [];
+        if (this.boilerPipeSystem() !== 'ss316') return arr.find(x => x.id === id);
+        if (!this._ss316Index) {
+            const idx = {};
+            Object.keys(catalog).forEach(k => {
+                if (k.indexOf('ss_') !== 0 || k.slice(-4) !== '_316') return;
+                (catalog[k] || []).forEach(it => {
+                    if (it && it.id) idx[String(it.id).replace(/^SSS-2/, 'RSS-1')] = it;
+                });
+            });
+            this._ss316Index = idx;
+        }
+        // У STOUT есть не все типоразмеры ROMMER (например штанг по 2 м нет вовсе).
+        // Там, где пары нет, честнее оставить ROMMER-позицию, чем выкинуть строку.
+        return this._ss316Index[id] || arr.find(x => x.id === id);
+    },
+
+    // Строка обвязки котельной, у которой в таблице замены показывается выбор системы.
+    // Нержавейка живёт только в котельной, поэтому её опознаём по артикулу; ППР же
+    // тем же артикулом идёт и в водоснабжении, поэтому его — только по разделу трубы.
+    isBoilerPipeRow: function (item) {
+        if (!item) return false;
+        const id = String(item.originalId || item.id || '');
+        if (/^(RSS|SSS)-/.test(id)) return true;
+        return String(item.group || '') === '2.5. Трубопроводы котельной';
+    },
     // === КОНФИГУРАТОР КОНТРОЛЛЕРА ОТОПЛЕНИЯ (STOUT Thermatic 3001) ===
     //
     // Контроллер — не просто ещё одна позиция сметы, а конфигурация: он
@@ -50761,7 +50870,10 @@ const app = {
                 // Коллекторный шкаф своего .alts не имеет: варианты (наружный/встроенный,
                 // обычный/углублённый, типоразмер) собираются в openSwapModal переключателями.
                 let cabHasAlt = String(lookupId || '').startsWith('cabinet_');
-                let hasAlts = (i.alts && i.alts.length > 0) || sewerHasAlt || cabHasAlt;
+                // Нержавейка котельной своего .alts не имеет: заменяется не позиция, а
+                // материал всей обвязки — список из трёх систем собирает openSwapModal.
+                let bpHasAlt = app.isBoilerPipeRow(i);
+                let hasAlts = (i.alts && i.alts.length > 0) || sewerHasAlt || cabHasAlt || bpHasAlt;
                 // Распознанная позиция без списка аналогов (пришла из прайса или
                 // вовсе без артикула) заменяется через свой поиск по каталогу и
                 // прайсу — см. openRecReplaceModal. Кнопка та же самая: монтажнику
@@ -51760,7 +51872,11 @@ const app = {
             // по сумме вклинивала между ними краны и американки змеевика бойлера.
             addToBill({ ...exp, alts: expAlts, sortRank: -2 }, 1, this.getDesc('exp_d', vol, exp.vol), grp);
             if (exp.vol <= 25) {
-                if (useAnalogSec2) { // PPR/Rommer
+                // Подводку бака ведём тем же, чем и всю котельную: на полипропилене это
+                // кронштейн с гибким подключением, на нержавейке — хомут и пресс-фитинги.
+                // Раньше решал посекционный «Аналог», а трубы — режим бренда, и при ручном
+                // переключении одного из двух бак с трубой расходились по материалу.
+                if (this.boilerPipeSystem() === 'ppr') { // PPR/Rommer
                     let isStout = (this.state.expansionTankMountType === 'stout');
                     let mountItem = isStout
                         ? catalog.mounting_system.find(x => x.id === "SAC-0030-000825")
@@ -51781,18 +51897,18 @@ const app = {
                     if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака ГВС.", grp);
 
                     addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Отсечной вентиль для подключения расширительного бака ГВС.", grp);
-                    let maleElbow = catalog.ss_elbow_mi.find(x => x.id === "RSS-1010-002234");
-                    let pressElbow = catalog.ss_elbow90.find(x => x.id === "RSS-1002-000022");
+                    let maleElbow = this.ssItem(catalog.ss_elbow_mi, "RSS-1010-002234");
+                    let pressElbow = this.ssItem(catalog.ss_elbow90, "RSS-1002-000022");
                     if (maleElbow) addToBill(maleElbow, 1, "Угольник-переходник 90° ВПр-НР 22х3/4\" для подключения к вентилю бака.", grp);
                     if (pressElbow) addToBill(pressElbow, 2, "Угольник 90° ВПр-НПр 22 для обвязки бака.", grp);
 
                     let frameBoilerPower = boilerPowerForPipes(selBoilers);
                     let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
                     if (frameSsDiameter === 22) {
-                        let teeItem = catalog.ss_tee.find(x => x.id === "RSS-1013-000022");
+                        let teeItem = this.ssItem(catalog.ss_tee, "RSS-1013-000022");
                         if (teeItem) addToBill(teeItem, 1, "Тройник равнопроходной ВПр 22 для врезки расширительного бака ГВС.", grp);
                     } else {
-                        let teeItem = catalog.ss_tee_red.find(x => x.id === "RSS-1014-282228");
+                        let teeItem = this.ssItem(catalog.ss_tee_red, "RSS-1014-282228");
                         if (teeItem) addToBill(teeItem, 1, "Тройник переходной ВПр 28х22х28 для врезки расширительного бака ГВС.", grp);
                     }
                 }
@@ -52195,7 +52311,11 @@ const app = {
             // noCheapen — см. бак ГВС: другой литраж не является аналогом.
             let etAlts = this.expTankPool('heat').filter(x => x.id !== et.id).map(x => ({ ...x, noCheapen: true }));
             addToBill({ ...et, alts: etAlts }, 1, this.getDesc('exp_h', Math.round(vSys), bltin, et.vol)); if (et.vol <= 25) {
-                if (useAnalogSec2) { // PPR/Rommer
+                // Подводку бака ведём тем же, чем и всю котельную: на полипропилене это
+                // кронштейн с гибким подключением, на нержавейке — хомут и пресс-фитинги.
+                // Раньше решал посекционный «Аналог», а трубы — режим бренда, и при ручном
+                // переключении одного из двух бак с трубой расходились по материалу.
+                if (this.boilerPipeSystem() === 'ppr') { // PPR/Rommer
                     let isStout = (this.state.expansionTankMountType === 'stout');
                     let mountItem = isStout
                         ? catalog.mounting_system.find(x => x.id === "SAC-0030-000825")
@@ -52216,18 +52336,18 @@ const app = {
                     if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака отопления.");
 
                     addToBill(catalog.tank_kit, 1, "Отсечной вентиль для подключения расширительного бака.");
-                    let maleElbow = catalog.ss_elbow_mi.find(x => x.id === "RSS-1010-002234");
-                    let pressElbow = catalog.ss_elbow90.find(x => x.id === "RSS-1002-000022");
+                    let maleElbow = this.ssItem(catalog.ss_elbow_mi, "RSS-1010-002234");
+                    let pressElbow = this.ssItem(catalog.ss_elbow90, "RSS-1002-000022");
                     if (maleElbow) addToBill(maleElbow, 1, "Угольник-переходник 90° ВПр-НР 22х3/4\" для подключения к вентилю бака.");
                     if (pressElbow) addToBill(pressElbow, 2, "Угольник 90° ВПр-НПр 22 для обвязки бака.");
 
                     let frameBoilerPower = boilerPowerForPipes(selBoilers);
                     let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
                     if (frameSsDiameter === 22) {
-                        let teeItem = catalog.ss_tee.find(x => x.id === "RSS-1013-000022");
+                        let teeItem = this.ssItem(catalog.ss_tee, "RSS-1013-000022");
                         if (teeItem) addToBill(teeItem, 1, "Тройник равнопроходной ВПр 22 для врезки расширительного бака.");
                     } else {
-                        let teeItem = catalog.ss_tee_red.find(x => x.id === "RSS-1014-282228");
+                        let teeItem = this.ssItem(catalog.ss_tee_red, "RSS-1014-282228");
                         if (teeItem) addToBill(teeItem, 1, "Тройник переходной ВПр 28х22х28 для врезки расширительного бака.");
                     }
                 }
@@ -52297,7 +52417,10 @@ const app = {
 
             let isDoubleMode = (this.state.boilerFrameType === 'profile_double' || this.state.boilerFrameType === 'direct_double');
             let clampId = "";
-            if (useAnalogSec2) { // PPR/Rommer
+            // Типоразмер хомута — от наружного диаметра трубы, а он у полипропилена
+            // (32/40) и нержавейки (22/28) разный. Поэтому спрашиваем систему обвязки,
+            // а не посекционный «Аналог»: иначе хомут не сядет на трубу.
+            if (this.boilerPipeSystem() === 'ppr') { // PPR/Rommer
                 let ppr_diam = (frameSsDiameter === 22) ? 32 : 40;
                 if (isDoubleMode) {
                     clampId = (ppr_diam === 32) ? "SAC-0020-200001" : "SAC-0020-300114"; // fallback to single M8 1 1/4" for 40
@@ -52655,10 +52778,15 @@ const app = {
             }
         }
 
-        // === РАСЧЕТ ТРУБ И ПРЕСС-ФИТИНГОВ ИЗ НЕРЖАВЕЮЩЕЙ СТАЛИ ROMMER / PPR WAVIN EKOPLASTIK (АНАЛОГ) ===
+        // === РАСЧЕТ ТРУБ И ПРЕСС-ФИТИНГОВ: НЕРЖАВЕЙКА ROMMER 304 / STOUT 316L / PPR (АНАЛОГ) ===
+        // Какая из трёх систем идёт в смету — решает boilerPipeSystem(), одно поле на всю
+        // котельную. isAnalog оставлен под полипропилен: под ним завязана вся ветка ППР
+        // ниже, включая изоляцию и подбор диаметра.
         let totalBoilerPower = boilerPowerForPipes(selBoilers);
         let ss_diameter = (totalBoilerPower <= 30) ? 22 : 28;
-        let isAnalog = (this.state.brandMode === 'rommer');
+        let _bpSystem = this.boilerPipeSystem();
+        let isAnalog = (_bpSystem === 'ppr');
+        let is316 = (_bpSystem === 'ss316');
 
         // Расшифровка подбора диаметра для подсказки позиции: монтажник должен иметь
         // возможность пересчитать её на бумаге, а не верить порогу «30 кВт» на слово.
@@ -52703,8 +52831,11 @@ const app = {
                     addToBill(p_4m, qty_4m, desc.replace('из нержавеющей стали AISI 304', `PP-RCT STABI PLUS ${ppr_diam}x${ppr_diam === 32 ? '4.4' : '5.5'} мм (Чехия)`).replace('нержавеющей трубы', 'трубы PP-RCT STABI PLUS'), grp);
                 }
             } else {
-                let p_4m = catalog.ss_pipe_4m.find(p => p.id === `RSS-1001-0000${diam}`);
-                let p_2m = catalog.ss_pipe_2m.find(p => p.id === `RSS-1001-2000${diam}`);
+                let p_4m = this.ssItem(catalog.ss_pipe_4m, `RSS-1001-0000${diam}`);
+                // Штанги по 2 м есть только у ROMMER. У STOUT линейка 316L идёт
+                // исключительно четырёхметровой, поэтому остаток округляем вверх до
+                // целой штанги, а не подставляем чужой типоразмер.
+                let p_2m = is316 ? null : catalog.ss_pipe_2m.find(p => p.id === `RSS-1001-2000${diam}`);
 
                 let qty_2m = 0;
                 let qty_4m = 0;
@@ -52726,11 +52857,19 @@ const app = {
                     }
                 }
 
+                if (qty_2m > 0 && !p_2m) { qty_4m += qty_2m; qty_2m = 0; }
+
+                // Цена нержавейки в каталоге — ЗА МЕТР: её пишет туда парсер по сайту
+                // поставщика, который торгует метрами с шагом заказа в штангу. В смете
+                // же строка считается штангами, поэтому цену домножаем на длину штанги
+                // (asCoilPrice по полю len) — иначе труба уходила бы клиенту вчетверо
+                // дешевле закупки. Переписать цену на штангу прямо в каталоге нельзя:
+                // следующий прогон парсера вернёт метровую.
                 if (qty_4m > 0 && p_4m) {
-                    addToBill(p_4m, qty_4m, desc, grp);
+                    addToBill(asCoilPrice(p_4m), qty_4m, desc, grp);
                 }
                 if (qty_2m > 0 && p_2m) {
-                    addToBill(p_2m, qty_2m, desc, grp);
+                    addToBill(asCoilPrice(p_2m), qty_2m, desc, grp);
                 }
             }
         };
@@ -52756,7 +52895,7 @@ const app = {
                     `Муфта комбинированная с наружной резьбой 32х${_sepTh} PP-RCT для присоединения сепаратора воздуха — у него внутренняя резьба с обеих сторон. Требуется: 2 шт.`, _airSepGrp);
             } else {
                 const _adpId = { '22|3/4': 'RSS-1021-002234', '22|1': 'RSS-1021-000221', '28|3/4': 'RSS-1021-002834', '28|1': 'RSS-1021-000281' }[ss_diameter + '|' + _sepThKey];
-                const _adp = _adpId && (catalog.ss_adapter_mi || []).find(x => x.id === _adpId);
+                const _adp = _adpId && this.ssItem(catalog.ss_adapter_mi, _adpId);
                 if (_adp) addToBill(_adp, 2,
                     `Переходник с пресс-соединения ${ss_diameter} на наружную резьбу ${_sepTh} для присоединения сепаратора воздуха — у него внутренняя резьба с обеих сторон. Требуется: 2 шт.`, _airSepGrp);
             }
@@ -52783,7 +52922,7 @@ const app = {
                 addToBill(this.getPprItem(catalog.ppr_ekoplastik_adapter_mi, 'SZE03232OKRCT'), 2,
                     `Муфта комбинированная с наружной резьбой 32х1" PP-RCT — вкручивается в муфту на патрубке узла гидроразделения. Требуется: 2 шт.`, _hydroTieGrp);
             } else {
-                const _tieAdp = (catalog.ss_adapter_mi || []).find(x => x.id === (ss_diameter === 22 ? 'RSS-1021-000221' : 'RSS-1021-000281'));
+                const _tieAdp = this.ssItem(catalog.ss_adapter_mi, (ss_diameter === 22 ? 'RSS-1021-000221' : 'RSS-1021-000281'));
                 if (_tieAdp) addToBill(_tieAdp, 2,
                     `Переходник с пресс-соединения ${ss_diameter} на наружную резьбу 1" — вкручивается в муфту на патрубке узла гидроразделения. Требуется: 2 шт.`, _hydroTieGrp);
             }
@@ -52817,7 +52956,7 @@ const app = {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_elbow90, ss_diameter === 22 ? 'SKO03290RCT' : 'SKO04090RCT'), 2,
                         `Угольник 90° PP-RCT ${ss_diameter === 22 ? 32 : 40} мм на повороте подводки от котла (${bName}) к узлу гидроразделения. Требуется: 2 шт.`, grp);
                 } else {
-                    const _elb = (catalog.ss_elbow90_ff || []).find(x => x.id === (ss_diameter === 22 ? 'RSS-1003-000022' : 'RSS-1003-000028'));
+                    const _elb = this.ssItem(catalog.ss_elbow90_ff, (ss_diameter === 22 ? 'RSS-1003-000022' : 'RSS-1003-000028'));
                     if (_elb) addToBill(_elb, 2,
                         `Пресс-угольник 90° В-В на повороте подводки от котла (${bName}) к узлу гидроразделения. Требуется: 2 шт.`, grp);
                 }
@@ -52838,15 +52977,15 @@ const app = {
                 }
             } else {
                 if (ss_diameter === 22) {
-                    addToBill(catalog.ss_adapter_fi.find(x => x.id === 'RSS-1022-002234'), 2, `Переходник с пресс-соединения на внутреннюю резьбу 3/4" для подключения нержавеющей трубы к патрубкам котла (${bName}). Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_elbow90_ff.find(x => x.id === 'RSS-1003-000022'), 2, `Пресс-угольник 90° В-В для выполнения поворотов трубопровода при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_elbow45.find(x => x.id === 'RSS-1004-000022'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_tee.find(x => x.id === 'RSS-1013-000022'), 2, `Пресс-тройник для создания ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_adapter_fi, 'RSS-1022-002234'), 2, `Переходник с пресс-соединения на внутреннюю резьбу 3/4" для подключения нержавеющей трубы к патрубкам котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000022'), 2, `Пресс-угольник 90° В-В для выполнения поворотов трубопровода при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow45, 'RSS-1004-000022'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee, 'RSS-1013-000022'), 2, `Пресс-тройник для создания ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
                 } else {
-                    addToBill(catalog.ss_adapter_fi.find(x => x.id === 'RSS-1022-000281'), 2, `Переходник с пресс-соединения на внутреннюю резьбу 1" для подключения нержавеющей трубы к патрубкам котла (${bName}). Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_elbow90_ff.find(x => x.id === 'RSS-1003-000028'), 2, `Пресс-угольник 90° В-В для выполнения поворотов трубопровода при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_elbow45.find(x => x.id === 'RSS-1004-000028'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_tee_red.find(x => x.id === 'RSS-1014-282228'), 2, `Пресс-тройник переходной для создания ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_adapter_fi, 'RSS-1022-000281'), 2, `Переходник с пресс-соединения на внутреннюю резьбу 1" для подключения нержавеющей трубы к патрубкам котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000028'), 2, `Пресс-угольник 90° В-В для выполнения поворотов трубопровода при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow45, 'RSS-1004-000028'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов при обвязке котла (${bName}). Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee_red, 'RSS-1014-282228'), 2, `Пресс-тройник переходной для создания ответвлений в контуре обвязки котла (${bName}). Требуется: 2 шт.`, grp);
                 }
             }
         });
@@ -52879,18 +53018,18 @@ const app = {
                 const _coilPort = (this._tankPorts && this._tankPorts.coil) || '1"';
                 const _coilIs1 = (_coilPort === '1"');
                 if (ss_diameter === 22) {
-                    const _adp = catalog.ss_adapter_fi.find(x => x.id === 'RSS-1022-002234');
+                    const _adp = this.ssItem(catalog.ss_adapter_fi, 'RSS-1022-002234');
                     addToBill(_adp, 2, `Переходник с пресс-соединения на внутреннюю резьбу 3/4" для подключения нержавеющей трубы к патрубкам змеевика бойлера ГВС. Патрубок змеевика — ${_coilPort} по паспорту.` +
                         (_coilIs1 ? ` <b>Внимание:</b> для патрубка 1" дополнительно нужен резьбовой переход 3/4"–1" (в смету не входит).` : ``) + ` Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_elbow90_ff.find(x => x.id === 'RSS-1003-000022'), 4, `Пресс-угольник 90° В-В для поворотов трубопровода греющего контура бойлера ГВС. Требуется: 4 шт.`, grp);
-                    addToBill(catalog.ss_elbow45.find(x => x.id === 'RSS-1004-000022'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов в обвязке бойлера ГВС. Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_tee.find(x => x.id === 'RSS-1013-000022'), 2, `Пресс-тройник для создания ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000022'), 4, `Пресс-угольник 90° В-В для поворотов трубопровода греющего контура бойлера ГВС. Требуется: 4 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow45, 'RSS-1004-000022'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов в обвязке бойлера ГВС. Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee, 'RSS-1013-000022'), 2, `Пресс-тройник для создания ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
                 } else {
-                    const _adp28 = catalog.ss_adapter_fi.find(x => x.id === (_coilIs1 ? 'RSS-1022-000281' : 'RSS-1022-002834'));
+                    const _adp28 = this.ssItem(catalog.ss_adapter_fi, (_coilIs1 ? 'RSS-1022-000281' : 'RSS-1022-002834'));
                     addToBill(_adp28, 2, `Переходник с пресс-соединения на внутреннюю резьбу ${_coilIs1 ? '1"' : '3/4"'} для подключения нержавеющей трубы к патрубкам змеевика бойлера ГВС. Патрубок змеевика — ${_coilPort} по паспорту. Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_elbow90_ff.find(x => x.id === 'RSS-1003-000028'), 4, `Пресс-угольник 90° В-В для поворотов трубопровода греющего контура бойлера ГВС. Требуется: 4 шт.`, grp);
-                    addToBill(catalog.ss_elbow45.find(x => x.id === 'RSS-1004-000028'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов в обвязке бойлера ГВС. Требуется: 2 шт.`, grp);
-                    addToBill(catalog.ss_tee_red.find(x => x.id === 'RSS-1014-282228'), 2, `Пресс-тройник переходной для создания ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000028'), 4, `Пресс-угольник 90° В-В для поворотов трубопровода греющего контура бойлера ГВС. Требуется: 4 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_elbow45, 'RSS-1004-000028'), 2, `Пресс-угольник 45° В-В для обхода препятствий и плавных поворотов в обвязке бойлера ГВС. Требуется: 2 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee_red, 'RSS-1014-282228'), 2, `Пресс-тройник переходной для создания ответвлений в греющем контуре бойлера ГВС. Требуется: 2 шт.`, grp);
                 }
             }
 
@@ -52907,12 +53046,12 @@ const app = {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee_red, 'STKR04032RCT'), 1, `Тройник переходной 40х32х40 PP-RCT для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
                 }
             } else {
-                addToBill(catalog.ss_adapter_mi.find(x => x.id === 'RSS-1021-002234'), 1, `Переходник с пресс-соединения на наружную резьбу 3/4" для подключения нержавеющей трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
-                addToBill(catalog.ss_elbow90_ff.find(x => x.id === 'RSS-1003-000022'), 1, `Пресс-угольник 90° В-В диаметром 22 мм для подведения трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
+                addToBill(this.ssItem(catalog.ss_adapter_mi, 'RSS-1021-002234'), 1, `Переходник с пресс-соединения на наружную резьбу 3/4" для подключения нержавеющей трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
+                addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000022'), 1, `Пресс-угольник 90° В-В диаметром 22 мм для подведения трубы к расширительному баку ГВС. Требуется: 1 шт.`, grp);
                 if (ss_diameter === 22) {
-                    addToBill(catalog.ss_tee.find(x => x.id === 'RSS-1013-000022'), 1, `Пресс-тройник диаметром 22 мм для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee, 'RSS-1013-000022'), 1, `Пресс-тройник диаметром 22 мм для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
                 } else {
-                    addToBill(catalog.ss_tee_red.find(x => x.id === 'RSS-1014-282228'), 1, `Пресс-тройник переходной 28х22х28 мм для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee_red, 'RSS-1014-282228'), 1, `Пресс-тройник переходной 28х22х28 мм для врезки линии расширительного бака ГВС. Требуется: 1 шт.`, grp);
                 }
             }
         }
@@ -52955,12 +53094,12 @@ const app = {
                     addToBill(this.getPprItem(catalog.ppr_ekoplastik_tee_red, 'STKR04032RCT'), 1, `Тройник переходной 40х32х40 PP-RCT для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
                 }
             } else {
-                addToBill(catalog.ss_adapter_mi.find(x => x.id === 'RSS-1021-002234'), 1, `Переходник с пресс-соединения на наружную резьбу 3/4" для подключения нержавеющей трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
-                addToBill(catalog.ss_elbow90_ff.find(x => x.id === 'RSS-1003-000022'), 1, `Пресс-угольник 90° В-В диаметром 22 мм для подведения трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
+                addToBill(this.ssItem(catalog.ss_adapter_mi, 'RSS-1021-002234'), 1, `Переходник с пресс-соединения на наружную резьбу 3/4" для подключения нержавеющей трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
+                addToBill(this.ssItem(catalog.ss_elbow90_ff, 'RSS-1003-000022'), 1, `Пресс-угольник 90° В-В диаметром 22 мм для подведения трубы к расширительному баку отопления. Требуется: 1 шт.`, grp);
                 if (ss_diameter === 22) {
-                    addToBill(catalog.ss_tee.find(x => x.id === 'RSS-1013-000022'), 1, `Пресс-тройник диаметром 22 мм для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee, 'RSS-1013-000022'), 1, `Пресс-тройник диаметром 22 мм для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
                 } else {
-                    addToBill(catalog.ss_tee_red.find(x => x.id === 'RSS-1014-282228'), 1, `Пресс-тройник переходной 28х22х28 мм для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
+                    addToBill(this.ssItem(catalog.ss_tee_red, 'RSS-1014-282228'), 1, `Пресс-тройник переходной 28х22х28 мм для врезки расширительного бака отопления. Требуется: 1 шт.`, grp);
                 }
             }
         }
@@ -52972,7 +53111,9 @@ const app = {
                 // Исключаем дублирование названий компонентов
                 let uniqueComponents = [...new Set(d.components)];
                 let listComponents = uniqueComponents.join(", ");
-                let pipeName = isAnalog ? ((this.state.pprSystemBrand === 'proaqua' || !this.state.pprSystemBrand) ? "Труба PP-R DUO SDR 6" : "Труба PP-RCT") : "Труба из нержавеющей стали AISI 304";
+                let pipeName = isAnalog
+                    ? ((this.state.pprSystemBrand === 'proaqua' || !this.state.pprSystemBrand) ? "Труба PP-R DUO SDR 6" : "Труба PP-RCT")
+                    : (is316 ? "Труба из нержавеющей стали AISI 316L" : "Труба из нержавеющей стали AISI 304");
                 // Расшифровка подбора диаметра идёт отдельным хвостом: addPipesToBill
                 // подменяет в описании название трубы под ППР, и её текст под замену
                 // попадать не должен.

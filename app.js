@@ -14935,7 +14935,7 @@ const app = {
                 // JSON-путь PostgREST и восстанавливаем прежнюю форму e.calc_data.xxx на клиенте,
                 // чтобы не переписывать весь код рендера ниже.
                 let { data: uEsts, error: errUE } = await supabaseClient.from('estimates')
-                    .select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, share_id, users(username, phone, email), calc_id:calc_data->>calc_id, shared_invoice_id:calc_data->>shared_invoice_id, area:calc_data->>area')
+                    .select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, share_id, users(username, phone, email), calc_id:calc_data->>calc_id, shared_invoice_id:calc_data->>shared_invoice_id, area:calc_data->>area, from_recognition:calc_data->>from_recognition')
                     .in('user_id', userIds);
                 if (errUE) throw errUE;
                 userEsts = (uEsts || []).map(e => ({ ...e, calc_data: { calc_id: e.calc_id, shared_invoice_id: e.shared_invoice_id, area: e.area } }));
@@ -14960,9 +14960,7 @@ const app = {
                         byId[String(u.id)] = String(u.id);
                         if (u.email) byEmail[String(u.email).trim().toLowerCase()] = String(u.id);
                     });
-                    // source из meta — откуда взялся расчёт (распознавание, быстрый старт).
-                    // Тянем именно поле, а не весь meta: столбцу нужно одно слово.
-                    const evSel = 'calc_id, user_id, user_email, event, source:meta->>source';
+                    const evSel = 'calc_id, user_id, user_email, event';
                     const emails = Object.keys(byEmail);
                     const queries = [supabaseClient.from('invoice_events').select(evSel).in('user_id', userIds.map(String))];
                     if (emails.length) queries.push(supabaseClient.from('invoice_events').select(evSel).in('user_email', emails));
@@ -14988,18 +14986,28 @@ const app = {
                         if (e.calc_data && e.calc_data.calc_id) own.add(String(e.calc_data.calc_id));
                         if (e.share_id) own.add(String(e.share_id));
                     });
-                    // Отдельно — расчёты, выросшие из распознавания: метка source ставится
-                    // один раз, на событие 'calculated' (см. ensureCalcId). По ней видно,
-                    // сколько разобранных накладных дошло до сметы, а сколько осталось
-                    // лежать в архиве.
-                    const fromRecByUser = {};
                     evRows.forEach(e => {
                         if (!e.calc_id) return;
                         const owner = byId[String(e.user_id)]
                             || byEmail[String(e.user_email || '').trim().toLowerCase()];
-                        if (!owner) return;
-                        bagIn(startedByUser, owner).add(String(e.calc_id));
-                        if (e.source === 'recognition') bagIn(fromRecByUser, owner).add(String(e.calc_id));
+                        if (owner) bagIn(startedByUser, owner).add(String(e.calc_id));
+                    });
+                    // Сколько сохранённых смет собрано распознаванием.
+                    //
+                    // Считаем по флагу from_recognition в самой смете: его ставит
+                    // applyRecognized в момент переноса, и он уезжает в облако вместе с
+                    // расчётом. Метка source у события 'calculated' для этого не годится —
+                    // она появляется только когда номер выдаётся ровно в этот момент, а у
+                    // сметы из одних распознанных строк (площадь нулевая) номер сплошь и
+                    // рядом выдавался позже, при сохранении. По событиям выходило «в смету
+                    // 0» у монтажника, у которого обе сметы собраны из ста пяти
+                    // распознанных строк.
+                    const fromRecByUser = {};
+                    userEsts.forEach(e => {
+                        if (e.from_recognition === 'true' || e.from_recognition === true) {
+                            const o = String(e.user_id);
+                            fromRecByUser[o] = (fromRecByUser[o] || 0) + 1;
+                        }
                     });
                     // Расчёты — объединение: что видно по событиям плюс то, что уже лежит
                     // сохранённой сметой. У смет, сохранённых до появления отметки
@@ -15014,7 +15022,7 @@ const app = {
                         all.forEach(cid => { if (!saved.has(cid)) unsaved++; });
                         userCalcStats[owner] = {
                             total: all.size, unsaved: unsaved,
-                            fromRec: (fromRecByUser[owner] || new Set()).size
+                            fromRec: fromRecByUser[owner] || 0
                         };
                     });
                 }
@@ -15843,14 +15851,18 @@ const app = {
             // Четвёртая строка — про распознавание. Накладные и планы этажей порознь:
             // план в смету не превращается, он ложится подложкой под разметку, и в общем
             // числе он только мешал бы понять, сколько разобрано закупок.
-            // «в смету» — сколько разобранных накладных дошло до расчёта; расхождение с
-            // первым числом и есть то, что осталось лежать в архиве.
+            //
+            // «в сметах» — сколько СОХРАНЁННЫХ смет собрано распознаванием. Заметно
+            // меньше числа разборов, и это нормально: в один объект нередко заносят
+            // несколько накладных, да и сохраняют не всё.
             const docsTxt = u.recStats ? u.recStats.docs : '—';
             const plansTxt = u.recStats ? u.recStats.plans : '—';
             const inBillTxt = u.calcFromRec === null || u.calcFromRec === undefined ? '—' : u.calcFromRec;
+            // Оранжевым — только когда разбирал, а сохранённых смет из распознавания
+            // нет ни одной: работа сделана, результата в облаке нет.
             const recLostColor = (u.recStats && u.recStats.docs > 0 && u.calcFromRec === 0) ? '#D97706' : 'inherit';
             const recognitionLine =
-                `<span title="Разобрано накладных и смет за два года: ${docsTxt}. Из них доведено до расчёта: ${inBillTxt}." style="color:${recLostColor};">Распознано: <b>${docsTxt}</b> (в смету ${inBillTxt})</span>`
+                `<span title="Разобрано накладных и смет за два года: ${docsTxt}. Сохранённых смет, собранных распознаванием: ${inBillTxt}. Одна смета нередко собирается из нескольких накладных, поэтому числа не обязаны совпадать." style="color:${recLostColor};">Распознано: <b>${docsTxt}</b> (в сметах ${inBillTxt})</span>`
                 + ` | <span title="Планы этажей, прочитанные распознаванием (в смету не переносятся — идут подложкой в разметку)">Планов: ${plansTxt}</span>`;
 
             h += `<tr class="active-row admin-list-row" data-search="${searchStr}" style="cursor: pointer; transition: 0.2s;" onclick="app.viewAdminUser('${u.id}')" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
@@ -24502,8 +24514,8 @@ const app = {
             const { data: freshUser, error: userErr } = await supabaseClient.from('users').select('*').eq('id', userId).maybeSingle();
             if (userErr || !freshUser) { app.alert('Пользователь не найден.'); return; }
             user = freshUser;
-            const { data: freshEst } = await supabaseClient.from('estimates').select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, share_id, area:calc_data->>area, calc_id:calc_data->>calc_id').eq('user_id', userId);
-            userEstimates = (freshEst || []).map(e => ({ ...e, calc_data: { area: e.area, calc_id: e.calc_id } }));
+            const { data: freshEst } = await supabaseClient.from('estimates').select('id, user_id, project_name, eq_sum, works_sum, total_sum, created_at, share_id, area:calc_data->>area, calc_id:calc_data->>calc_id, from_recognition:calc_data->>from_recognition').eq('user_id', userId);
+            userEstimates = (freshEst || []).map(e => ({ ...e, calc_data: { area: e.area, calc_id: e.calc_id, from_recognition: e.from_recognition } }));
         }
 
         // Начатые расчёты: отметка 'calculated' ставится один раз на объект (см.
@@ -24513,7 +24525,7 @@ const app = {
         // берём из списка: карточку открывают и из переписки, где страницы списка нет.
         let calcStarted = null, calcUnsaved = null, calcSaved = null, calcFromRec = null;
         try {
-            const evSel = 'calc_id, event, source:meta->>source';
+            const evSel = 'calc_id, event';
             const qs = [supabaseClient.from('invoice_events').select(evSel).eq('user_id', String(user.id))];
             // До появления колонки user_id отметки подписывались только почтой
             if (user.email) qs.push(supabaseClient.from('invoice_events').select(evSel).eq('user_email', user.email));
@@ -24533,11 +24545,12 @@ const app = {
             // Плитка показывает доведённые до сметы, а не брошенные: та же
             // арифметика, что и в строке списка, только с положительной стороны.
             calcSaved = calcStarted - calcUnsaved;
-            // Сколько расчётов выросло из распознавания: метка ставится на событие
-            // 'calculated' (см. ensureCalcId). Разница с числом разобранных накладных
-            // и показывает, сколько так и осталось лежать в архиве.
-            calcFromRec = new Set(evRows.filter(e => e.source === 'recognition' && e.calc_id)
-                .map(e => String(e.calc_id))).size;
+            // Сколько сохранённых смет собрано распознаванием — по флагу в самой
+            // смете, а не по метке события (почему именно так — см. одноимённый
+            // расчёт в loadAdminData).
+            calcFromRec = userEstimates.filter(e =>
+                (e.calc_data && (e.calc_data.from_recognition === 'true' || e.calc_data.from_recognition === true))
+                || e.from_recognition === 'true' || e.from_recognition === true).length;
         } catch (e) {
             console.warn('[админка] расчёты монтажника не посчитаны:', e.message || e);
         }
@@ -24611,10 +24624,10 @@ const app = {
                                 <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">расчётов: ${calcStarted === null ? '—' : calcStarted}</div>
                             </div>
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
-                                 title="Накладных и смет, разобранных распознаванием за два года, и сколько из них дошло до расчёта">
+                                 title="Накладных и смет, разобранных распознаванием за два года, и сколько сохранённых смет из них собрано. Одна смета нередко собирается из нескольких накладных, поэтому числа не обязаны совпадать.">
                                 <div style="font-size:11px; color:var(--text-sec); text-transform:uppercase; font-weight:700; margin-bottom:5px;">Распознано</div>
                                 <div style="font-size:20px; font-weight:800; color:${(recStats && recStats.docs > 0 && calcFromRec === 0) ? '#D97706' : 'var(--text-main)'};">${recStats === null ? '—' : recStats.docs}</div>
-                                <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">в смету: ${calcFromRec === null ? '—' : calcFromRec}</div>
+                                <div style="font-size:10px; color:var(--text-sec); margin-top:2px;">в сметах: ${calcFromRec === null ? '—' : calcFromRec}</div>
                             </div>
                             <div style="background:var(--bg); padding:15px; border-radius:12px; text-align:center; border:1px solid var(--border);"
                                  title="Планы этажей, прочитанные распознаванием. В смету не переносятся — идут подложкой в разметку помещений">

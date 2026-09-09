@@ -614,6 +614,20 @@ const RecognizeMatch = (function () {
     // «ленточные» попадало в исключение, оставленное для демпферной ленты.
     // Пара «хомут-стяжка» другого смысла не имеет, поэтому ловим её прямо.
     /хомут[\s-]*стяжк/i,
+    /**
+     * Промышленная задвижка — не наш ассортимент.
+     *
+     * Чугунные фланцевые задвижки Ду100–400 (FAF, Рашворк, МЗВ, Tecofi) — это
+     * магистральная арматура, у поставщика её нет: из задвижек он возит только
+     * латунные муфтовые ITAP от 1/2" до 4". Модель размечает такие строки типом
+     * «хомут», и двадцать четыре строки висели в копилке промахов как дыра в
+     * каталоге, хотя дырой не были.
+     *
+     * Отличаем по признакам магистральной арматуры — фланец, чугун,
+     * обрезиненный клин, марка. Латунная муфтовая под правило не подпадает:
+     * её мы продаём и подбирать обязаны.
+     */
+    /задвижк[а-яё]*[\s\S]{0,80}(фланцев|чугун|обрезиненн|30ч39|мзв|рашворк|tecofi|faf)|(фланцев|чугун|обрезиненн|30ч39|мзв|рашворк|tecofi|faf)[\s\S]{0,80}задвижк/i,
   ];
 
   function notOurRange(raw) {
@@ -1864,6 +1878,50 @@ const RecognizeMatch = (function () {
     };
   }
 
+  /**
+   * Обвод — деталь, которой в подборе по форме нет.
+   *
+   * Это П-образный обход трубы через трубу; в каталоге он лежит в общей полке
+   * дополнительных фитингов Pro Aqua, вне рядов, по которым подбор ищет углы,
+   * тройники и муфты. Строка «PPRC Чехия обвод 20мм Ecoplastik 2-х растр.»
+   * не находила ничего — предмет есть, а формы под него нет.
+   *
+   * Короткий обвод с муфтами — отдельное изделие, и берётся он только когда
+   * назван: у него другая длина и другая цена.
+   */
+  function isBypass(rec) {
+    const raw = String(rec.raw || '').toLowerCase();
+    if (!/обвод/.test(raw)) return false;
+    // Нержавеющий обвод лежит в прайсе своим рядом и ищется как все.
+    return !/нерж|впр|aisi/.test(raw);
+  }
+
+  function matchBypass(rec) {
+    const pool = ((typeof catalog !== 'undefined' && catalog.ppr_proaqua_extra) || [])
+      .filter((it) => it && /обвод/i.test(it.name));
+    if (!pool.length) return null;
+
+    const raw = String(rec.raw || '').toLowerCase();
+    const short = /с\s*муфт|коротк/.test(raw);
+    const d = rec.d || (raw.match(/(\d{2})\s*мм/) || [])[1] || null;
+    if (!d) return null;
+
+    // Без обратных слэшей в строке регулярки: экранирование в исходнике
+    // легко теряется, а «[^d]20s*мм» не совпадает ни с чем и молчит.
+    const size = new RegExp('(^|[^0-9])' + d + ' ?мм');
+    const hit = pool.find((it) => size.test(it.name) && (short === /муфт/i.test(it.name)))
+      || pool.find((it) => size.test(it.name));
+    if (!hit) return null;
+
+    return {
+      item: hit,
+      score: 1,
+      brandRank: brandRank(hit),
+      needsApproval: brandRank(hit) >= 3,
+      alternatives: pool.filter((it) => it !== hit).slice(0, 3),
+    };
+  }
+
   function matchCatalog(rec, sysHint) {
     rec = normalize(rec);
 
@@ -1885,6 +1943,10 @@ const RecognizeMatch = (function () {
     if (isWaterMeter(rec)) {
       const w = matchWaterMeter(rec);
       if (w) return w;
+    }
+    if (isBypass(rec)) {
+      const b = matchBypass(rec);
+      if (b) return b;
     }
     // Консоль выбирают по вылету, а не по трубной системе.
     if (isConsole(rec)) {

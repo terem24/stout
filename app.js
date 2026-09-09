@@ -14495,6 +14495,43 @@ const app = {
         return out;
     },
 
+    /**
+     * Четыре числа сводки для стартового экрана админки на телефоне.
+     *
+     * Те же, что в шапке вкладки «Пользователи», но меню разделов тяжёлую
+     * загрузку не запускает (adminTabNeedsHeavyData) — и все четыре карточки
+     * показывали ноль. Считаем их здесь отдельно и дёшево: пользователи —
+     * только count без строк, сметы — два числовых столбца без calc_data.
+     *
+     * Фильтры таблицы сюда не примешиваются: на стартовом экране это всегда
+     * «всего». Менеджеру — всего по его компании, как и везде в панели.
+     */
+    loadAdminHomeTotals: async function () {
+        const out = { totalUsers: 0, totalEstimates: 0, totalEq: 0, totalWorks: 0 };
+
+        try {
+            let uq = supabaseClient.from('users').select('id', { count: 'exact', head: true });
+            if (this.isManagerRole()) {
+                const mine = this.managerDistIds();
+                uq = uq.in('distributor_id', mine.length ? mine : ['00000000-0000-0000-0000-000000000000']);
+            }
+            const { count } = await uq;
+            out.totalUsers = count || 0;
+        } catch (e) { console.warn('[админка] сводка: пользователи не посчитаны:', e); }
+
+        try {
+            const { data } = await this.scopeQueryToManager(
+                supabaseClient.from('estimates').select('eq_sum, works_sum'), 'user_id');
+            (data || []).forEach(s => {
+                out.totalEstimates++;
+                out.totalEq += (s.eq_sum || 0);
+                out.totalWorks += (s.works_sum || 0);
+            });
+        } catch (e) { console.warn('[админка] сводка: сметы не посчитаны:', e); }
+
+        return out;
+    },
+
     loadAdminData: async function (offset = 0) {
         if (!this.hasAdminAccess()) {
             const content = document.getElementById('admin_content');
@@ -14505,13 +14542,17 @@ const app = {
         if (!this.adminTabNeedsHeavyData()) {
             if (this.isManagerRole()) await this.resolveManagerScope();
             const lists = await this.loadAdminLightData();
+            // На телефоне пустой раздел означает меню со сводкой наверху — её
+            // четыре числа тяжёлая загрузка сюда не приносит, считаем отдельно
+            const homeTotals = (this.isAdminMobile() && !this._adminTab) ? await this.loadAdminHomeTotals() : null;
             // Пустая заготовка обязательна: renderAdminMain разбирает adminData сразу,
             // ещё до ветвления по вкладкам. Ранее загруженное не теряем.
             this.adminData = Object.assign(
                 { users: [], userEstimates: [], recentEstimates: [], totalUsers: 0, totalEstimates: 0, totalEq: 0, totalWorks: 0, messageReceipts: null },
                 this.adminData || {},
                 { allUsersDropdown: lists.allUsersDropdown, distributors: lists.distributors },
-                (this._adminTab === 'messages') ? { messages: lists.allMessages } : {}
+                (this._adminTab === 'messages') ? { messages: lists.allMessages } : {},
+                homeTotals || {}
             );
             this.renderAdminMain();
             return;

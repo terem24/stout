@@ -52734,49 +52734,20 @@ const app = {
                         addToBill(itemCopy, 1, "Крепление расширительного бака ГВС (L-кронштейн или комплект STOUT).", grp);
                     }
                     addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Подключение расширительного бака ГВС.", grp);
-                } else if (this.boilerPipeSystem() === 'mp') { // Металлопластик STOUT
-                    // Подводка та же по смыслу, что и на нержавейке (хомут + жёсткая
-                    // труба на пресс-фитингах), только типоразмер трубы 26, а не 22.
-                    // Хомут 3/4" (25–29 мм) на неё садится тот же.
-                    const _mp = (id) => (catalog.water_fittings_press_mp || []).find(x => x.id === id);
+                } else { // Нержавейка и металлопластик — жёсткая труба на хомуте
+                    // Здесь только КРЕПЛЕНИЕ и вентиль. Тройник врезки, угольники и
+                    // переход на резьбу бака считаются ниже, в блоке труб котельной,
+                    // вместе с метражом подводки (1,5 м) — и считаются для бака любого
+                    // литража, а этот блок работает только до 25 л. Пока фитинги стояли
+                    // в обоих местах, у бака до 25 л выходило два тройника и три
+                    // угольника вместо одного комплекта. В полипропиленовой ветке выше
+                    // фитингов нет ровно по этой причине.
                     let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
                     let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
                     if (clampItem) addToBill(clampItem, 1, "Хомут 3/4\" для фиксации трубы подводки перед расширительным баком ГВС.", grp);
                     if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака ГВС.", grp);
 
                     addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Отсечной вентиль для подключения расширительного бака ГВС.", grp);
-                    let maleElbow = _mp("SFP-0011-003426");
-                    let pressElbow = _mp("SFP-0009-002626");
-                    if (maleElbow) addToBill(maleElbow, 1, "Пресс-угольник-переходник 90° с наружной резьбой 3/4\"х26 для подключения к вентилю бака.", grp);
-                    if (pressElbow) addToBill(pressElbow, 2, "Пресс-угольник 90° 26х26 для обвязки бака.", grp);
-
-                    let frameBoilerPower = boilerPowerForPipes(selBoilers);
-                    let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
-                    let teeItem = (frameSsDiameter === 22) ? _mp("SFP-0006-262626") : _mp("SFP-0005-322632");
-                    if (teeItem) addToBill(teeItem, 1, (frameSsDiameter === 22)
-                        ? "Пресс-тройник равнопроходный 26х26х26 для врезки расширительного бака ГВС."
-                        : "Пресс-тройник переходной 32х26х32 для врезки расширительного бака ГВС.", grp);
-                } else { // Stainless steel (Stout)
-                    let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
-                    let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
-                    if (clampItem) addToBill(clampItem, 1, "Хомут 3/4\" для фиксации трубы подводки перед расширительным баком ГВС.", grp);
-                    if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака ГВС.", grp);
-
-                    addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Отсечной вентиль для подключения расширительного бака ГВС.", grp);
-                    let maleElbow = this.ssItem(catalog.ss_elbow_mi, "RSS-1010-002234");
-                    let pressElbow = this.ssItem(catalog.ss_elbow90, "RSS-1002-000022");
-                    if (maleElbow) addToBill(maleElbow, 1, "Угольник-переходник 90° ВПр-НР 22х3/4\" для подключения к вентилю бака.", grp);
-                    if (pressElbow) addToBill(pressElbow, 2, "Угольник 90° ВПр-НПр 22 для обвязки бака.", grp);
-
-                    let frameBoilerPower = boilerPowerForPipes(selBoilers);
-                    let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
-                    if (frameSsDiameter === 22) {
-                        let teeItem = this.ssItem(catalog.ss_tee, "RSS-1013-000022");
-                        if (teeItem) addToBill(teeItem, 1, "Тройник равнопроходной ВПр 22 для врезки расширительного бака ГВС.", grp);
-                    } else {
-                        let teeItem = this.ssItem(catalog.ss_tee_red, "RSS-1014-282228");
-                        if (teeItem) addToBill(teeItem, 1, "Тройник переходной ВПр 28х22х28 для врезки расширительного бака ГВС.", grp);
-                    }
                 }
             } else {
                 addToBill({ ...catalog.tank_kit, sortRank: -1 }, 1, "Подключение расширительного бака ГВС.", grp);
@@ -53195,47 +53166,16 @@ const app = {
                         addToBill(itemCopy, 1, "Крепление расширительного бака.");
                     }
                     addToBill(catalog.tank_kit, 1, "Подключение бака.");
-                } else if (this.boilerPipeSystem() === 'mp') { // Металлопластик STOUT
-                    // См. бак ГВС выше: та же подводка, типоразмер трубы 26 вместо 22.
-                    const _mp = (id) => (catalog.water_fittings_press_mp || []).find(x => x.id === id);
+                } else { // Нержавейка и металлопластик — жёсткая труба на хомуте
+                    // Только крепление и вентиль: врезка с тройником, угольниками и
+                    // переходом на резьбу бака считается ниже, в блоке труб котельной,
+                    // вместе с метражом подводки. См. тот же разбор у бака ГВС.
                     let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
                     let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
                     if (clampItem) addToBill(clampItem, 1, "Хомут 3/4\" для фиксации трубы подводки перед расширительным баком отопления.");
                     if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака отопления.");
 
                     addToBill(catalog.tank_kit, 1, "Отсечной вентиль для подключения расширительного бака.");
-                    let maleElbow = _mp("SFP-0011-003426");
-                    let pressElbow = _mp("SFP-0009-002626");
-                    if (maleElbow) addToBill(maleElbow, 1, "Пресс-угольник-переходник 90° с наружной резьбой 3/4\"х26 для подключения к вентилю бака.");
-                    if (pressElbow) addToBill(pressElbow, 2, "Пресс-угольник 90° 26х26 для обвязки бака.");
-
-                    let frameBoilerPower = boilerPowerForPipes(selBoilers);
-                    let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
-                    let teeItem = (frameSsDiameter === 22) ? _mp("SFP-0006-262626") : _mp("SFP-0005-322632");
-                    if (teeItem) addToBill(teeItem, 1, (frameSsDiameter === 22)
-                        ? "Пресс-тройник равнопроходный 26х26х26 для врезки расширительного бака."
-                        : "Пресс-тройник переходной 32х26х32 для врезки расширительного бака.");
-                } else { // Stainless steel (Stout)
-                    let clampItem = catalog.mounting_system.find(x => x.id === "SAC-0020-000034"); // 3/4"
-                    let studItem = catalog.mounting_system.find(x => x.id === "SAC-0020-400100");
-                    if (clampItem) addToBill(clampItem, 1, "Хомут 3/4\" для фиксации трубы подводки перед расширительным баком отопления.");
-                    if (studItem) addToBill(studItem, 1, "Шпилька-шуруп с дюбелем для крепления хомута подводки бака отопления.");
-
-                    addToBill(catalog.tank_kit, 1, "Отсечной вентиль для подключения расширительного бака.");
-                    let maleElbow = this.ssItem(catalog.ss_elbow_mi, "RSS-1010-002234");
-                    let pressElbow = this.ssItem(catalog.ss_elbow90, "RSS-1002-000022");
-                    if (maleElbow) addToBill(maleElbow, 1, "Угольник-переходник 90° ВПр-НР 22х3/4\" для подключения к вентилю бака.");
-                    if (pressElbow) addToBill(pressElbow, 2, "Угольник 90° ВПр-НПр 22 для обвязки бака.");
-
-                    let frameBoilerPower = boilerPowerForPipes(selBoilers);
-                    let frameSsDiameter = (frameBoilerPower <= 30) ? 22 : 28;
-                    if (frameSsDiameter === 22) {
-                        let teeItem = this.ssItem(catalog.ss_tee, "RSS-1013-000022");
-                        if (teeItem) addToBill(teeItem, 1, "Тройник равнопроходной ВПр 22 для врезки расширительного бака.");
-                    } else {
-                        let teeItem = this.ssItem(catalog.ss_tee_red, "RSS-1014-282228");
-                        if (teeItem) addToBill(teeItem, 1, "Тройник переходной ВПр 28х22х28 для врезки расширительного бака.");
-                    }
                 }
             } else {
                 addToBill(catalog.tank_kit, 1, "Подключение бака.");

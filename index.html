@@ -2062,15 +2062,15 @@
                         onclick="app.setViewMode('equipment')">1. Оборудование</div>
                     <div id="tab_works" class="tab" style="font-size: 14px; font-weight: 700;"
                         onclick="app.setViewMode('works')">2. Монтажные работы</div>
+                    <!-- Распознавание рукописных смет. Скрыта по умолчанию,
+                         показывается только админам из RecognizeUI.syncButton(). -->
+                    <div id="tab_recognize" class="tab" style="font-size: 14px; font-weight: 700; display: none;"
+                        onclick="app.setViewMode('recognize')">3. Распознавание <span class="rec-beta">beta</span></div>
                     <!-- Деньги по объекту: закупка, бригада, маржа. Гостю не
                          показывается вовсе (app.syncMoneyTab), Базовому тарифу
                          открывает окно тарифов — считает только ПРОФИ. -->
                     <div id="tab_money" class="tab" style="font-size: 14px; font-weight: 700; display: none;"
-                        onclick="app.setViewMode('money')">3. Деньги</div>
-                    <!-- Распознавание рукописных смет. Скрыта по умолчанию,
-                         показывается только админам из RecognizeUI.syncButton(). -->
-                    <div id="tab_recognize" class="tab" style="font-size: 14px; font-weight: 700; display: none;"
-                        onclick="app.setViewMode('recognize')">4. Распознавание <span class="rec-beta">beta</span></div>
+                        onclick="app.setViewMode('money')">4. Деньги</div>
                     <div id="tab_3d" class="tab" style="font-size: 14px; font-weight: 700; display: none;"
                         onclick="app.setViewMode('3d')">5. 3D Котельная</div>
                 </div>

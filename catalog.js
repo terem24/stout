@@ -3547,31 +3547,31 @@ const catalog = {
         { id: "900003.R", article: "900003.R", name: "Смазка силиконовая", price: 313, brand: "Sinikon", availability: "in_stock", price_date: "2026-08-20" }
     ],
     ss_pipe_4m: [
-        { id: "RSS-1001-000015", name: "Труба нерж. 304, штанга 4м 15х1", price: 300, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-000018", name: "Труба нерж. 304, штанга 4м 18х1", price: 409, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-000022", name: "Труба нерж. 304, штанга 4м 22х1.2", price: 553, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-000028", name: "Труба нерж. 304, штанга 4м 28х1.2", price: 715, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-000035", name: "Труба нерж. 304, штанга 4м 35х1.5", price: 1119, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-000042", name: "Труба нерж. 304, штанга 4м 42х1.5", price: 1636, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-000054", name: "Труба нерж. 304, штанга 4м 54х1.5", price: 2113, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "RSS-1001-000015", name: "Труба нерж. 304, штанга 4м 15х1", price: 300, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-000018", name: "Труба нерж. 304, штанга 4м 18х1", price: 409, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-000022", name: "Труба нерж. 304, штанга 4м 22х1.2", price: 553, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-000028", name: "Труба нерж. 304, штанга 4м 28х1.2", price: 715, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-000035", name: "Труба нерж. 304, штанга 4м 35х1.5", price: 1119, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-000042", name: "Труба нерж. 304, штанга 4м 42х1.5", price: 1636, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-000054", name: "Труба нерж. 304, штанга 4м 54х1.5", price: 2113, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-08-10" }
     ],
     ss_pipe_2m: [
-        { id: "RSS-1001-200015", name: "Труба нерж. 304, штанга 2м 15х1", price: 309, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-200018", name: "Труба нерж. 304, штанга 2м 18х1", price: 421, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-200022", name: "Труба нерж. 304, штанга 2м 22х1.2", price: 570, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-200028", name: "Труба нерж. 304, штанга 2м 28х1.2", price: 736, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-200035", name: "Труба нерж. 304, штанга 2м 35х1.5", price: 1153, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-200042", name: "Труба нерж. 304, штанга 2м 42х1.5", price: 1685, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" },
-        { id: "RSS-1001-200054", name: "Труба нерж. 304, штанга 2м 54х1.5", price: 2177, brand: "ROMMER", unit: "шт", availability: "in_stock", price_date: "2026-08-10" }
+        { id: "RSS-1001-200015", name: "Труба нерж. 304, штанга 2м 15х1", price: 309, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-200018", name: "Труба нерж. 304, штанга 2м 18х1", price: 421, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-200022", name: "Труба нерж. 304, штанга 2м 22х1.2", price: 570, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-200028", name: "Труба нерж. 304, штанга 2м 28х1.2", price: 736, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-200035", name: "Труба нерж. 304, штанга 2м 35х1.5", price: 1153, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-200042", name: "Труба нерж. 304, штанга 2м 42х1.5", price: 1685, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" },
+        { id: "RSS-1001-200054", name: "Труба нерж. 304, штанга 2м 54х1.5", price: 2177, brand: "ROMMER", unit: "шт", len: 2, availability: "in_stock", price_date: "2026-08-10" }
     ],
     ss_pipe_4m_ru: [
-        { id: "RSS-2001-000018", name: "Труба нерж. 304, штанга 4м (Россия) 18х1", price: 322, brand: "ROMMER", unit: "шт", availability: "in_stock",
+        { id: "RSS-2001-000018", name: "Труба нерж. 304, штанга 4м (Россия) 18х1", price: 322, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock",
   price_date: '2026-08-10' },
-        { id: "RSS-2001-000022", name: "Труба нерж. 304, штанга 4м (Россия) 22х1.2", price: 475, brand: "ROMMER", unit: "шт", availability: "in_stock",
+        { id: "RSS-2001-000022", name: "Труба нерж. 304, штанга 4м (Россия) 22х1.2", price: 475, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock",
   price_date: '2026-08-10' },
-        { id: "RSS-2001-000028", name: "Труба нерж. 304, штанга 4м (Россия) 28х1.2", price: 609, brand: "ROMMER", unit: "шт", availability: "on_order",
+        { id: "RSS-2001-000028", name: "Труба нерж. 304, штанга 4м (Россия) 28х1.2", price: 609, brand: "ROMMER", unit: "шт", len: 4, availability: "on_order",
   price_date: '2026-08-10' },
-        { id: "RSS-2001-000035", name: "Труба нерж. 304, штанга 4м (Россия) 35х1.5", price: 947, brand: "ROMMER", unit: "шт", availability: "in_stock",
+        { id: "RSS-2001-000035", name: "Труба нерж. 304, штанга 4м (Россия) 35х1.5", price: 947, brand: "ROMMER", unit: "шт", len: 4, availability: "in_stock",
   price_date: '2026-08-10' }
     ],
     ss_elbow90: [
@@ -3861,13 +3861,13 @@ const catalog = {
     // делается заменой префикса (см. ssItem в app.js), а не таблицей соответствий.
     // Цена — за метр (как у ROMMER), Терем даёт ровно −15% от РРЦ.
     ss_pipe_4m_316: [
-        { id: "SSS-2001-000015", name: "Труба нерж. 316L, штанга 4м 15х1", price: 712, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "SSS-2001-000018", name: "Труба нерж. 316L, штанга 4м 18х1", price: 909, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "SSS-2001-000022", name: "Труба нерж. 316L, штанга 4м 22х1.2", price: 1250, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "SSS-2001-000028", name: "Труба нерж. 316L, штанга 4м 28х1.2", price: 1525, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "SSS-2001-000035", name: "Труба нерж. 316L, штанга 4м 35х1.5", price: 2230, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "SSS-2001-000042", name: "Труба нерж. 316L, штанга 4м 42х1.5", price: 2838, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },
-        { id: "SSS-2001-000054", name: "Труба нерж. 316L, штанга 4м 54х1.5", price: 3673, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" }
+        { id: "SSS-2001-000015", name: "Труба нерж. 316L, штанга 4м 15х1", price: 712, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SSS-2001-000018", name: "Труба нерж. 316L, штанга 4м 18х1", price: 909, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SSS-2001-000022", name: "Труба нерж. 316L, штанга 4м 22х1.2", price: 1250, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SSS-2001-000028", name: "Труба нерж. 316L, штанга 4м 28х1.2", price: 1525, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SSS-2001-000035", name: "Труба нерж. 316L, штанга 4м 35х1.5", price: 2230, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SSS-2001-000042", name: "Труба нерж. 316L, штанга 4м 42х1.5", price: 2838, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" },
+        { id: "SSS-2001-000054", name: "Труба нерж. 316L, штанга 4м 54х1.5", price: 3673, brand: "STOUT", unit: "шт", len: 4, availability: "in_stock", price_date: "2026-09-09" }
     ],
     ss_elbow90_316: [
         { id: "SSS-2002-000015", name: "Угольник 90° ВПр-НПр 15", price: 312, brand: "STOUT", unit: "шт", availability: "in_stock", price_date: "2026-09-09" },

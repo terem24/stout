@@ -4764,7 +4764,7 @@ const app = {
      */
     capturePriceSnapshot: function () {
         try {
-            const prices = {}, qty = {}, names = {};
+            const prices = {}, qty = {}, names = {}, packs = {};
             (this.currentEquipmentList || []).forEach(it => {
                 const art = String((it && (it.originalId || it.id)) || '');
                 if (!art || art.indexOf('custom_collapsed_') === 0) return;
@@ -4774,6 +4774,11 @@ const app = {
                     // артикул, а строку сметы: «Радиатор Space 11 секций, 4 шт»
                     qty[art] = Number(it.q) || 1;
                     if (it.name) names[art] = String(it.name).slice(0, 90);
+                    // Труба и бухта: в смете строка стоит целую упаковку, в каталоге
+                    // цена лежит за метр. Запоминаем множитель, иначе сверка цен
+                    // сравнит бухту с метром и объявит подорожание в разы там, где
+                    // прайс не двигался (см. Reprice.show).
+                    if (it.coilPriced && Number(it.len) > 1) packs[art] = Number(it.len);
                 }
             });
             const works = {};
@@ -4794,6 +4799,7 @@ const app = {
                 prices: prices,
                 qty: qty,
                 names: names,
+                packs: packs,
                 works: works
             };
             this.saveState();
@@ -52853,11 +52859,17 @@ const app = {
 
                 if (qty_2m > 0 && !p_2m) { qty_4m += qty_2m; qty_2m = 0; }
 
+                // Цена нержавейки в каталоге — ЗА МЕТР: её пишет туда парсер по сайту
+                // поставщика, который торгует метрами с шагом заказа в штангу. В смете
+                // же строка считается штангами, поэтому цену домножаем на длину штанги
+                // (asCoilPrice по полю len) — иначе труба уходила бы клиенту вчетверо
+                // дешевле закупки. Переписать цену на штангу прямо в каталоге нельзя:
+                // следующий прогон парсера вернёт метровую.
                 if (qty_4m > 0 && p_4m) {
-                    addToBill(p_4m, qty_4m, desc, grp);
+                    addToBill(asCoilPrice(p_4m), qty_4m, desc, grp);
                 }
                 if (qty_2m > 0 && p_2m) {
-                    addToBill(p_2m, qty_2m, desc, grp);
+                    addToBill(asCoilPrice(p_2m), qty_2m, desc, grp);
                 }
             }
         };

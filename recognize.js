@@ -2983,6 +2983,7 @@ const RecognizeUI = {
         // поэтому пересчёт метров в штанги идёт строго после них.
         this.refreshSuggestions();
         this.packPipes();
+        this.markCoils();
         this.progressStop();
         this.step(2);
         this.renderReview();
@@ -3293,6 +3294,119 @@ const RecognizeUI = {
                 r.unit = 'шт';
             }
         });
+    },
+
+    /**
+     * Труба, которую продают бухтами.
+     *
+     * У бухтовой трубы цена в каталоге стоит за метр, а поставка идёт целыми
+     * бухтами: PEX-a 16x2.0 — по 100 и 500 м, металлопластик — по 100 и 200.
+     * Считать метры как есть верно для расчёта, но не для заказа: 137 метров
+     * купить нельзя, нужны две бухты по 100. Что из двух нужно монтажнику,
+     * зависит от того, зачем он открыл смету, — поэтому спрашиваем.
+     *
+     * Штанговая труба сюда не попадает: её пересчёт в штуки делает packPipes,
+     * и делает раньше — строки с _packed мы не трогаем.
+     */
+    markCoils() {
+        this._coilMode = 'm';
+        this._coilAsked = false;
+        this._rows.forEach(r => {
+            r._coil = null;
+            r._coilFrom = null;
+            r._coilNote = null;
+            const m = r._m;
+            if (!m || r._packed) return;
+            if (!/^(м|м\.?п\.?|мп|метр[а-яё]*)$/i.test(String(r.unit || '').trim())) return;
+            const len = (typeof RecognizeMatch !== 'undefined' && RecognizeMatch.pipeCoil)
+                ? RecognizeMatch.pipeCoil(m.item) : null;
+            if (len) r._coil = len;
+        });
+    },
+
+    /** Строки, которых касается выбор «метры или бухты». */
+    coilRows() {
+        return this._rows.filter(r => r._coil);
+    },
+
+    /** «бухта» в нужном числе: 1 бухта, 2 бухты, 5 бухт. */
+    coilWord(n) {
+        const t = n % 10, h = n % 100;
+        if (t === 1 && h !== 11) return 'бухта';
+        if (t >= 2 && t <= 4 && (h < 12 || h > 14)) return 'бухты';
+        return 'бухт';
+    },
+
+    /**
+     * Пересчёт метража кратно бухтам — и обратно.
+     *
+     * Исходный метраж помним в _coilFrom: переключаться можно сколько угодно,
+     * и округление никогда не накладывается само на себя.
+     */
+    setCoilMode(mode) {
+        const next = mode === 'coil' ? 'coil' : 'm';
+        this._coilAsked = true;
+        if (next !== this._coilMode) this.snap();
+        this._coilMode = next;
+        try { localStorage.setItem('rec_coil_mode', next); } catch (e) { /* и так сойдёт */ }
+
+        this._rows.forEach(r => {
+            if (!r._coil) return;
+            if (next === 'coil') {
+                const qty = (Number(r.qty) || 0) + (Number(r.qtyExtra) || 0);
+                if (!qty) return;
+                if (r._coilFrom == null) r._coilFrom = qty;
+                const n = Math.ceil(r._coilFrom / r._coil);
+                r.qty = n * r._coil;
+                r.qtyExtra = 0;
+                r._coilNote = r._coilFrom + ' м \u2192 ' + n + ' ' + this.coilWord(n) + ' по ' + r._coil + ' м';
+            } else if (r._coilFrom != null) {
+                r.qty = r._coilFrom;
+                r.qtyExtra = 0;
+                r._coilFrom = null;
+                r._coilNote = null;
+            }
+        });
+        this.renderReview();
+    },
+
+    /**
+     * Вопрос о фасовке — строкой над таблицей, а не окном.
+     *
+     * Окно пришлось бы закрывать до того, как видно смету, а решение зависит
+     * как раз от неё. Ответив, монтажник получает на том же месте переключатель:
+     * выбор в любой момент можно поменять и увидеть разницу в деньгах.
+     */
+    renderCoilBar() {
+        const rows = this.coilRows();
+        if (!rows.length) return '';
+        const src = (r) => Number(r._coilFrom != null ? r._coilFrom : r.qty) || 0;
+        const meters = rows.reduce((s, r) => s + src(r), 0);
+        const coils = rows.reduce((s, r) => s + Math.ceil(src(r) / r._coil) * r._coil, 0);
+
+        if (!this._coilAsked) {
+            const add = coils > meters ? ' — это добавит ' + (coils - meters) + ' м'
+                : ' — метраж уже кратен бухтам';
+            return `<div class="rec-panel-row rec-coilbar">
+                <span class="rec-switch-text">Труба идёт бухтами. Как считать ${
+                    rows.length === 1 ? 'эту строку' : 'эти строки (' + rows.length + ')'}?</span>
+                <button class="rec-btn-g" title="Оставить метраж как в смете — так считает расчёт"
+                        onclick="RecognizeUI.setCoilMode('m')">По метрам, как в расчёте</button>
+                <button class="rec-btn-g" title="Округлить вверх до целых бухт — так придётся заказывать${add}"
+                        onclick="RecognizeUI.setCoilMode('coil')">Кратно бухтам</button>
+              </div>`;
+        }
+
+        const on = this._coilMode === 'coil';
+        return `<div class="rec-panel-row rec-coilbar">
+            <label class="rec-switch${on ? ' on' : ''}"
+                   title="Округлить метраж вверх до целых бухт: 137 м это две бухты по 100 м">
+              <input type="checkbox" ${on ? 'checked' : ''}
+                     onchange="RecognizeUI.setCoilMode(this.checked ? 'coil' : 'm')">
+              <span class="rec-switch-track"><span class="rec-switch-knob"></span></span>
+              <span class="rec-switch-text">Считать бухтами <em>${on ? coils : meters} м</em></span>
+            </label>
+          </div>`;
     },
 
     /**
@@ -4083,7 +4197,8 @@ const RecognizeUI = {
               <td><input class="rec-f rec-f-s" value="${esc(cell(r.qty))}"
                          onchange="RecognizeUI.set(${n},'qty',this.value)">
                   ${r.qtyExtra ? `<span class="rec-art">+${r.qtyExtra}</span>` : ''}
-                  ${r._packNote ? `<div class="rec-art">${esc(r._packNote)}</div>` : ''}</td>
+                  ${r._packNote ? `<div class="rec-art">${esc(r._packNote)}</div>` : ''}
+                  ${r._coilNote ? `<div class="rec-art">${esc(r._coilNote)}</div>` : ''}</td>
               <td>${match}</td>
               <td>${m ? Math.round(this.ourUnitPrice(r) * 100) / 100 + ' ₽' : (docP ? `<span class="rec-art">${Math.round(docP)} ₽</span>` : '—')}</td>
               <td><b>${m ? Math.round(this.ourUnitPrice(r) * qty) + ' ₽'
@@ -4318,6 +4433,7 @@ const RecognizeUI = {
                 ${this.renderRetryButton()}${this.renderMemoryButton()}${undo}${this.renderCompareButton()}${reset}
               </span>
             </div>
+            ${this.renderCoilBar()}
             <div class="rec-panel-stat">${stat}</div>
           </div>`;
     },

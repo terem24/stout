@@ -235,6 +235,31 @@ const RecognizeMatch = (function () {
   }
 
   /**
+   * Длина бухты у трубы, которую продают метражом.
+   *
+   * У бухтовой трубы цена в каталоге стоит ЗА МЕТР, а поставка идёт целыми
+   * бухтами: PEX-a 16x2.0 — по 100 и 500 м, металлопластик — по 100 и 200,
+   * стабильная — по 100 и 50. Монтажник пишет в смете метры, и, если считать
+   * их как есть, в заказе окажется 137 метров, которых не бывает.
+   *
+   * Штанговая труба сюда не попадает: у нержавейки в поле len лежат 4 и 2
+   * метра, но продаётся она штуками и цена стоит за штангу — её пересчитывает
+   * PIPE_PACK. Отличаем по единице измерения и по длине: бухт короче десяти
+   * метров не бывает.
+   *
+   * Имя не coilLength: так уже называется расчёт длины бухты по системе и
+   * диаметру для пересчёта смет (см. ниже). Две функции с одним именем в одной
+   * области видимости молча заменяют друг друга — эта ошибка тут уже была.
+   */
+  function pipeCoil(item) {
+    if (!item) return null;
+    const unit = String(item.unit || '').trim().toLowerCase();
+    if (unit && unit !== 'м') return null;
+    const len = Number(item.len) || parseCoil(String(item.name || ''));
+    return len && len >= 10 ? len : null;
+  }
+
+  /**
    * Резьба в дюймах: 1/2, 3/4, 1, 1 1/4.
    *
    * Полипропилен пишет её в кавычках («32х3/4''»), нержавейка — без них
@@ -5267,7 +5292,7 @@ const RecognizeMatch = (function () {
     // Тип, выведенный из текста строки: нужен интерфейсу проверки, чтобы
     // строка-повтор наследовала предмет от той, что действительно назвала его.
     typeOf: (rec) => (normalizeType(rec).type || '').toLowerCase(),
-    matchPrice, matchByName, explainMiss, rommerAlt, packSize, packArea, setPriceIndex, hasPriceIndex, convert, total,
+    matchPrice, matchByName, explainMiss, rommerAlt, packSize, packArea, pipeCoil, setPriceIndex, hasPriceIndex, convert, total,
     // Материал, названный в строке, и его имя по-русски: экран проверки пишет
     // им, чего именно у нас нет («полипропиленовой позиции такого размера»).
     namedSystem, systemLabel,

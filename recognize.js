@@ -3322,6 +3322,21 @@ const RecognizeUI = {
                 ? RecognizeMatch.pipeCoil(m.item) : null;
             if (len) r._coil = len;
         });
+
+        /**
+         * Ответ, данный однажды, действует и дальше.
+         *
+         * Спрашивать одно и то же на каждой смете — это не забота, а
+         * докучливость: монтажник работает либо на расчёт, либо на заказ, и
+         * решение у него одно на все сметы. Переключатель остаётся на месте,
+         * так что поменять выбор можно в любой момент и на любой смете.
+         */
+        let saved = null;
+        try { saved = localStorage.getItem('rec_coil_mode'); } catch (e) { /* и так сойдёт */ }
+        if (saved === 'coil' || saved === 'm') {
+            this._coilAsked = true;
+            this.applyCoilMode(saved);
+        }
     },
 
     /** Строки, которых касается выбор «метры или бухты». */
@@ -3345,11 +3360,23 @@ const RecognizeUI = {
      */
     setCoilMode(mode) {
         const next = mode === 'coil' ? 'coil' : 'm';
-        this._coilAsked = true;
         if (next !== this._coilMode) this.snap();
-        this._coilMode = next;
+        this._coilAsked = true;
         try { localStorage.setItem('rec_coil_mode', next); } catch (e) { /* и так сойдёт */ }
+        this.applyCoilMode(next);
+        this.renderReview();
+    },
 
+    /**
+     * Сам пересчёт — без запоминания, отмены и перерисовки.
+     *
+     * Отдельно от setCoilMode он нужен потому, что запомненный ответ
+     * применяется ДО первой отрисовки экрана: снимок для «Отменить» там делать
+     * не по чему, да и отменять пользователю нечего — он ещё ничего не нажимал.
+     */
+    applyCoilMode(mode) {
+        const next = mode === 'coil' ? 'coil' : 'm';
+        this._coilMode = next;
         this._rows.forEach(r => {
             if (!r._coil) return;
             if (next === 'coil') {
@@ -3367,7 +3394,6 @@ const RecognizeUI = {
                 r._coilNote = null;
             }
         });
-        this.renderReview();
     },
 
     /**
@@ -3400,7 +3426,7 @@ const RecognizeUI = {
         const on = this._coilMode === 'coil';
         return `<div class="rec-panel-row rec-coilbar">
             <label class="rec-switch${on ? ' on' : ''}"
-                   title="Округлить метраж вверх до целых бухт: 137 м это две бухты по 100 м">
+                   title="Округлить метраж вверх до целых бухт: 137 м это две бухты по 100 м. Выбор запоминается и применяется к следующим сметам">
               <input type="checkbox" ${on ? 'checked' : ''}
                      onchange="RecognizeUI.setCoilMode(this.checked ? 'coil' : 'm')">
               <span class="rec-switch-track"><span class="rec-switch-knob"></span></span>

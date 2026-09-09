@@ -453,23 +453,47 @@ foreach ($sheets as $s) {
          * «Управляющая автоматика» и ещё 54 листа. Поэтому колонку, названную в
          * шапке, сверяем с товарными строками и при необходимости ищем настоящую.
          */
+        /**
+         * Колонки, подписанные ценой, в кандидаты на артикул не берём вовсе.
+         *
+         * Рядом с ценой почти всегда стоит вторая — «с учётом скидки», и
+         * значения в ней короткие, без пробелов и все разные, то есть по
+         * признакам это идеальный «артикул». Так лист FAR и терял свой код:
+         * артикулы там записаны через пробелы («FT 1640 12»), под правило
+         * «короткий, без пробелов» они не подходили, и колонка со скидочной
+         * ценой уводила выбор на себя. В индексе у 90 позиций листа вместо
+         * кода стояла цена, и найти такую позицию было нечем.
+         */
+        $priceCols = [];
+        foreach ($hdr as $col => $v) {
+            if (preg_match($rePrice, trim((string)$v))) $priceCols[$col] = 1;
+        }
+
         $probe = [];
         $canon = [];
         // Сколько РАЗНЫХ значений встретилось в колонке — см. $varied ниже.
         $distinct = [];
+        // Заполненность колонки БЕЗ отбора по форме: шапку, назвавшую артикул,
+        // нельзя отвергать только потому, что коды в ней записаны непривычно.
+        $filled = [];
+        // Числовых значений в колонке: сплошь числа — это цена или количество.
+        $nums = [];
         $seenRows = 0;
         for ($i = $hi + 1; $i < count($rows) && $seenRows < 40; $i++) {
             if (!is_numeric($rows[$i][$cPrice] ?? null)) continue;
             $seenRows++;
             foreach ($rows[$i] as $col => $v) {
                 $t = trim((string)$v);
+                if ($t === '' || $col === $cPrice || $col === $cName) continue;
+                $filled[$col] = ($filled[$col] ?? 0) + 1;
+                if (isset($priceCols[$col])) continue;
                 // Код товара: короткий, без пробелов, не цена и не название.
                 // Исключение — артикул, записанный через пробелы: он код и есть.
-                if ($t === '' || $col === $cPrice || $col === $cName) continue;
                 $spacedArt = preg_match($reCanonSp, $t) && !preg_match($reCanon, $t);
                 if (!$spacedArt && (mb_strlen($t) > 30 || preg_match('/\s/u', $t))) continue;
                 $probe[$col] = ($probe[$col] ?? 0) + 1;
                 $distinct[$col][$t] = 1;
+                if (is_numeric(str_replace(',', '.', $t))) $nums[$col] = ($nums[$col] ?? 0) + 1;
                 if ($spacedArt || preg_match($reCanon, $t)) $canon[$col] = ($canon[$col] ?? 0) + 1;
             }
         }
@@ -494,13 +518,33 @@ foreach ($sheets as $s) {
             return count($distinct[$col] ?? []) * 2 > $n;
         };
 
-        $artFilled = $cArt ? ($probe[$cArt] ?? 0) : 0;
+        /**
+         * Сплошь числа — это не артикул.
+         *
+         * У листа «Pro Aqua» рядом с кодом стоит колонка размера («110 x 50 м»),
+         * а на дренажных позициях — голое число. Разные, короткие, плотные:
+         * по признакам артикул, по смыслу нет. Настоящие коды почти всегда
+         * несут хоть одну букву, поэтому колонку из одних чисел берём только
+         * тогда, когда другой не нашлось вовсе.
+         */
+        $allNumeric = static function ($col) use ($probe, $nums) {
+            $n = $probe[$col] ?? 0;
+            return $n > 0 && ($nums[$col] ?? 0) === $n;
+        };
+
+        $artFilled = $cArt ? ($filled[$cArt] ?? 0) : 0;
         if ($seenRows > 0 && $artFilled * 2 < $seenRows) {
             arsort($probe);
             // Берём самую плотную из тех, что похожи на артикул. Раньше бралась
             // просто самая плотная, и колонка страны обходила колонку кода.
             foreach ($probe as $col => $n) {
-                if ($n * 2 >= $seenRows && $varied($col)) { $cArt = $col; break; }
+                if ($n * 2 >= $seenRows && $varied($col) && !$allNumeric($col)) { $cArt = $col; break; }
+            }
+            // Буквенной колонки не нашлось — берём числовую, лишь бы не пустоту.
+            if ($cArt === null || ($filled[$cArt] ?? 0) * 2 < $seenRows) {
+                foreach ($probe as $col => $n) {
+                    if ($n * 2 >= $seenRows && $varied($col)) { $cArt = $col; break; }
+                }
             }
         }
 

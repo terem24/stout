@@ -14113,6 +14113,39 @@ const app = {
         return undefined;
     },
 
+    /**
+     * Регион, приведённый к единому виду, — им и сверяются списки доступа.
+     *
+     * В анкетах один и тот же регион записан по-разному: «Калининград»,
+     * «Калининградская обл.», «калининградская область». Список для массового
+     * включения показывает приведённые названия, а в карточке монтажника лежит
+     * то, что он ввёл сам, — поэтому сравнение «в лоб» находило далеко не всех,
+     * и доступ, включённый региону, доставался одному человеку из десяти.
+     */
+    regionAccessKey: function (region) {
+        let r = String(region || '').trim();
+        if (!r) return '';
+        // Приведение недешёвое, а зовут его на каждую строку таблицы против
+        // каждого ключа списка — ответы запоминаем.
+        const cache = this._regionKeyCache || (this._regionKeyCache = {});
+        if (cache[r] !== undefined) return cache[r];
+        let out = r;
+        try { out = this.normalizeUserRegionAndCity(r, '').region || r; } catch (e) { /* незнакомый регион — сверяем как есть */ }
+        out = out.toLowerCase().replace(/\s+/g, ' ');
+        cache[r] = out;
+        return out;
+    },
+
+    /** Открыт ли доступ региону: ключи списка сверяем приведёнными (см. regionAccessKey). */
+    regionFlagFor: function (map, region) {
+        const want = this.regionAccessKey(region);
+        if (!map || !want) return false;
+        for (const k of Object.keys(map)) {
+            if (map[k] && this.regionAccessKey(k) === want) return true;
+        }
+        return false;
+    },
+
     /** Открыт ли инструмент по умолчанию, без явной отметки: да — только админам. */
     featureDefaultFor: function (u) {
         const email = ((u && u.email) || '').toLowerCase();
@@ -14206,7 +14239,7 @@ const app = {
         const dist = row.distributor_id || this.state.distributorId;
         if (dist && (d.dists || {})[dist]) return true;
         const region = row.region || (this.state.tgUser && this.state.tgUser.region) || '';
-        return !!(region && (d.regions || {})[region]);
+        return this.regionFlagFor(d.regions, region);
     },
 
     /**
@@ -14320,6 +14353,7 @@ const app = {
             expiry: document.getElementById('admin_filter_expiry')?.value || 'all',
             region: document.getElementById('admin_filter_region')?.value || '',
             activity: document.getElementById('admin_filter_activity')?.value || 'all',
+            recog: document.getElementById('admin_filter_recog')?.value || 'all',
             search: document.getElementById('admin_search_input')?.value || ''
         };
         const tariffFilter = filters.tariff;
@@ -14398,6 +14432,22 @@ const app = {
         if (!await app.confirm(`Назначить дистрибьютора «${dist ? dist.company_name : distId}» всем пользователям, попадающим под текущие фильтры (${count} чел.)? Тариф при этом не меняется.`)) return;
 
         try {
+            // Отбор по доступу к распознаванию сделан на клиенте (см. loadAdminData):
+            // базе его не повторить, поэтому назначаем поимённо, порциями — длинный
+            // список номеров не влезает в адрес запроса.
+            const picked = this._recogFilteredIds;
+            if (picked) {
+                if (!picked.length) { app.alert('Под фильтры никто не попадает.'); return; }
+                for (let i = 0; i < picked.length; i += 100) {
+                    const { error } = await supabaseClient.from('users')
+                        .update({ distributor_id: distId })
+                        .in('id', picked.slice(i, i + 100));
+                    if (error) throw error;
+                }
+                app.alert(`✅ Дистрибьютор назначен ${picked.length} пользователям.`);
+                this.loadAdminData(this._adminOffset);
+                return;
+            }
             let query = supabaseClient.from('users').update({ distributor_id: distId });
             query = this.buildAdminUserFilter(query);
             const { error } = await query;
@@ -14646,7 +14696,8 @@ const app = {
             tariff: document.getElementById('admin_filter_tariff')?.value || 'all',
             expiry: document.getElementById('admin_filter_expiry')?.value || 'all',
             region: document.getElementById('admin_filter_region')?.value || '',
-            activity: document.getElementById('admin_filter_activity')?.value || 'all'
+            activity: document.getElementById('admin_filter_activity')?.value || 'all',
+            recog: document.getElementById('admin_filter_recog')?.value || 'all'
         };
 
         const estSearchInputBefore = document.getElementById('admin_est_search_input');
@@ -14673,6 +14724,11 @@ const app = {
             // список и сортируем на клиенте (см. adminTariffRank), а страницу нарезаем сами.
             const isTariffSort = sortType.startsWith('tariff_');
             const isClientSort = isLtvSort || isTariffSort;
+            // Доступ к распознаванию базе неизвестен — он лежит в списках на сервере
+            // распознавания. Поэтому фильтр по нему, как сортировка по тарифу, требует
+            // всего списка целиком: страницу нарезаем сами уже после отбора.
+            const recogFilter = (this._pendingAdminFilters && this._pendingAdminFilters.recog) || 'all';
+            const isRecogFilter = recogFilter === 'on' || recogFilter === 'off';
 
             if (sortType === 'login_desc') {
                 query = query
@@ -14708,7 +14764,7 @@ const app = {
             let users = [];
             let totalUsers = 0;
 
-            if (isClientSort) {
+            if (isClientSort || isRecogFilter) {
                 let { data, error, count } = await query;
                 if (error) throw error;
                 users = data || [];
@@ -14718,6 +14774,24 @@ const app = {
                 if (error) throw error;
                 users = data || [];
                 totalUsers = count || users.length;
+            }
+
+            // Отбор по доступу к распознаванию — раньше всего остального: и тариф, и LTV
+            // должны сортировать уже отобранных, а счётчик «Пользователей» — показывать
+            // их число, а не число всех подходящих по региону.
+            if (isRecogFilter) {
+                if (!this._recognitionAccess) await this.loadRecognitionAccess();
+                const want = recogFilter === 'on';
+                users = users.filter(u => this.recognitionStateFor(u).on === want);
+                totalUsers = users.length;
+                // Массовое назначение дистрибьютора повторяет фильтры запросом к базе,
+                // а про доступ к распознаванию база не знает — поэтому запоминаем, кто
+                // именно отобран, иначе «назначить отфильтрованным (17)» задело бы всех
+                // в регионе.
+                this._recogFilteredIds = users.map(u => u.id);
+                if (!isClientSort) users = users.slice(offset, offset + this._adminPageSize);
+            } else {
+                this._recogFilteredIds = null;
             }
 
             // Сортировка по тарифу — до запроса смет, чтобы тянуть их только для своей страницы
@@ -15307,12 +15381,14 @@ const app = {
             expiry: 'all',
             region: '',
             activity: 'all',
+            recog: 'all',
             search: ''
         };
         const tariffFilter = filters.tariff;
         const expiryFilter = filters.expiry;
         const regionFilter = filters.region;
         const activityFilter = filters.activity;
+        const recogFilter = filters.recog || 'all';
         const sortArrow = (key) => sortType === key + '_asc' ? ' ▲' : (sortType === key + '_desc' ? ' ▼' : '');
         // Проектирование: переключатели работают, только если на сервере лежит
         // обновлённый recognize_archive.php (см. designAccessSupported).
@@ -15322,7 +15398,7 @@ const app = {
         // (см. _bulkAccessRegion ниже), по умолчанию совпадает с фильтром таблицы
         const bulkRegionSel = this._bulkAccessRegion !== undefined ? this._bulkAccessRegion : regionFilter;
         const designRegionOn = !!(designOk && bulkRegionSel &&
-            (this._recognitionAccess.design.regions || {})[bulkRegionSel]);
+            this.regionFlagFor(this._recognitionAccess.design.regions, bulkRegionSel));
 
         let h = `
                     <div class="admin-stat-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
@@ -15362,6 +15438,15 @@ const app = {
                                     }
                                 }).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru')).map(r => `<option value="${r}" ${regionFilter === r ? 'selected' : ''}>${r}</option>`).join('')}
                             </select>
+                            <!-- Доступ к распознаванию — фильтр клиентский: он живёт не в базе,
+                                 а в списках доступа на сервере (см. recognitionStateFor).
+                                 С остальными фильтрами складывается: регион отбирает база,
+                                 доступ — мы поверх её ответа. -->
+                            <select id="admin_filter_recog" onchange="app.loadAdminData(0)" title="Кому открыто распознавание смет" style="background: var(--surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-size: 12px; outline: none; cursor: pointer; height: 34px; box-sizing: border-box;">
+                                <option value="all" ${recogFilter === 'all' ? 'selected' : ''}>🔍 Распознавание: все</option>
+                                <option value="on" ${recogFilter === 'on' ? 'selected' : ''}>🔍 Распознавание: включено</option>
+                                <option value="off" ${recogFilter === 'off' ? 'selected' : ''}>🔍 Распознавание: выключено</option>
+                            </select>
                             <select id="admin_filter_activity" onchange="app.loadAdminData(0)" style="background: var(--surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-size: 12px; outline: none; cursor: pointer; height: 34px; box-sizing: border-box;">
                                 <option value="all" ${activityFilter === 'all' ? 'selected' : ''}>Вся сфера деят-ти</option>
                                 <option value="Монтажник" ${activityFilter === 'Монтажник' ? 'selected' : ''}>Монтажник</option>
@@ -15400,7 +15485,7 @@ const app = {
                         const allRegions = [...new Set((this.adminData.allUsersDropdown || []).map(u => {
                             try { return app.normalizeUserRegionAndCity(u.region, u.city).region; } catch (e) { return ''; }
                         }).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
-                        const recogRegionOn = !!(this._recognitionAccess && this._recognitionAccess.regions && this._recognitionAccess.regions[bulkRegion]);
+                        const recogRegionOn = this.regionFlagFor(this._recognitionAccess && this._recognitionAccess.regions, bulkRegion);
                         const regHint = bulkRegion ? '' : ' Сначала выберите регион в списке слева.';
                         const noRegion = isViewer || !bulkRegion;
                         // Тот же переключатель, что в колонках таблицы (label.switch + подпись),
@@ -25957,13 +26042,30 @@ const app = {
     },
 
     /**
+     * Открыто ли монтажнику распознавание — одним ответом на всю админку.
+     *
+     * Тем же расчётом живут и ячейка столбца, и фильтр «Распознавание:
+     * включено/выключено» над таблицей: считать их порознь нельзя, иначе
+     * фильтр однажды начнёт показывать не тех, кого показывает столбец.
+     */
+    recognitionStateFor: function (u) {
+        const acc = this._recognitionAccess || { users: {}, regions: {} };
+        // Личная отметка сильнее всего: явное «выключено» перебивает и должность,
+        // и доступ, открытый компании или региону
+        const own = this.accessFlagFor(acc.users, this.recognitionUserKey(u));
+        const byDefault = this.featureDefaultFor(u);
+        const byDist = !!(u.distributor_id && (acc.dists || {})[u.distributor_id]);
+        const byRegion = this.regionFlagFor(acc.regions, u.region || '');
+        return { own, byDefault, byDist, byRegion, on: own !== undefined ? own : (byDefault || byDist || byRegion) };
+    },
+
+    /**
      * Ячейка столбца «Распознавание» в таблице пользователей.
      *
      * Обычный переключатель, а не кнопка: он реагирует на клик мгновенно,
      * своей анимацией, не дожидаясь ответа сервера и перерисовки таблицы.
      */
     recognitionAccessCell: function (u, isViewer) {
-        const acc = this._recognitionAccess || { users: {}, regions: {} };
         const key = this.recognitionUserKey(u);
         const region = u.region || '';
 
@@ -25974,13 +26076,8 @@ const app = {
             return `<span style="font-size:10px; color:var(--text-sec);" title="Нет email или логина — доступ включать не по чему">—</span>`;
         }
 
-        // Личная отметка сильнее всего: явное «выключено» перебивает и должность,
-        // и доступ, открытый компании или региону
-        const own = this.accessFlagFor(acc.users, key);
-        const byDefault = this.featureDefaultFor(u);
-        const byDist = !!(u.distributor_id && (acc.dists || {})[u.distributor_id]);
-        const byRegion = !!(region && acc.regions[region]);
-        const on = own !== undefined ? own : (byDefault || byDist || byRegion);
+        const st = this.recognitionStateFor(u);
+        const own = st.own, byDefault = st.byDefault, byDist = st.byDist, byRegion = st.byRegion, on = st.on;
 
         const label = own === true ? 'включено'
             : own === false ? 'выключено'
@@ -26070,7 +26167,7 @@ const app = {
         const own = this.accessFlagFor(d.users, key);
         const byDefault = this.featureDefaultFor(u);
         const byDist = !!(u.distributor_id && (d.dists || {})[u.distributor_id]);
-        const byRegion = !!(region && (d.regions || {})[region]);
+        const byRegion = this.regionFlagFor(d.regions, region);
         const on = own !== undefined ? own : (byDefault || byDist || byRegion);
 
         const label = own === true ? 'включено'

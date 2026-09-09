@@ -1765,6 +1765,58 @@ const RecognizeMatch = (function () {
     };
   }
 
+  /**
+   * Коллекторный шкаф — по обозначению, а не по габаритам.
+   *
+   * У шкафа есть типоразмер (ШРН-5, ШРВ-3), и он определяет всё: число
+   * выходов, цену, налезет ли шкаф на гребёнку. Но в строке рядом с ним
+   * часто стоят габариты — «Шкаф для коллекторов наружный ШРН-5
+   * (1004х120х651-691)», — и подбор по словам считал их наравне со всем
+   * остальным. Числа 651 и 120 совпадали с прайсовой строкой «651 x 120 x
+   * 554», и ШРН-5 за 6 921 ₽ уходил в ШРН-2 за 2 131 ₽: втрое дешевле и на
+   * три типоразмера меньше. Обозначение названо прямо — значит, решает оно.
+   *
+   * Ряды различаются припиской: обычный, углублённый ШРН-180 и «эконом».
+   * Проверяем углублённый первым: у него в обозначении своя сотня («ШРН-180-4»),
+   * и без этого номером типоразмера стала бы единица из 180.
+   */
+  function isCabinet(rec) {
+    const raw = String(rec.raw || '');
+    return /шкаф|ящик/i.test(raw) && /шр\s*[нв]\s*-?\s*\d/i.test(raw);
+  }
+
+  function matchCabinet(rec) {
+    const raw = String(rec.raw || '');
+    const deep = raw.match(/шр\s*н\s*-?\s*180\s*-?\s*(\d)/i);
+    const m = deep || raw.match(/шр\s*([нв])\s*-?\s*(\d)/i);
+    if (!m) return null;
+
+    const kind = deep ? 'н' : m[1].toLowerCase();
+    const n = deep ? +deep[1] : +m[2];
+    const eco = /эконом/i.test(raw);
+
+    const key = deep ? 'cabinets_shrn180'
+      : eco ? 'cabinets_shrn_eco'
+        : (kind === 'в' ? 'cabinets_shrv' : 'cabinets_shrn');
+    const pool = (typeof catalog !== 'undefined' && catalog[key]) || [];
+    if (!pool.length) return null;
+
+    // Обозначение в названии каталога: «…ШРН-5 (13–16 вых.)», «…ШРН-180-5…»,
+    // «…ШРН-5 эконом…». Ищем номер, стоящий сразу за буквой ряда.
+    const want = deep ? new RegExp('ШРН-180-' + n + '(?!\d)')
+      : new RegExp('ШР' + (kind === 'в' ? 'В' : 'Н') + '-' + n + '(?!\d)');
+    const hit = pool.find((it) => want.test(String(it.name || '')));
+    if (!hit) return null;
+
+    return {
+      item: hit,
+      score: 1,
+      brandRank: brandRank(hit),
+      needsApproval: brandRank(hit) >= 3,
+      alternatives: pool.filter((it) => it !== hit).slice(0, 3),
+    };
+  }
+
   function matchCatalog(rec, sysHint) {
     rec = normalize(rec);
 
@@ -1778,6 +1830,10 @@ const RecognizeMatch = (function () {
     if (isProtectSleeve(rec)) {
       const s = matchProtectSleeve(rec);
       if (s) return s;
+    }
+    if (isCabinet(rec)) {
+      const c = matchCabinet(rec);
+      if (c) return c;
     }
     // Консоль выбирают по вылету, а не по трубной системе.
     if (isConsole(rec)) {

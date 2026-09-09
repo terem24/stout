@@ -564,6 +564,59 @@ function archiveSummary($archiveDir, $days, $force = false) {
 }
 
 /**
+ * Сколько распознаваний за каждым монтажником.
+ *
+ * Нужно списку пользователей в админке: у монтажника может не быть ни одной
+ * сохранённой сметы и при этом десяток разобранных накладных. Из браузера то
+ * же самое не собрать — записи лежат по файлу на разбор, и ради двух чисел на
+ * строку пришлось бы выкачать весь архив.
+ *
+ * Считаем здесь, рядом с файлами, и держим час в кэше: список пользователей
+ * открывают часто, а архив за час меняется на одну-две записи.
+ */
+function archiveUserCounts($archiveDir, $days, $force = false) {
+    $cachePath = $archiveDir . '/user_counts.json';
+    $ttl = 3600;
+    if (!$force && is_file($cachePath)) {
+        $cached = json_decode(@file_get_contents($cachePath), true);
+        if (is_array($cached) && ($cached['days'] ?? null) === $days
+            && (time() - (int)($cached['builtTs'] ?? 0)) < $ttl) {
+            $cached['cached'] = true;
+            return $cached;
+        }
+    }
+
+    $edge = date('Y-m-d', time() - $days * 86400);
+    $byUser = [];
+    $dirs = is_dir($archiveDir) ? scandir($archiveDir, SCANDIR_SORT_DESCENDING) : [];
+    foreach ($dirs as $day) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) || $day < $edge) continue;
+        foreach (scandir("$archiveDir/$day") ?: [] as $f) {
+            if (substr($f, -5) !== '.json') continue;
+            $meta = json_decode(@file_get_contents("$archiveDir/$day/$f"), true);
+            if (!is_array($meta)) continue;
+            $user = trim((string)($meta['user'] ?? ''));
+            if ($user === '') continue;
+            if (!isset($byUser[$user])) $byUser[$user] = ['n' => 0, 'plans' => 0, 'calls' => 0, 'last' => null];
+            $byUser[$user]['n']++;
+            // Запросов к модели: многолистная смета стоит четырёх, и по этому
+            // числу видно, почему у монтажника десяток разборов съел лимит.
+            $byUser[$user]['calls'] += max(1, (int)($meta['calls'] ?? 1));
+            // План этажа — не смета (так же считает и сводка), поэтому отдельно.
+            if (($meta['source'] ?? '') === 'floor_plan' || strpos((string)($meta['mode'] ?? ''), 'plan') === 0) {
+                $byUser[$user]['plans']++;
+            }
+            $when = (string)($meta['saved_at'] ?? $day);
+            if ($byUser[$user]['last'] === null || $when > $byUser[$user]['last']) $byUser[$user]['last'] = $when;
+        }
+    }
+
+    $out = ['ok' => true, 'days' => $days, 'builtTs' => time(), 'byUser' => $byUser];
+    @file_put_contents($cachePath, json_encode($out, JSON_UNESCAPED_UNICODE), LOCK_EX);
+    return $out;
+}
+
+/**
  * Остаток распознаваний. Отвечает без авторизации: это нужно самому
  * монтажнику перед отправкой сметы, и секрета в числе нет.
  */
@@ -672,6 +725,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'diskTotal' => @disk_total_space(__DIR__) ?: null,
             'diskFree'  => @disk_free_space(__DIR__) ?: null,
         ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // --- Распознаваний на каждого монтажника -------------------------------
+    // Для колонки статистики в списке пользователей.
+    if (!empty($_GET['counts'])) {
+        $days = max(1, min(730, (int)($_GET['days'] ?? 730)));
+        echo json_encode(archiveUserCounts($ARCHIVE_DIR, $days, !empty($_GET['force'])), JSON_UNESCAPED_UNICODE);
         exit;
     }
 

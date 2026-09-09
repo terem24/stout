@@ -2787,9 +2787,18 @@ const catalog = {
         { id: "SPM-0001-052630", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 26x3.0", price: 439, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" },
         { id: "SPM-0001-053230", name: "Труба металлопластиковая PE-Xb/Al/PE-Xb 32x3.0", price: 644, unit: "м", brand: "STOUT", availability: "in_stock", price_date: "2026-09-09" }
     ],
+    // Толщина у горячей и холодной трубы разная, и это не описка.
+    //
+    // Красная (ГВС) держит тепло — там 9 мм. Синяя (ХВС) защищает от конденсата,
+    // для этого довольно 6 мм; к тому же синей 18/9 у Энергофлекса нет вовсе:
+    // в линейке SUPER PROTECT S девятка идёт в 15, 22, 28 и 42 мм, а 18 — только
+    // 4, 6 и 13. До 09.09.2026 здесь стоял артикул EFXT018092SUPRS, которого у
+    // поставщика не существует: цена не обновлялась, а купить эту строку по коду
+    // монтажник не смог бы. Синяя 18/6 — та же трубка, что лежит в insulated_pipes
+    // у трубы в изоляции.
     water_insulation: [
         { id: "EFXT018092SUPRK", name: "Теплоизоляция 18/9 (Красная)", price: 38, unit: "м", brand: "Energoflex", availability: "on_order", price_date: "2026-09-09" },
-        { id: "EFXT018092SUPRS", name: "Теплоизоляция 18/9 (Синяя)", price: 34, unit: "м", brand: "Energoflex" }
+        { id: "EFXT018062SUPRS-400", name: "Теплоизоляция 18/6 (Синяя)", price: 27.5, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" }
     ],
     insulation_pro: [
         { id: "RIC-0001-180602", name: "Трубка ПРОТЕКТ ПРО 18/6, 2м (синяя)",  dn: 18, thick: 6, len: 2, pack: 184, price: 27, unit: "м", brand: "ROMMER", availability: "in_stock", price_date: "2026-09-09" },

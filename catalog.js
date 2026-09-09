@@ -5090,8 +5090,24 @@ const catalog = {
 
         // Энергофлекс 18/4: в прайсе эти позиции лежат без названия — в поле
         // наименования стоит сам артикул, поэтому по названию их не найти.
+        //
+        // Лист «Энергофлекс» — не таблица, а матрица: в одной строке стоят
+        // рядом несколько исполнений, а красное написано строкой ниже синего
+        // и несёт из описания только слово «красный». Поэтому ряд 4/11 заведён
+        // целиком — по тому же правилу, что и гофра ниже: «Теплоизоляция
+        // Энергофлекс Super Protect 22мм красная» из счёта не находила в базе
+        // ничего, при том что 18-я того же ряда находилась.
+        // Цены — колонка рублёвой цены сентябрьского прайса.
+        { id: "EFXT0150411SUPRK", name: "Теплоизоляция 15/4 Super Протект (Красная), бухта 11 м", price: 24.85, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0150411SUPRS", name: "Теплоизоляция 15/4 Super Протект (Синяя), бухта 11 м", price: 24.85, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
         { id: "EFXT0180411SUPRK", name: "Теплоизоляция 18/4 Super Протект (Красная), бухта 11 м", price: 26.54, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-07-28" },
         { id: "EFXT0180411SUPRS", name: "Теплоизоляция 18/4 Super Протект (Синяя), бухта 11 м", price: 26.54, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-07-28" },
+        { id: "EFXT0220411SUPRK", name: "Теплоизоляция 22/4 Super Протект (Красная), бухта 11 м", price: 28.65, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0220411SUPRS", name: "Теплоизоляция 22/4 Super Протект (Синяя), бухта 11 м", price: 28.65, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0280411SUPRK", name: "Теплоизоляция 28/4 Super Протект (Красная), бухта 11 м", price: 36.06, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0280411SUPRS", name: "Теплоизоляция 28/4 Super Протект (Синяя), бухта 11 м", price: 36.06, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0350411SUPRK", name: "Теплоизоляция 35/4 Super Протект (Красная), бухта 11 м", price: 45.58, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
+        { id: "EFXT0350411SUPRS", name: "Теплоизоляция 35/4 Super Протект (Синяя), бухта 11 м", price: 45.58, unit: "м", brand: "Energoflex", availability: "in_stock", price_date: "2026-09-09" },
 
         // Гофрированная защитная труба ПНД. В прайсе название состоит из одного
         // размера («28 (трубы до 20Ø)»), слова «гофра» там нет вовсе — поэтому

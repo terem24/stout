@@ -717,6 +717,39 @@ foreach ($sheets as $s) {
                 $mine[] = $t;
                 if (count($mine) > 3) array_shift($mine);
             }
+            /**
+             * Цветное исполнение стоит строкой ниже, а размер — только у первого.
+             *
+             * На «Энергофлексе» пара исполнений записана двумя строками:
+             *   «22 | 22/4-11 | синий  | EFXT0220411SUPRS | цена»
+             *   «   |          | красный| EFXT0220411SUPRK | цена»
+             * У красной размер не повторяют, и своего блока ей хватает ровно на
+             * слово «красный». В индексе она так и лежала — «красный», без
+             * диаметра и без предмета, — и «Теплоизоляция Энергофлекс Super
+             * Protect 22мм красная» из счёта не находила её вовсе, хотя синяя
+             * того же ряда находилась.
+             *
+             * Цвет — никогда не название товара, поэтому в таком случае (и
+             * только в таком) пустые ячейки своего блока берём из строки выше:
+             * там стоит размер этой же пары.
+             */
+            if ($i > $hi + 1 &&
+                preg_match('/^(красн|син|бел|чёрн|черн|сер)[а-яё]*$/ui', trim(implode(' ', $mine)))) {
+                $prev = $rows[$i - 1];
+                $cols = array_unique(array_merge(array_keys($r), array_keys($prev)));
+                usort($cols, function ($x, $y) { return colNum($x) - colNum($y); });
+                $filled = [];
+                foreach ($cols as $col) {
+                    if (colNum($col) >= $artNo) break;
+                    $t = $squash($r[$col] ?? '');
+                    if ($t === '') $t = $squash($prev[$col] ?? '');
+                    if ($t === '' || $t === $art) { $filled = []; continue; }
+                    if (preg_match('/^[A-Za-z0-9.\-]{8,}$/', $t) || mb_strlen($t) > 60) { $filled = []; continue; }
+                    $filled[] = $t;
+                    if (count($filled) > 3) array_shift($filled);
+                }
+                if (count($filled) > count($mine)) $mine = $filled;
+            }
             $built = trim($section . ' ' . implode(' ', $mine));
             if (mb_strlen($built) >= 3) { $name = $built; $inherited = false; }
         }

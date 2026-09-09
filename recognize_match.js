@@ -259,6 +259,67 @@ const RecognizeMatch = (function () {
     return null;
   }
 
+  /**
+   * Пара резьб перехода: «Футорка 3/4х1"» → ['3/4', '1'].
+   *
+   * У футорки, переходного ниппеля и американки резьбы ДВЕ, а поле thread в
+   * разборе одно — вторая теряется по дороге. Из-за этого «Футорка 3/4х1"»
+   * подбиралась футоркой 3/4"x1/2": совпала одна резьба из двух, и в смету
+   * шёл переход не на тот диаметр. А «Футорка 1/4х1/2"» не находила свою же
+   * каталожную «Футорку 1/2" x 1/4"» — у той первой резьбой стоит 1/2, и
+   * сравнение одиночных резьб её отбрасывало; вместо неё из прайса приезжала
+   * «Футорка НВ 1 1/2 x 1 1/4» за 1 177 ₽ вместо 108 ₽.
+   *
+   * Пара засчитывается, только когда обе стороны — размеры из дюймового ряда
+   * и хотя бы одна записана дробью. Иначе парой выглядели бы «Тройник
+   * 20х16х16» и «Труба 16х2,0».
+   */
+  const INCH_SIZES = new Set(['1/4', '3/8', '1/2', '5/8', '3/4', '1',
+    '1 1/4', '1 1/2', '2', '2 1/2', '3', '4']);
+
+  function threadPair(raw) {
+    const s = String(raw || '').replace(/[”»″]/g, '"');
+    const m = s.match(/(\d\s+\d\/\d|\d\/\d|\d)\s*"?\s*[хx×*]\s*(\d\s+\d\/\d|\d\/\d|\d)\s*"?/i);
+    if (!m) return null;
+    const a = m[1].replace(/\s+/g, ' ').trim();
+    const b = m[2].replace(/\s+/g, ' ').trim();
+    if (!INCH_SIZES.has(a) || !INCH_SIZES.has(b)) return null;
+    // Обе стороны целыми числами — это диаметры труб, а не резьбы.
+    if (!a.includes('/') && !b.includes('/')) return null;
+    /**
+     * Одинаковые резьбы парой не считаем.
+     *
+     * «Ниппель прямой 3/4 x 3/4» — обе стороны одна и та же, и правило «обе
+     * резьбы должны найтись» выполняется у любого кандидата, где 3/4 стоит
+     * хотя бы раз: ниппель 1"х3/4" получал те же баллы, что и 3/4"х3/4", и
+     * обходил его. Равнопроходный переход и без того разбирается обычной
+     * проверкой одиночной резьбы — ей и оставляем.
+     */
+    if (a === b) return null;
+    return [a, b];
+  }
+
+  /**
+   * Полтора дюйма склеиваем в один знак: «1 1/2» → «1&1/2».
+   *
+   * Иначе поиск резьбы «1/2» находит её внутри «1 1/2», и футорка на полдюйма
+   * не отличается от футорки на полтора.
+   */
+  function maskInch(s) {
+    return String(s).replace(/(\d)\s+(\d\/\d)/g, '$1&$2');
+  }
+
+  /** Регулярка на резьбу как на отдельный размер. */
+  function threadRe(th) {
+    const q = maskInch(th).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(^|[^0-9/&])' + q + '([^0-9/]|$)');
+  }
+
+  /** Есть ли резьба в названии отдельным размером. */
+  function threadIn(name, th) {
+    return threadRe(th).test(maskInch(norm(name)));
+  }
+
   /** Все размеры подряд для переходных тройников: «32x25x32» → [32,25,32]. */
   function parseDimChain(name) {
     const m = name.match(/(\d{2})\s*[xх]\s*(\d{2})\s*[xх]\s*(\d{2})/i);
@@ -1743,6 +1804,11 @@ const RecognizeMatch = (function () {
     // шаблонов, здесь закрываем прямое.
     const wantValve = /^кран/.test((rec.type || '').toLowerCase());
 
+    // Переход назван двумя резьбами — обе обязаны быть у кандидата, и порядок
+    // записи роли не играет: «Футорка 1/4х1/2"» это каталожная «Футорка
+    // 1/2" x 1/4"». Сравнение одиночных резьб её не находило.
+    const pair = threadPair(rec.raw);
+
     for (const re of patterns) {
       const pool = brassPool().filter((it) => it.name && re.test(it.name) &&
         (wantValve || !/кран|вентил/i.test(it.name)));
@@ -1750,8 +1816,10 @@ const RecognizeMatch = (function () {
 
       for (const it of pool) {
         const th = parseThread(it.name);
-        if (rec.thread && th !== rec.thread) continue;
-        if (!rec.thread && th) continue;
+        if (pair) {
+          if (!threadIn(it.name, pair[0]) || !threadIn(it.name, pair[1])) continue;
+        } else if (rec.thread && th !== rec.thread) continue;
+        else if (!rec.thread && th) continue;
 
         // Тип резьбы у латуни пишется как «ВР/НР», «ВН», «ВВ» и означает
         // разные изделия. Несовпадение не отбрасываем — такой позиции может
@@ -2604,7 +2672,9 @@ const RecognizeMatch = (function () {
     if (priceTokens) return priceTokens;
     priceTokens = priceIndex.map((it) => {
       const n = norm(it.n);
-      return { it, n, w: n.split(' ').filter((x) => x.length > 2) };
+      // nm — то же название, но с «1 1/2», склеенным в один знак: по нему
+      // ищется резьба, чтобы полдюйма не находились внутри полутора.
+      return { it, n, nm: maskInch(n), w: n.split(' ').filter((x) => x.length > 2) };
     });
     return priceTokens;
   }
@@ -2687,6 +2757,10 @@ const RecognizeMatch = (function () {
     const reWords = words.map((w) => new RegExp('(^|[^а-яa-z])' + esc(w)));
     const reD = d ? new RegExp('(^|[^0-9])0*' + d + '([^0-9]|$)') : null;
     const reTh = thread ? new RegExp('(^|[^0-9/])' + esc(thread) + '([^0-9/]|$)') : null;
+    // Пара резьб перехода: обе названы в строке, обе должны найтись в
+    // названии. Регулярки собираем один раз — в цикле их пятнадцать тысяч.
+    const pair = threadPair(rec.raw);
+    const rePair = pair ? [threadRe(pair[0]), threadRe(pair[1])] : null;
     const angleStr = rec.angle ? String(rec.angle) : null;
     const explained = [...words, thread, dims, String(d || ''), String(rec.angle || '')]
       .filter(Boolean).map(String);
@@ -2742,6 +2816,22 @@ const RecognizeMatch = (function () {
         // «1» находилась внутри «110», и «Тройник 1 ВВВ» уходил к
         // канализационному «Тройнику 110» — с ценой канализационного.
         if (reTh.test(n)) score += 2;
+      }
+
+      /**
+       * Вторая резьба перехода весит больше первой.
+       *
+       * «Футорка 3/4х1"» отличается от «Футорки 3/4х1/2"» ровно вторым
+       * размером, и по одной резьбе они неразличимы. Кандидат с обеими
+       * резьбами обязан обойти кандидата с одной, поэтому вес пары больше
+       * веса одиночной резьбы.
+       */
+      if (rePair) {
+        max += 3;
+        const first = rePair[0].test(row.nm);
+        const second = rePair[1].test(row.nm);
+        if (first && second) score += 3;
+        else if (first || second) score += 1;
       }
 
       if (wantMi || wantFi) {

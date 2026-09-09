@@ -14451,7 +14451,11 @@ const app = {
     // сообщений — таблица messages из трёх самая объёмная.
     loadAdminLightData: async function () {
         const withMessages = this._adminTab === 'messages';
-        const out = { allUsersDropdown: [], allMessages: [], distributors: [] };
+        // Вкладку «Расчёты» на телефоне открывают из меню разделов, минуя тяжёлую
+        // загрузку, — список смет для неё тянем здесь. Один раз за открытие
+        // панели: дальше его отмечает estimatesLoaded в adminData.
+        const withEstimates = this._adminTab === 'estimates' && !(this.adminData && this.adminData.estimatesLoaded);
+        const out = { allUsersDropdown: [], allMessages: [], distributors: [], estimates: null };
 
         try {
             const { data } = await supabaseClient.from('users')
@@ -14491,6 +14495,12 @@ const app = {
                 out.distributors = out.distributors.filter(d => mine.includes(String(d.id)));
             }
         } catch (e) { console.warn('[loadAdminLightData] Дистрибьюторы:', e); }
+
+        if (withEstimates) {
+            try {
+                out.estimates = await this.loadAdminEstimatesData();
+            } catch (e) { console.warn('[loadAdminLightData] Расчёты:', e); }
+        }
 
         return out;
     },
@@ -14532,6 +14542,66 @@ const app = {
         return out;
     },
 
+    /**
+     * Данные вкладки «Расчёты»: последние 50 смет и статусы к ним.
+     *
+     * Вынесено отдельно, потому что вкладку открывают двумя путями: вместе с
+     * тяжёлой загрузкой раздела «Пользователи» на десктопе и напрямую из меню
+     * разделов на телефоне, где тяжёлой загрузки нет вовсе — раньше в этом
+     * случае список оставался пустым («Смет пока нет»).
+     *
+     * Ошибку запроса смет пробрасываем наверх: без списка вкладке нечего
+     * показывать. Статусы и события, наоборот, необязательны — без них строка
+     * просто останется с отметкой «Сохранена».
+     */
+    loadAdminEstimatesData: async function () {
+        // Точечные JSON-поля вместо полного calc_data: в нём лежит вся смета
+        // целиком, а таблице нужны номер расчёта, счёт, площадь и адрес
+        let recentQuery = supabaseClient.from('estimates')
+            .select('id, project_name, eq_sum, works_sum, total_sum, created_at, users(username, phone, email), calc_id:calc_data->>calc_id, shared_invoice_id:calc_data->>shared_invoice_id, area:calc_data->>area, from_recognition:calc_data->>from_recognition, addr:calc_data->projectAddress, share_id')
+            .order('created_at', { ascending: false })
+            .limit(50);
+        recentQuery = this.scopeQueryToManager(recentQuery, 'user_id');
+        const { data: rows, error } = await recentQuery;
+        if (error) throw error;
+        const recentEstimates = (rows || []).map(e => ({ ...e, calc_data: { calc_id: e.calc_id, shared_invoice_id: e.shared_invoice_id, area: e.area, projectAddress: e.addr || null } }));
+
+        // Статусы клиентских ссылок на счета из этих смет
+        const sharedStatusesAdmin = {};
+        try {
+            const sharedIds = recentEstimates.map(e => e.calc_data?.shared_invoice_id).filter(Boolean);
+            if (sharedIds.length > 0) {
+                const { data: sharedList } = await supabaseClient
+                    .from('shared_invoices')
+                    .select('id, object_info')
+                    .in('id', sharedIds);
+                if (sharedList) {
+                    sharedList.forEach(item => {
+                        sharedStatusesAdmin[item.id] = item.object_info?.status || 'sent';
+                    });
+                }
+            }
+        } catch (e) { console.error('Admin status fetch error:', e); }
+
+        // Последнее событие по каждому расчёту — из него берётся отметка статуса
+        const latestInvoiceEvents = {};
+        try {
+            const { data: evList } = await supabaseClient.from('invoice_events')
+                .select('calc_id, event')
+                .order('created_at', { ascending: true });
+            if (evList) {
+                evList.forEach(e => {
+                    // Технические отметки статусом сметы не являются (см. ADMIN_KANBAN_TECH_EVENTS)
+                    if (e.calc_id && !this.ADMIN_KANBAN_TECH_EVENTS.includes(e.event)) latestInvoiceEvents[String(e.calc_id)] = e.event;
+                });
+            }
+        } catch (e) {
+            console.warn('Could not load invoice events status mapping:', e);
+        }
+
+        return { recentEstimates, sharedStatusesAdmin, latestInvoiceEvents };
+    },
+
     loadAdminData: async function (offset = 0) {
         if (!this.hasAdminAccess()) {
             const content = document.getElementById('admin_content');
@@ -14552,6 +14622,7 @@ const app = {
                 this.adminData || {},
                 { allUsersDropdown: lists.allUsersDropdown, distributors: lists.distributors },
                 (this._adminTab === 'messages') ? { messages: lists.allMessages } : {},
+                lists.estimates ? Object.assign({ estimatesLoaded: true }, lists.estimates) : {},
                 homeTotals || {}
             );
             this.renderAdminMain();
@@ -14758,15 +14829,12 @@ const app = {
                 users = users.slice(offset, offset + this._adminPageSize);
             }
 
-            // 3. Fetch Recent Estimates (Fixed 50) — те же точечные JSON-поля, что и выше, вместо
-            // полного calc_data (см. комментарий у запроса userEsts)
-            let recentQuery = supabaseClient.from('estimates')
-                .select('id, project_name, eq_sum, works_sum, total_sum, created_at, users(username, phone, email), calc_id:calc_data->>calc_id, shared_invoice_id:calc_data->>shared_invoice_id, area:calc_data->>area, from_recognition:calc_data->>from_recognition, addr:calc_data->projectAddress, share_id')
-                .order('created_at', { ascending: false })
-                .limit(50);
-            recentQuery = this.scopeQueryToManager(recentQuery, 'user_id');
-            let { data: recentEsts, error: errRE } = await recentQuery;
-            recentEsts = (recentEsts || []).map(e => ({ ...e, calc_data: { calc_id: e.calc_id, shared_invoice_id: e.shared_invoice_id, area: e.area, projectAddress: e.addr || null } }));
+            // 3. Последние сметы и статусы к ним — тем же кодом, каким их берёт
+            // вкладка «Расчёты», открытая напрямую из меню разделов на телефоне
+            const estData = await this.loadAdminEstimatesData();
+            const recentEsts = estData.recentEstimates;
+            const sharedStatusesAdmin = estData.sharedStatusesAdmin;
+            const latestInvoiceEvents = estData.latestInvoiceEvents;
 
             // 4. Fetch Global Totals (Only sums for dashboard cards)
             // Цифры в шапке панели. Менеджеру они считаются по его компании:
@@ -14774,43 +14842,10 @@ const app = {
             let { data: sums, error: errS } = await this.scopeQueryToManager(
                 supabaseClient.from('estimates').select('eq_sum, works_sum, total_sum'), 'user_id');
 
-            if (errRE || errS) throw new Error("Ошибка загрузки связанных данных");
+            if (errS) throw new Error("Ошибка загрузки связанных данных");
 
             let totalEq = 0, totalWorks = 0;
             sums.forEach(s => { totalEq += (s.eq_sum || 0); totalWorks += (s.works_sum || 0); });
-
-            // 5. Fetch statuses for shared invoices linked to recent estimates
-            let sharedStatusesAdmin = {};
-            try {
-                const sharedIds = (recentEsts || []).map(e => e.calc_data?.shared_invoice_id).filter(Boolean);
-                if (sharedIds.length > 0) {
-                    const { data: sharedList } = await supabaseClient
-                        .from('shared_invoices')
-                        .select('id, object_info')
-                        .in('id', sharedIds);
-                    if (sharedList) {
-                        sharedList.forEach(item => {
-                            sharedStatusesAdmin[item.id] = item.object_info?.status || 'sent';
-                        });
-                    }
-                }
-            } catch (e) { console.error('Admin status fetch error:', e); }
-
-            // 5b. Fetch latest status from invoice_events for actual status badges
-            let latestInvoiceEvents = {};
-            try {
-                const { data: evList } = await supabaseClient.from('invoice_events')
-                    .select('calc_id, event')
-                    .order('created_at', { ascending: true });
-                if (evList) {
-                    evList.forEach(e => {
-                        // Технические отметки статусом сметы не являются (см. ADMIN_KANBAN_TECH_EVENTS)
-                        if (e.calc_id && !this.ADMIN_KANBAN_TECH_EVENTS.includes(e.event)) latestInvoiceEvents[String(e.calc_id)] = e.event;
-                    });
-                }
-            } catch (e) {
-                console.warn('Could not load invoice events status mapping:', e);
-            }
 
             // 6. Fetch Lightweight list of all users for the message composer dropdown selection
             let allUsersDropdown = [];
@@ -14874,6 +14909,8 @@ const app = {
                 users: users || [],
                 userEstimates: userEsts || [],
                 recentEstimates: recentEsts || [],
+                // Список смет уже здесь — вкладке «Расчёты» перезапрашивать нечего
+                estimatesLoaded: true,
                 totalUsers: totalUsers || 0,
                 totalEstimates: sums.length,
                 totalEq,
@@ -15818,8 +15855,9 @@ const app = {
         // сам набор users, переписку — массив messages.
         const needHeavy = this.adminTabNeedsHeavyData(tab) && !(this.adminData && Array.isArray(this.adminData.users) && this.adminData.users.length);
         const needMessages = (tab === 'messages') && !(this.adminData && Array.isArray(this.adminData.messages));
+        const needEstimates = (tab === 'estimates') && !(this.adminData && this.adminData.estimatesLoaded);
         const needLists = !(this.adminData && Array.isArray(this.adminData.distributors));
-        if (needHeavy || needMessages || needLists) {
+        if (needHeavy || needMessages || needEstimates || needLists) {
             this.loadAdminData(0);
         } else {
             this.renderAdminMain();

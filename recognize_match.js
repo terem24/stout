@@ -1817,6 +1817,53 @@ const RecognizeMatch = (function () {
     };
   }
 
+  /**
+   * Счётчик воды — по присоединению, а не по словам.
+   *
+   * В каталоге их два: ВСКМ-15 на полдюйма и ВСКМ-20 на три четверти. В счёте
+   * же пишут «Водосчетчик универсальный (новый), 3/4, 105 мм» — половина
+   * строки не про товар вовсе, и подбор по словам тонет: нужная позиция у него
+   * первая, но совпадение 0,36 из-за «универсальный», «новый» и длины корпуса.
+   * Пять таких строк в копилке промахов.
+   *
+   * Присоединение названо всегда — дюймами или диаметром, — и выбирает оно.
+   */
+  function isWaterMeter(rec) {
+    const raw = String(rec.raw || '').toLowerCase();
+    if (!/счет|счёт|вскм/.test(raw)) return false;
+    // «Счётчик тепла», «теплосчётчик» — другое изделие, его в каталоге нет.
+    if (/тепл|электр|газ/.test(raw)) return false;
+    return /вод|вскм/.test(raw);
+  }
+
+  function matchWaterMeter(rec) {
+    const pool = [];
+    for (const key in catalog) {
+      const v = catalog[key];
+      if (!Array.isArray(v)) continue;
+      for (const it of v) {
+        if (it && it.name && /счётчик воды|счетчик воды/i.test(it.name) &&
+            !pool.some((x) => x.id === it.id)) pool.push(it);
+      }
+    }
+    if (!pool.length) return null;
+
+    const raw = String(rec.raw || '').toLowerCase();
+    const th = String(rec.thread || '');
+    // Три четверти — двадцатый, полдюйма — пятнадцатый.
+    const big = /3\/4/.test(th) || /3\/4|(^|[^\d])20([^\d]|$)/.test(raw);
+    const want = big ? /вскм-?20/i : /вскм-?15/i;
+    const hit = pool.find((it) => want.test(it.name)) || pool[0];
+    return {
+      item: hit,
+      score: 0.9,
+      substituted: 'счётчик подобран по присоединению — сверьте длину корпуса',
+      brandRank: brandRank(hit),
+      needsApproval: brandRank(hit) >= 3,
+      alternatives: pool.filter((it) => it !== hit).slice(0, 3),
+    };
+  }
+
   function matchCatalog(rec, sysHint) {
     rec = normalize(rec);
 
@@ -1834,6 +1881,10 @@ const RecognizeMatch = (function () {
     if (isCabinet(rec)) {
       const c = matchCabinet(rec);
       if (c) return c;
+    }
+    if (isWaterMeter(rec)) {
+      const w = matchWaterMeter(rec);
+      if (w) return w;
     }
     // Консоль выбирают по вылету, а не по трубной системе.
     if (isConsole(rec)) {
@@ -3298,6 +3349,19 @@ const RecognizeMatch = (function () {
      */
     'заглушка': ['пробка'],
     'пробка': ['заглушка'],
+    /**
+     * Водосчётчик — счётчик воды, и общего слова у них нет.
+     *
+     * В счетах пишут «Водосчетчик универсальный (новый), 3/4, 105 мм», в
+     * каталоге лежит «Счётчик воды ВСКМ-20 крыльчатый, 3/4"». Сравнение по
+     * началу слова тут не выручает: «водосчетчик» и «счетчик» расходятся с
+     * первой буквы. Пять промахов в копилке.
+     */
+    'водосчетчик': ['счетчик', 'вскм'],
+    'водосчётчик': ['счетчик', 'вскм'],
+    // «Преобразователь давления 4…20 мА» и «Датчик давления MLD 4–20 мА» —
+    // одно изделие: преобразователем его зовут по паспорту, датчиком в обиходе.
+    'преобразователь': ['датчик'],
   };
 
   /**

@@ -4893,6 +4893,46 @@ const app = {
         this.logInvoiceEvent('calculated', calcMeta);
     },
 
+    /**
+     * Карточка в планировщике — в момент разбора, а не при переносе в смету.
+     *
+     * Разбор, брошенный на экране проверки, до сих пор не оставлял следа нигде:
+     * архив пишется внутри apply(), то есть только у перенесённых, событий тоже
+     * не было. Работа сделана, запросы к модели потрачены — а в панели пусто.
+     *
+     * Номер расчёта выдаём здесь же, если его ещё нет: карточка живёт под ним, и
+     * перенос в смету продолжит ту же карточку, а не заведёт вторую. Отметку
+     * «посчитано» тут НЕ ставим — разбор ещё не расчёт; её поставит перенос
+     * (markRecognitionApplied), потому что обычный ensureCalcId после выданного
+     * номера уже промолчит.
+     */
+    beginRecognitionCard: function (meta) {
+        try {
+            if (!this.state.calc_id) {
+                this.state.calc_id = String(Math.floor(100000 + Math.random() * 900000));
+                this.state.rec_card_pending = true;
+                this.saveState();
+            }
+            this.logInvoiceEvent('recognized', meta || null);
+        } catch (e) {
+            console.warn('[распознавание] карточка не заведена:', e.message || e);
+        }
+    },
+
+    /**
+     * Разобранное уехало в смету — карточка идёт дальше по воронке.
+     *
+     * Срабатывает только если номер выдали мы сами (см. beginRecognitionCard).
+     * Когда монтажник разбирал накладную в уже начатый объект, у того есть свой
+     * номер и своя отметка «посчитано» — второй раз её ставить незачем.
+     */
+    markRecognitionApplied: function () {
+        if (!this.state.rec_card_pending) return;
+        delete this.state.rec_card_pending;
+        this.logInvoiceEvent('calculated', { source: 'recognition' });
+        this.saveState();
+    },
+
     getProUntilDate: function () {
         let trialUntil = parseInt(localStorage.getItem('pro_trial_until')) || 0;
         let isTrialActive = trialUntil > Date.now();
@@ -6615,6 +6655,7 @@ const app = {
     // своего ПОСЛЕДНЕГО события; при новом событии сама "переезжает", т.к. рендер берёт самую свежую запись.
     // Метка и цвет конкретного события показываются как бейдж внутри карточки.
     ADMIN_KANBAN_EVENT_META: {
+        recognized: { label: 'Разобран документ', color: '#0D9488' },
         calculated: { label: 'Новый расчёт', color: '#94A3B8' },
         saved: { label: 'Сохранено', color: '#60A5FA' },
         sent: { label: 'Отправлено клиенту', color: '#818CF8' },
@@ -6660,6 +6701,10 @@ const app = {
     },
 
     ADMIN_KANBAN_STAGES: [
+        // Первая ступень воронки: документ разобран, но в смету ещё не уехал.
+        // Карточка появляется на экране проверки — до того такой разбор не
+        // оставлял следа нигде (см. beginRecognitionCard).
+        { key: 'recognized', label: 'Распознано', color: '#0D9488', events: ['recognized'] },
         { key: 'draft', label: 'Расчёты', color: '#60A5FA', events: ['calculated', 'saved'] },
         { key: 'review', label: 'На согласовании', color: '#818CF8', events: ['sent', 'printed', 'confirmed', 'needs_revision', 'invoice_reminder_sent', 'invoice_reminder_declined'] },
         { key: 'payment', label: 'В оплату', color: '#F59E0B', events: ['invoice_requested', 'invoice_issued', 'rejected', 'paid'] },
@@ -6816,8 +6861,11 @@ const app = {
                 // (иначе первая ступень «расчёт сохранён» пустеет сама собой).
                 // Правило было описано в комментарии выше, но в коде его не
                 // было: под нож шло всё, чего нет в estimates.
+                // Разобранный документ — такое же штатное начало воронки, как и
+                // черновик расчёта: сметы в базе у него нет и быть не может.
                 const isDraftOnly = (list) => list.every(e =>
-                    e.event === 'calculated' || this.ADMIN_KANBAN_TECH_EVENTS.includes(e.event));
+                    e.event === 'calculated' || e.event === 'recognized'
+                    || this.ADMIN_KANBAN_TECH_EVENTS.includes(e.event));
                 const orphanCalcIds = Object.keys(byCalc)
                     .filter(calcId => !liveCalcIds.has(calcId) && !isDraftOnly(byCalc[calcId]));
                 if (orphanCalcIds.length) {
@@ -6901,10 +6949,12 @@ const app = {
         const scopeDists = this.isManagerRole() ? this.managerDistIds().map(String) : null;
         const list = Object.values(projects)
             .filter(p => !scopeDists || scopeDists.includes(String(p.distributor_id || '')));
-        // Брошенный расчёт — тот, у которого так и не появилось сохранённой сметы.
-        // Другого он и быть не может: карточки с историей, но без сметы, чистка
-        // удаляет как осиротевшие (см. выше), остаются только черновики.
-        list.forEach(p => { p.abandoned = !!liveIds && !liveIds.has(String(p.calc_id)); });
+        // Брошенный расчёт — тот, что остановился на «посчитано» и не стал сметой.
+        // Карточку, застрявшую на разборе документа, сюда не относим: она и есть то,
+        // ради чего заводилась, и прятать её по умолчанию бессмысленно.
+        list.forEach(p => {
+            p.abandoned = !!liveIds && !liveIds.has(String(p.calc_id)) && p.current === 'calculated';
+        });
 
         const installers = [...new Set(list.map(p => p.user_name).filter(Boolean))].sort();
         const regions = [...new Set(list.map(p => p.region).filter(Boolean))].sort();

@@ -14673,11 +14673,21 @@ const app = {
                         if (e.calc_data && e.calc_data.calc_id) savedCalcIds.add(String(e.calc_data.calc_id));
                         if (e.share_id) savedCalcIds.add(String(e.share_id));
                     });
-                    Object.keys(ownerOf).forEach(cid => {
-                        const owner = ownerOf[cid];
-                        if (!userCalcStats[owner]) userCalcStats[owner] = { total: 0, unsaved: 0 };
-                        userCalcStats[owner].total++;
-                        if (!savedCalcIds.has(cid)) userCalcStats[owner].unsaved++;
+                    // Расчёты считаем объединением: что видно по событиям плюс то, что
+                    // уже лежит сохранённой сметой. У смет, сохранённых до появления
+                    // отметки 'calculated', истории нет вовсе, и по одним событиям
+                    // получалось бы «Смет: 1, Расчётов: 0» — число, которому не верят.
+                    const calcIdsByUser = {};
+                    const bagOf = (owner) => (calcIdsByUser[owner] = calcIdsByUser[owner] || new Set());
+                    Object.keys(ownerOf).forEach(cid => { bagOf(ownerOf[cid]).add(cid); });
+                    userEsts.forEach(e => {
+                        const cid = (e.calc_data && e.calc_data.calc_id) || e.share_id;
+                        if (cid) bagOf(String(e.user_id)).add(String(cid));
+                    });
+                    Object.keys(calcIdsByUser).forEach(owner => {
+                        let total = 0, unsaved = 0;
+                        calcIdsByUser[owner].forEach(cid => { total++; if (!savedCalcIds.has(cid)) unsaved++; });
+                        userCalcStats[owner] = { total: total, unsaved: unsaved };
                     });
                 }
             } catch (e) {
@@ -15166,7 +15176,9 @@ const app = {
             // сохранённым сметам не видно, чем занят тот, кто заходит каждый день,
             // а в списке смет у него ноль. null = «посчитать не удалось».
             const calcStats = this.adminData.userCalcStats;
-            u.calcStarted = calcStats ? ((calcStats[String(u.id)] || {}).total || 0) : null;
+            // Не ниже числа сохранённых смет: у сметы может не оказаться номера
+            // расчёта вовсе (старые записи), а «Смет 3, расчётов 1» — бессмыслица.
+            u.calcStarted = calcStats ? Math.max((calcStats[String(u.id)] || {}).total || 0, u.projectsCount) : null;
             u.calcUnsaved = calcStats ? ((calcStats[String(u.id)] || {}).unsaved || 0) : null;
             u.recognitions = this.recognitionCountFor(u);
         });
@@ -24170,9 +24182,11 @@ const app = {
                 if (e.calc_data && e.calc_data.calc_id) savedIds.add(String(e.calc_data.calc_id));
                 if (e.share_id) savedIds.add(String(e.share_id));
             });
-            calcStarted = calcIds.size;
+            // Сохранённые сметы — тоже расчёты, даже если истории у них не осталось
+            savedIds.forEach(cid => calcIds.add(cid));
             calcUnsaved = 0;
             calcIds.forEach(cid => { if (!savedIds.has(cid)) calcUnsaved++; });
+            calcStarted = Math.max(calcIds.size, userEstimates.length);
         } catch (e) {
             console.warn('[админка] расчёты монтажника не посчитаны:', e.message || e);
         }

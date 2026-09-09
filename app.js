@@ -6646,6 +6646,19 @@ const app = {
     // В воронке дашборда шаг всё равно учитывается: она считает по INVOICE_FLOW,
     // а не по колонкам канбана.
     ADMIN_KANBAN_TECH_EVENTS: ['offline_link', 'opened'],
+    /**
+     * Показывать ли на доске брошенные расчёты.
+     *
+     * Живёт только в памяти вкладки: это взгляд на доску, а не настройка аккаунта,
+     * и следующее открытие панели должно снова показать её чистой.
+     */
+    _kanbanShowAbandoned: false,
+    toggleKanbanAbandoned: function (on) {
+        this._kanbanShowAbandoned = !!on;
+        // Перерисовка без повторного чтения: события уже в памяти.
+        this.renderAdminKanban(true);
+    },
+
     ADMIN_KANBAN_STAGES: [
         { key: 'draft', label: 'Расчёты', color: '#60A5FA', events: ['calculated', 'saved'] },
         { key: 'review', label: 'На согласовании', color: '#818CF8', events: ['sent', 'printed', 'confirmed', 'needs_revision', 'invoice_reminder_sent', 'invoice_reminder_declined'] },
@@ -6840,6 +6853,10 @@ const app = {
             this._kanbanUserMeta = userMeta;
             this._kanbanCalcSumMap = liveCalcMap;
             this._kanbanRecMap = liveRecMap;
+            // Номера, у которых есть живая смета. По ним отличаем брошенный расчёт от
+            // доведённого до дела: суммой это не проверить — сохранённая смета бывает
+            // и нулевой. Список переживает skipFetch вместе с остальными картами.
+            this._kanbanLiveIds = liveCalcIds ? Array.from(liveCalcIds) : null;
         } else if (!document.getElementById('kanban_root')) {
             content.innerHTML += `<div id="kanban_root"></div>`;
         }
@@ -6847,6 +6864,9 @@ const app = {
         const userMeta = this._kanbanUserMeta || {};
         const liveCalcMap = this._kanbanCalcSumMap || {};
         const liveRecMap = this._kanbanRecMap || {};
+        // null = живые сметы прочитать не удалось. Тогда брошенными не считаем никого:
+        // спрятать карточку, про которую мы не знаем правды, хуже, чем показать лишнюю.
+        const liveIds = this._kanbanLiveIds ? new Set(this._kanbanLiveIds) : null;
 
         // Группируем события по calc_id — каждая карточка живёт в колонке своего
         // последнего по времени события
@@ -6881,6 +6901,10 @@ const app = {
         const scopeDists = this.isManagerRole() ? this.managerDistIds().map(String) : null;
         const list = Object.values(projects)
             .filter(p => !scopeDists || scopeDists.includes(String(p.distributor_id || '')));
+        // Брошенный расчёт — тот, у которого так и не появилось сохранённой сметы.
+        // Другого он и быть не может: карточки с историей, но без сметы, чистка
+        // удаляет как осиротевшие (см. выше), остаются только черновики.
+        list.forEach(p => { p.abandoned = !!liveIds && !liveIds.has(String(p.calc_id)); });
 
         const installers = [...new Set(list.map(p => p.user_name).filter(Boolean))].sort();
         const regions = [...new Set(list.map(p => p.region).filter(Boolean))].sort();
@@ -6908,6 +6932,13 @@ const app = {
         if (distributorFilter !== 'all') filtered = filtered.filter(p => String(p.distributor_id || '') === String(distributorFilter));
         if (periodFrom) filtered = filtered.filter(p => p.lastAt && new Date(p.lastAt) >= periodFrom);
 
+        // Брошенные расчёты по умолчанию свёрнуты. Их вчетверо больше, чем живых
+        // карточек, и колонка «Расчёты» превращалась в свалку, где двадцать пять
+        // работающих смет тонули в двух сотнях черновиков. Данные не трогаем —
+        // прячем только показ, переключатель возвращает их на место.
+        const abandonedCount = filtered.filter(p => p.abandoned).length;
+        if (!this._kanbanShowAbandoned) filtered = filtered.filter(p => !p.abandoned);
+
         const STAGES = this.ADMIN_KANBAN_STAGES;
         const EVENT_META = this.ADMIN_KANBAN_EVENT_META;
         const stageOf = (event) => STAGES.find(s => s.events.includes(event));
@@ -6931,6 +6962,12 @@ const app = {
                     <select id="kanban_period_filter" onchange="app.renderAdminKanban(true)" style="background: var(--surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; outline: none; cursor: pointer;">
                         ${PERIODS.map(p => `<option value="${p.key}" ${periodFilter === p.key ? 'selected' : ''}>${p.label}</option>`).join('')}
                     </select>
+                    <label title="Расчёты, которые монтажник начал и не сохранил сметой. По умолчанию свёрнуты: их вчетверо больше, чем работающих карточек."
+                           style="display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-sec); cursor:pointer; white-space:nowrap;">
+                        <input type="checkbox" ${this._kanbanShowAbandoned ? 'checked' : ''}
+                               onchange="app.toggleKanbanAbandoned(this.checked)" style="cursor:pointer;">
+                        Брошенные расчёты (${abandonedCount})
+                    </label>
                     <button class="btn-header-blue" onclick="app.renderAdminKanban()" style="height:32px; padding:0 14px; font-size:12px;">↻ Обновить</button>
                 </div>
             </div>

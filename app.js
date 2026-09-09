@@ -15502,17 +15502,20 @@ const app = {
             const desCell = this.designAccessCell(u, isViewer);
 
             // Третья строка статистики: чем человек занимался, если сохранённых
-            // смет у него нет. «Расчётов» — сколько объектов он начинал считать
-            // (отметка ставится один раз на объект), в скобках — сколько из них
-            // так и не сохранил. «Распозн.» — загрузок в распознавание.
+            // смет у него нет. «Сохранено» — сколько расчётов он довёл до сметы в
+            // облаке, в скобках — сколько всего начинал (отметка ставится один раз
+            // на объект). «0 (расчётов 4)» и есть тот, кто считает и уходит.
+            // «Распознано» — загрузок в распознавание.
             // Прочерк вместо нуля значит «не посчитали», а не «ничего не делал».
-            const cUnsaved = u.calcUnsaved === null || u.calcUnsaved === undefined ? '—' : u.calcUnsaved;
-            const cStarted = u.calcStarted === null || u.calcStarted === undefined ? '—' : u.calcStarted;
+            const cSaved = (typeof u.calcStarted === 'number' && typeof u.calcUnsaved === 'number')
+                ? u.calcStarted - u.calcUnsaved : null;
+            const savedTxt = cSaved === null ? '—' : cSaved;
+            const startedTxt = u.calcStarted === null || u.calcStarted === undefined ? '—' : u.calcStarted;
             const recN = u.recognitions === null || u.recognitions === undefined ? '—' : u.recognitions;
-            const unsavedColor = (typeof u.calcUnsaved === 'number' && u.calcUnsaved > 0 && u.projectsCount === 0) ? '#D97706' : 'inherit';
+            const nothingSavedColor = (cSaved === 0 && typeof u.calcStarted === 'number' && u.calcStarted > 0) ? '#D97706' : 'inherit';
             const activityLine =
-                `<span title="Начато расчётов: ${cStarted}. Не доведено до сохранённой сметы: ${cUnsaved}." style="color:${unsavedColor};">Расчётов: ${cStarted} <b>(бросил ${cUnsaved})</b></span>`
-                + ` | <span title="Загрузок в распознавание за два года (архив на сервере)">Распозн.: ${recN}</span>`;
+                `<span title="Довёл до сохранённой сметы: ${savedTxt}. Всего начинал расчётов: ${startedTxt}." style="color:${nothingSavedColor};">Сохранено: <b>${savedTxt}</b> (расчётов ${startedTxt})</span>`
+                + ` | <span title="Загрузок в распознавание за два года (архив на сервере)">Распознано: ${recN}</span>`;
 
             h += `<tr class="active-row admin-list-row" data-search="${searchStr}" style="cursor: pointer; transition: 0.2s;" onclick="app.viewAdminUser('${u.id}')" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='transparent'">
                         <!-- Нумерация сквозная по всему списку, а не по странице: на второй
